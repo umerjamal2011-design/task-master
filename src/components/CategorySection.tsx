@@ -121,7 +121,13 @@ export function CategorySection({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="w-full group">
+      <Card 
+        className="w-full group" 
+        style={{
+          background: `linear-gradient(135deg, ${category.color || '#3B82F6'}06 0%, ${category.color || '#3B82F6'}02 100%)`,
+          borderColor: `${category.color || '#3B82F6'}20`
+        }}
+      >
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
@@ -157,7 +163,14 @@ export function CategorySection({
                     {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
                   </Badge>
                   {completedTasks.length > 0 && (
-                    <Badge variant="outline" className="text-xs text-accent">
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs"
+                      style={{ 
+                        borderColor: `${category.color || '#3B82F6'}60`,
+                        color: category.color || '#3B82F6'
+                      }}
+                    >
                       {completedTasks.length} completed
                     </Badge>
                   )}
@@ -250,6 +263,11 @@ export function CategorySection({
                   size="sm"
                   onClick={() => setShowAddTask(true)}
                   className="gap-2"
+                  style={{
+                    backgroundColor: category.color || '#3B82F6',
+                    borderColor: category.color || '#3B82F6',
+                    color: 'white'
+                  }}
                 >
                   <Plus size={16} />
                   Add Task
@@ -268,7 +286,13 @@ export function CategorySection({
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="p-4 bg-secondary/50 border-dashed">
+                <Card 
+                  className="p-4 border-dashed"
+                  style={{
+                    backgroundColor: `${category.color || '#3B82F6'}08`,
+                    borderColor: `${category.color || '#3B82F6'}30`
+                  }}
+                >
                   <div className="space-y-3">
                     <Input
                       placeholder="Task title"
@@ -284,7 +308,15 @@ export function CategorySection({
                       onKeyDown={handleKeyDown}
                     />
                     <div className="flex gap-2">
-                      <Button onClick={handleAddTask} disabled={!newTaskTitle.trim()}>
+                      <Button 
+                        onClick={handleAddTask} 
+                        disabled={!newTaskTitle.trim()}
+                        style={{
+                          backgroundColor: category.color || '#3B82F6',
+                          borderColor: category.color || '#3B82F6',
+                          color: 'white'
+                        }}
+                      >
                         <Plus size={16} />
                         Add Task
                       </Button>

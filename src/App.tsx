@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_CATEGORY_ID = 'general';
@@ -160,85 +160,156 @@ function App() {
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">TaskFlow</h1>
-              <p className="text-muted-foreground">Organize your day, one task at a time</p>
-            </div>
-            <div className="flex items-center gap-4">
-              {totalTasks > 0 && (
-                <div className="text-right">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle size={20} className="text-accent" />
-                    <span className="font-medium">{completedTasks} of {totalTasks} completed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full bg-accent rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${completionRate}%` }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                      />
-                    </div>
-                    <span className="text-sm text-muted-foreground">{completionRate}%</span>
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className="min-h-screen bg-background flex">
+      {/* Sticky Sidebar */}
+      <div className="w-80 bg-card/50 border-r border-border sticky top-0 h-screen overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-xl font-bold text-foreground mb-1">TaskFlow</h1>
+            <p className="text-sm text-muted-foreground">Organize your day</p>
           </div>
 
-          {/* Navigation Tabs */}
-          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'categories' | 'daily')} className="mb-6">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="categories" className="gap-2">
-                <List size={16} />
-                Categories
-              </TabsTrigger>
-              <TabsTrigger value="daily" className="gap-2">
-                <Sun size={16} />
-                Daily View
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Category Navigation Bar */}
-          {currentView === 'categories' && (categories || []).length > 1 && (
-            <Card className="mb-6 bg-secondary/20">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Hash size={16} className="text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">Quick Navigation</span>
+          {/* Progress Stats */}
+          {totalTasks > 0 && (
+            <Card className="mb-6 bg-primary/5 border-primary/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendUp size={20} className="text-primary" />
+                  <div>
+                    <div className="font-semibold text-foreground">{completedTasks} of {totalTasks}</div>
+                    <div className="text-sm text-muted-foreground">Tasks Completed</div>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {(categories || []).map((category) => {
-                    const categoryTasks = (tasks || []).filter(task => task.categoryId === category.id);
-                    const completedCount = categoryTasks.filter(task => task.completed).length;
-                    return (
-                      <button
-                        key={category.id}
-                        onClick={() => scrollToCategory(category.id)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background hover:bg-secondary/50 transition-colors border border-border/50 hover:border-border text-sm"
-                      >
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: category.color || '#3B82F6' }}
-                        />
-                        <span>{category.name}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {completedCount}/{categoryTasks.length}
-                        </Badge>
-                      </button>
-                    );
-                  })}
+                <div className="space-y-3">
+                  <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-primary rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${completionRate}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{completionRate}% Complete</span>
+                    <span>{totalTasks - completedTasks} Remaining</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
+
+          {/* Navigation Tabs */}
+          <div className="mb-6">
+            <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'categories' | 'daily')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="categories" className="gap-2 text-xs">
+                  <List size={14} />
+                  Categories
+                </TabsTrigger>
+                <TabsTrigger value="daily" className="gap-2 text-xs">
+                  <Sun size={14} />
+                  Daily View
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Category Stats & Navigation */}
+          {currentView === 'categories' && (categories || []).length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Hash size={16} className="text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Categories</span>
+              </div>
+              
+              {/* Overall Stats */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="text-center p-2 bg-secondary/30 rounded-lg">
+                  <div className="font-semibold text-sm text-foreground">{(categories || []).length}</div>
+                  <div className="text-xs text-muted-foreground">Total</div>
+                </div>
+                <div className="text-center p-2 bg-accent/10 rounded-lg">
+                  <div className="font-semibold text-sm text-accent">{completedTasks}</div>
+                  <div className="text-xs text-muted-foreground">Done</div>
+                </div>
+                <div className="text-center p-2 bg-primary/10 rounded-lg">
+                  <div className="font-semibold text-sm text-primary">{totalTasks - completedTasks}</div>
+                  <div className="text-xs text-muted-foreground">Pending</div>
+                </div>
+              </div>
+
+              {/* Category Navigation */}
+              <div className="space-y-2">
+                {(categories || []).map((category) => {
+                  const categoryTasks = (tasks || []).filter(task => task.categoryId === category.id);
+                  const completedCount = categoryTasks.filter(task => task.completed).length;
+                  const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
+                  
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => scrollToCategory(category.id)}
+                      className="w-full text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group"
+                      style={{
+                        background: `linear-gradient(135deg, ${category.color || '#3B82F6'}08 0%, ${category.color || '#3B82F6'}03 100%)`,
+                        borderColor: `${category.color || '#3B82F6'}20`
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.color || '#3B82F6' }}
+                          />
+                          <span className="font-medium text-sm">{category.name}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {completedCount}/{categoryTasks.length}
+                        </Badge>
+                      </div>
+                      {categoryTasks.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                            <motion.div
+                              className="h-full rounded-full"
+                              style={{ backgroundColor: category.color || '#3B82F6' }}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${categoryProgress}%` }}
+                              transition={{ duration: 0.3 }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{categoryProgress}%</span>
+                            <span>{categoryTasks.length - completedCount} left</span>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Date Picker for Daily View */}
+          {currentView === 'daily' && (
+            <div className="mb-4">
+              <Label className="text-sm font-medium mb-2 block">Select Date</Label>
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1">
+        <div className="container mx-auto px-6 py-8 max-w-4xl">
 
           {/* Add Category Form */}
           {currentView === 'categories' && (
@@ -320,22 +391,9 @@ function App() {
             </>
           )}
 
-          {/* Date Picker for Daily View */}
-          {currentView === 'daily' && (
-            <div className="flex justify-end mb-4">
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <Tabs value={currentView} className="space-y-6">
-          <TabsContent value="categories" className="space-y-6">
+          {/* Content */}
+          <Tabs value={currentView} className="space-y-6">
+            <TabsContent value="categories" className="space-y-6">
             <AnimatePresence>
               {(categories || []).length > 0 ? (
                 (categories || []).map((category) => {
@@ -387,30 +445,7 @@ function App() {
             />
           </TabsContent>
         </Tabs>
-
-        {/* Footer Stats */}
-        {totalTasks > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-12 text-center"
-          >
-            <div className="flex justify-center gap-8 text-sm text-muted-foreground">
-              <div>
-                <span className="font-medium text-foreground">{(categories || []).length}</span> categories
-              </div>
-              <div>
-                <span className="font-medium text-foreground">{totalTasks}</span> total tasks
-              </div>
-              <div>
-                <span className="font-medium text-accent">{completedTasks}</span> completed
-              </div>
-              <div>
-                <span className="font-medium text-primary">{totalTasks - completedTasks}</span> pending
-              </div>
-            </div>
-          </motion.div>
-        )}
+        </div>
       </div>
     </div>
   );

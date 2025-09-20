@@ -6,6 +6,11 @@ export interface Task {
   categoryId: string;
   createdAt: string;
   completedAt?: string;
+  parentId?: string; // For sub-tasks
+  scheduledDate?: string; // YYYY-MM-DD format
+  scheduledTime?: string; // HH:mm format
+  priority?: 'low' | 'medium' | 'high';
+  subtasks?: Task[]; // Computed field for UI
 }
 
 export interface Category {

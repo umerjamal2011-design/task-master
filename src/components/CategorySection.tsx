@@ -5,30 +5,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { TaskItem } from './TaskItem';
-import { Plus, Folder, Trash2, Check, X, Pencil } from '@phosphor-icons/react';
+import { Plus, Folder, Trash, Check, X, Pencil } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CategorySectionProps {
   category: Category;
   tasks: Task[];
+  allTasks: Task[];
   onAddTask: (categoryId: string, title: string, description?: string) => void;
   onToggleTaskComplete: (taskId: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
   onDeleteTask: (taskId: string) => void;
   onUpdateCategory: (categoryId: string, updates: Partial<Category>) => void;
   onDeleteCategory: (categoryId: string) => void;
+  onAddSubtask: (parentId: string, title: string) => void;
   canDeleteCategory: boolean;
 }
 
 export function CategorySection({
   category,
   tasks,
+  allTasks,
   onAddTask,
   onToggleTaskComplete,
   onUpdateTask,
   onDeleteTask,
   onUpdateCategory,
   onDeleteCategory,
+  onAddSubtask,
   canDeleteCategory
 }: CategorySectionProps) {
   const [showAddTask, setShowAddTask] = useState(false);
@@ -37,8 +41,10 @@ export function CategorySection({
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [editCategoryName, setEditCategoryName] = useState(category.name);
 
-  const completedTasks = tasks.filter(task => task.completed);
-  const pendingTasks = tasks.filter(task => !task.completed);
+  // Filter to only show top-level tasks (not subtasks)
+  const mainTasks = tasks.filter(task => !task.parentId);
+  const completedTasks = mainTasks.filter(task => task.completed);
+  const pendingTasks = mainTasks.filter(task => !task.completed);
   const sortedTasks = [...pendingTasks, ...completedTasks];
 
   const handleAddTask = () => {
@@ -146,7 +152,7 @@ export function CategorySection({
                     onClick={() => onDeleteCategory(category.id)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
                   >
-                    <Trash2 size={16} />
+                    <Trash size={16} />
                   </Button>
                 )}
                 <Button
@@ -215,9 +221,12 @@ export function CategorySection({
                   <TaskItem
                     key={task.id}
                     task={task}
+                    allTasks={allTasks}
+                    categoryName={category.name}
                     onToggleComplete={onToggleTaskComplete}
-                    onUpdateTask={onUpdateTask}
-                    onDeleteTask={onDeleteTask}
+                    onUpdate={onUpdateTask}
+                    onDelete={onDeleteTask}
+                    onAddSubtask={onAddSubtask}
                   />
                 ))}
               </div>

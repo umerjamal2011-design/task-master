@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Task, Category } from '@/types';
 import { CategorySection } from '@/components/CategorySection';
+import { DailyView } from '@/components/DailyView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, CheckCircle, Circle, FolderPlus } from '@phosphor-icons/react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_CATEGORY_ID = 'general';
@@ -17,6 +19,8 @@ function App() {
     { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }
   ]);
   
+  const [currentView, setCurrentView] = useState<'categories' | 'daily'>('categories');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -32,12 +36,28 @@ function App() {
       createdAt: new Date().toISOString()
     };
 
-    setTasks(currentTasks => [...currentTasks, newTask]);
+    setTasks(currentTasks => [...(currentTasks || []), newTask]);
+  };
+
+  const addSubtask = (parentId: string, title: string) => {
+    const parentTask = tasks?.find(t => t.id === parentId);
+    if (!parentTask) return;
+
+    const newSubtask: Task = {
+      id: generateId(),
+      title,
+      completed: false,
+      categoryId: parentTask.categoryId,
+      parentId,
+      createdAt: new Date().toISOString()
+    };
+
+    setTasks(currentTasks => [...(currentTasks || []), newSubtask]);
   };
 
   const toggleTaskComplete = (taskId: string) => {
     setTasks(currentTasks =>
-      currentTasks.map(task =>
+      (currentTasks || []).map(task =>
         task.id === taskId
           ? {
               ...task,
@@ -51,14 +71,14 @@ function App() {
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
     setTasks(currentTasks =>
-      currentTasks.map(task =>
+      (currentTasks || []).map(task =>
         task.id === taskId ? { ...task, ...updates } : task
       )
     );
   };
 
   const deleteTask = (taskId: string) => {
-    setTasks(currentTasks => currentTasks.filter(task => task.id !== taskId));
+    setTasks(currentTasks => (currentTasks || []).filter(task => task.id !== taskId));
   };
 
   const addCategory = () => {
@@ -69,7 +89,7 @@ function App() {
         createdAt: new Date().toISOString()
       };
 
-      setCategories(currentCategories => [...currentCategories, newCategory]);
+      setCategories(currentCategories => [...(currentCategories || []), newCategory]);
       setNewCategoryName('');
       setShowAddCategory(false);
     }
@@ -77,7 +97,7 @@ function App() {
 
   const updateCategory = (categoryId: string, updates: Partial<Category>) => {
     setCategories(currentCategories =>
-      currentCategories.map(category =>
+      (currentCategories || []).map(category =>
         category.id === categoryId ? { ...category, ...updates } : category
       )
     );
@@ -86,7 +106,7 @@ function App() {
   const deleteCategory = (categoryId: string) => {
     // Move tasks from deleted category to General
     setTasks(currentTasks =>
-      currentTasks.map(task =>
+      (currentTasks || []).map(task =>
         task.categoryId === categoryId
           ? { ...task, categoryId: DEFAULT_CATEGORY_ID }
           : task
@@ -94,7 +114,7 @@ function App() {
     );
 
     setCategories(currentCategories =>
-      currentCategories.filter(category => category.id !== categoryId)
+      (currentCategories || []).filter(category => category.id !== categoryId)
     );
   };
 
@@ -108,8 +128,8 @@ function App() {
     }
   };
 
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.completed).length;
+  const totalTasks = (tasks || []).length;
+  const completedTasks = (tasks || []).filter(task => task.completed).length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
@@ -142,96 +162,145 @@ function App() {
                   </div>
                 </div>
               )}
-              <Button
-                onClick={() => setShowAddCategory(true)}
-                className="gap-2"
-              >
-                <FolderPlus size={18} />
-                Add Category
-              </Button>
             </div>
           </div>
 
+          {/* Navigation Tabs */}
+          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'categories' | 'daily')} className="mb-6">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="categories" className="gap-2">
+                <List size={16} />
+                Categories
+              </TabsTrigger>
+              <TabsTrigger value="daily" className="gap-2">
+                <Sun size={16} />
+                Daily View
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {/* Add Category Form */}
-          <AnimatePresence>
-            {showAddCategory && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="mb-6"
-              >
-                <Card className="bg-secondary/50 border-dashed">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-3">
-                      <Input
-                        placeholder="Category name"
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                        className="flex-1"
-                      />
-                      <Button onClick={addCategory} disabled={!newCategoryName.trim()}>
-                        <Plus size={16} />
-                        Add
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowAddCategory(false);
-                          setNewCategoryName('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {currentView === 'categories' && (
+            <>
+              <div className="flex justify-end mb-4">
+                <Button
+                  onClick={() => setShowAddCategory(true)}
+                  className="gap-2"
+                >
+                  <FolderPlus size={18} />
+                  Add Category
+                </Button>
+              </div>
+
+              <AnimatePresence>
+                {showAddCategory && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="mb-6"
+                  >
+                    <Card className="bg-secondary/50 border-dashed">
+                      <CardContent className="pt-6">
+                        <div className="flex gap-3">
+                          <Input
+                            placeholder="Category name"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                            className="flex-1"
+                          />
+                          <Button onClick={addCategory} disabled={!newCategoryName.trim()}>
+                            <Plus size={16} />
+                            Add
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowAddCategory(false);
+                              setNewCategoryName('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
+
+          {/* Date Picker for Daily View */}
+          {currentView === 'daily' && (
+            <div className="flex justify-end mb-4">
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-auto"
+              />
+            </div>
+          )}
         </div>
 
-        {/* Categories */}
-        <div className="space-y-6">
-          <AnimatePresence>
-            {categories.length > 0 ? (
-              categories.map((category) => {
-                const categoryTasks = tasks.filter(task => task.categoryId === category.id);
-                return (
-                  <CategorySection
-                    key={category.id}
-                    category={category}
-                    tasks={categoryTasks}
-                    onAddTask={addTask}
-                    onToggleTaskComplete={toggleTaskComplete}
-                    onUpdateTask={updateTask}
-                    onDeleteTask={deleteTask}
-                    onUpdateCategory={updateCategory}
-                    onDeleteCategory={deleteCategory}
-                    canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID}
-                  />
-                );
-              })
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-16"
-              >
-                <Circle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-medium mb-2">No categories yet</h3>
-                <p className="text-muted-foreground mb-4">Create your first category to start organizing tasks</p>
-                <Button onClick={() => setShowAddCategory(true)} className="gap-2">
-                  <FolderPlus size={18} />
-                  Add Your First Category
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Content */}
+        <Tabs value={currentView} className="space-y-6">
+          <TabsContent value="categories" className="space-y-6">
+            <AnimatePresence>
+              {(categories || []).length > 0 ? (
+                (categories || []).map((category) => {
+                  const categoryTasks = (tasks || []).filter(task => task.categoryId === category.id);
+                  return (
+                    <CategorySection
+                      key={category.id}
+                      category={category}
+                      tasks={categoryTasks}
+                      allTasks={tasks || []}
+                      onAddTask={addTask}
+                      onToggleTaskComplete={toggleTaskComplete}
+                      onUpdateTask={updateTask}
+                      onDeleteTask={deleteTask}
+                      onUpdateCategory={updateCategory}
+                      onDeleteCategory={deleteCategory}
+                      onAddSubtask={addSubtask}
+                      canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID}
+                    />
+                  );
+                })
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-16"
+                >
+                  <Circle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
+                  <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                  <p className="text-muted-foreground mb-4">Create your first category to start organizing tasks</p>
+                  <Button onClick={() => setShowAddCategory(true)} className="gap-2">
+                    <FolderPlus size={18} />
+                    Add Your First Category
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </TabsContent>
+
+          <TabsContent value="daily">
+            <DailyView
+              tasks={tasks || []}
+              categories={categories || []}
+              selectedDate={selectedDate}
+              onToggleTaskComplete={toggleTaskComplete}
+              onUpdateTask={updateTask}
+              onDeleteTask={deleteTask}
+              onAddSubtask={addSubtask}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Footer Stats */}
         {totalTasks > 0 && (
@@ -242,7 +311,7 @@ function App() {
           >
             <div className="flex justify-center gap-8 text-sm text-muted-foreground">
               <div>
-                <span className="font-medium text-foreground">{categories.length}</span> categories
+                <span className="font-medium text-foreground">{(categories || []).length}</span> categories
               </div>
               <div>
                 <span className="font-medium text-foreground">{totalTasks}</span> total tasks

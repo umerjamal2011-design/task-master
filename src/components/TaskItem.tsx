@@ -134,37 +134,40 @@ export function TaskItem({
   };
 
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-3">
       {/* Subtask indicator dots */}
       {depth > 0 && (
-        <div className="flex items-center gap-1 pt-6 flex-shrink-0">
+        <div className="flex items-center gap-1.5 pt-2 flex-shrink-0 ml-2">
           {Array.from({ length: depth }, (_, index) => (
             <div
               key={index}
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: `${categoryColor}80` }}
+              className="w-3 h-3 rounded-full border-2 border-current"
+              style={{ 
+                backgroundColor: `${categoryColor}20`,
+                borderColor: `${categoryColor}60`
+              }}
             />
           ))}
         </div>
       )}
-      
       <motion.div
         layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.2 }}
-        className="flex-1"
+        className={`flex-1 ${depth > 0 ? 'ml-2' : ''}`}
+        style={{ marginLeft: depth > 0 ? `${depth * 8}px` : '0' }}
       >
       <Card 
         className={`transition-all duration-200 group ${
           task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-md'
-        }`}
+        } ${depth > 0 ? 'border-l-2' : 'border-l-3'}`}
         style={{
           background: task.completed 
             ? undefined 
             : `linear-gradient(135deg, ${categoryColor}04 0%, ${categoryColor}01 100%)`,
-          borderLeft: `3px solid ${task.completed ? '#94A3B8' : categoryColor}30`
+          borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${task.completed ? '#94A3B8' : categoryColor}30`
         }}
       >
         <div className="p-4">
@@ -353,7 +356,7 @@ export function TaskItem({
             </div>
             
             {!isEditing && (
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -374,6 +377,7 @@ export function TaskItem({
                     setIsEditing(true);
                   }}
                   className="h-8 w-8 p-0"
+                  title="Edit task"
                 >
                   <Pencil size={14} />
                 </Button>
@@ -385,6 +389,7 @@ export function TaskItem({
                     onDelete(task.id);
                   }}
                   className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                  title="Delete task"
                 >
                   <Trash size={14} />
                 </Button>

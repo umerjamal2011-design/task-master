@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_CATEGORY_ID = 'general';
@@ -23,6 +25,21 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState('#3B82F6');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  const categoryColors = [
+    '#3B82F6', // blue
+    '#10B981', // green
+    '#F59E0B', // amber
+    '#EF4444', // red
+    '#8B5CF6', // purple
+    '#06B6D4', // cyan
+    '#F97316', // orange
+    '#84CC16', // lime
+    '#EC4899', // pink
+    '#6B7280', // gray
+  ];
 
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -86,11 +103,13 @@ function App() {
       const newCategory: Category = {
         id: generateId(),
         name: newCategoryName.trim(),
+        color: newCategoryColor,
         createdAt: new Date().toISOString()
       };
 
       setCategories(currentCategories => [...(currentCategories || []), newCategory]);
       setNewCategoryName('');
+      setNewCategoryColor('#3B82F6');
       setShowAddCategory(false);
     }
   };
@@ -125,6 +144,14 @@ function App() {
     } else if (e.key === 'Escape') {
       setShowAddCategory(false);
       setNewCategoryName('');
+      setNewCategoryColor('#3B82F6');
+    }
+  };
+
+  const scrollToCategory = (categoryId: string) => {
+    const element = document.getElementById(`category-${categoryId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -179,6 +206,40 @@ function App() {
             </TabsList>
           </Tabs>
 
+          {/* Category Navigation Bar */}
+          {currentView === 'categories' && (categories || []).length > 1 && (
+            <Card className="mb-6 bg-secondary/20">
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Hash size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Quick Navigation</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(categories || []).map((category) => {
+                    const categoryTasks = (tasks || []).filter(task => task.categoryId === category.id);
+                    const completedCount = categoryTasks.filter(task => task.completed).length;
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => scrollToCategory(category.id)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background hover:bg-secondary/50 transition-colors border border-border/50 hover:border-border text-sm"
+                      >
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: category.color || '#3B82F6' }}
+                        />
+                        <span>{category.name}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {completedCount}/{categoryTasks.length}
+                        </Badge>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Add Category Form */}
           {currentView === 'categories' && (
             <>
@@ -203,28 +264,53 @@ function App() {
                   >
                     <Card className="bg-secondary/50 border-dashed">
                       <CardContent className="pt-6">
-                        <div className="flex gap-3">
-                          <Input
-                            placeholder="Category name"
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="flex-1"
-                          />
-                          <Button onClick={addCategory} disabled={!newCategoryName.trim()}>
-                            <Plus size={16} />
-                            Add
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setShowAddCategory(false);
-                              setNewCategoryName('');
-                            }}
-                          >
-                            Cancel
-                          </Button>
+                        <div className="space-y-4">
+                          <div className="flex gap-3">
+                            <Input
+                              placeholder="Category name"
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              autoFocus
+                              className="flex-1"
+                            />
+                            <Button onClick={addCategory} disabled={!newCategoryName.trim()}>
+                              <Plus size={16} />
+                              Add
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setShowAddCategory(false);
+                                setNewCategoryName('');
+                                setNewCategoryColor('#3B82F6');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium flex items-center gap-2">
+                              <Palette size={14} />
+                              Choose Color
+                            </Label>
+                            <div className="flex flex-wrap gap-2">
+                              {categoryColors.map((color) => (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  onClick={() => setNewCategoryColor(color)}
+                                  className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                    newCategoryColor === color 
+                                      ? 'border-foreground scale-110' 
+                                      : 'border-border hover:scale-105'
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

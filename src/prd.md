@@ -22,8 +22,9 @@
 
 ### Hierarchical Task Structure
 - **Unlimited sub-task nesting**: Users can create sub-tasks within sub-tasks to any depth level
-- **Visual hierarchy indication**: Indentation and visual cues show task relationships
+- **Visual hierarchy indication**: Indentation and dot indicators show task depth and relationships
 - **Expandable/collapsible views**: Users can focus on specific levels of detail
+- **Dot system**: Visual dots on the left indicate subtask hierarchy levels (• for level 1, •• for level 2, etc.)
 - **Cascade completion**: Option to mark parent tasks complete when all sub-tasks are done
 
 ### Advanced Scheduling System
@@ -42,6 +43,8 @@
 - **Drag and drop**: (Future enhancement) Reorder tasks and change hierarchy
 - **Quick task creation**: Streamlined process for adding both main tasks and sub-tasks
 - **Rich task metadata**: Due dates, times, priorities, descriptions, and categories
+- **Dark mode support**: Toggle between light and dark themes for comfortable use in any lighting
+- **Theme customization**: Category colors extend to all related UI elements for visual consistency
 
 ## Design Direction
 
@@ -52,11 +55,12 @@
 - **Simplicity Spectrum**: Balanced interface - clean enough to avoid clutter, rich enough to show complex hierarchies
 
 ### Color Strategy
-- **Color Scheme Type**: Monochromatic with strategic accents
+- **Color Scheme Type**: Adaptive monochromatic with strategic accents (supports both light and dark modes)
 - **Primary Color**: Deep blue (#4F46E5) - represents focus and organization
-- **Secondary Colors**: Light grays for backgrounds and subtle structure
+- **Secondary Colors**: Adaptive grays that change based on theme for optimal contrast
 - **Accent Color**: Warm orange (#F59E0B) - for completion states and highlights
 - **Color Psychology**: Blue promotes focus and productivity, orange provides warmth and achievement satisfaction
+- **Theme Flexibility**: Full dark mode support with carefully calibrated colors for comfortable night-time use
 
 ### Typography System
 - **Font Pairing Strategy**: Single font family (Inter) with varied weights for hierarchy
@@ -71,11 +75,14 @@
 - **Content Density**: Balanced - detailed enough to be useful, clean enough to reduce stress
 
 ### Component Design
-- **Expandable Cards**: Task cards that can show/hide sub-tasks
+- **Expandable Cards**: Task cards that can show/hide sub-tasks with smooth animations
 - **Time Badges**: Clear visual indicators for scheduled times and dates
 - **Priority Indicators**: Subtle color coding that doesn't overwhelm
 - **Progress Indicators**: Visual completion rates and status tracking
 - **Nested Interaction**: Intuitive controls for creating and managing hierarchies
+- **Hierarchy Dots**: Small colored dots indicate subtask depth levels visually
+- **Theme Toggle**: Accessible dark/light mode switching in the header
+- **Category Theming**: All UI elements adapt to category colors for visual cohesion
 
 ### Animations & Interactions
 - **Expand/Collapse**: Smooth animations when showing/hiding sub-tasks

@@ -148,13 +148,15 @@ export function TaskItem({
     >
       {/* Subtask indicator dots */}
       {depth > 0 && (
-        <div className="absolute left-[-20px] top-6 flex items-center gap-1">
+        <div className="absolute left-[-20px] top-6 flex items-center gap-0.5">
           {Array.from({ length: depth }, (_, index) => (
-            <Dot 
-              key={index} 
-              size={16} 
-              className="text-muted-foreground/60"
-              style={{ color: `${categoryColor}60` }}
+            <div
+              key={index}
+              className="w-2 h-2 rounded-full border"
+              style={{ 
+                backgroundColor: `${categoryColor}40`,
+                borderColor: `${categoryColor}80`
+              }}
             />
           ))}
         </div>

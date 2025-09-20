@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Task, Category } from '@/types';
 import { CategorySection } from '@/components/CategorySection';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_CATEGORY_ID = 'general';
@@ -20,6 +20,7 @@ function App() {
   const [categories, setCategories] = useKV<Category[]>('categories', [
     { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }
   ]);
+  const [isDarkMode, setIsDarkMode] = useKV<boolean>('dark-mode', false);
   
   const [currentView, setCurrentView] = useState<'categories' | 'daily'>('categories');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -29,6 +30,19 @@ function App() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [quickAddTaskCategory, setQuickAddTaskCategory] = useState<string | null>(null);
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
+
+  // Apply dark mode to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const categoryColors = [
     '#3B82F6', // blue
@@ -186,7 +200,18 @@ function App() {
         <div className="p-6">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-xl font-bold text-foreground mb-1">TaskFlow</h1>
+            <div className="flex items-center justify-between mb-1">
+              <h1 className="text-xl font-bold text-foreground">TaskFlow</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleDarkMode}
+                className="h-8 w-8 p-0"
+                title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground">Organize your day</p>
           </div>
 

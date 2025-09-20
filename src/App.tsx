@@ -60,6 +60,115 @@ function App() {
 
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+  // Cleanup function to remove orphaned tasks (tasks with non-existent parent IDs or category IDs)
+  const cleanupOrphanedTasks = () => {
+    setTasks(currentTasks => {
+      if (!currentTasks || currentTasks.length === 0) return [];
+      
+      const validCategoryIds = new Set((categories || []).map(cat => cat.id));
+      const validTaskIds = new Set(currentTasks.map(task => task.id));
+      
+      const cleanedTasks = currentTasks.filter(task => {
+        // Remove tasks with invalid category IDs
+        if (!validCategoryIds.has(task.categoryId)) {
+          return false;
+        }
+        
+        // Remove tasks with invalid parent IDs (orphaned subtasks)
+        if (task.parentId && !validTaskIds.has(task.parentId)) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // Only update if there's a difference to prevent infinite loops
+      return cleanedTasks.length !== currentTasks.length ? cleanedTasks : currentTasks;
+    });
+  };
+
+  // Run cleanup when categories change, but with a dependency check to prevent loops
+  useEffect(() => {
+    if (!categories || categories.length === 0 || !tasks || tasks.length === 0) return;
+    
+    // Check if cleanup is needed
+    const validCategoryIds = new Set(categories.map(cat => cat.id));
+    const validTaskIds = new Set(tasks.map(task => task.id));
+    
+    const hasOrphanedTasks = tasks.some(task => 
+      !validCategoryIds.has(task.categoryId) ||
+      (task.parentId && !validTaskIds.has(task.parentId))
+    );
+    
+    if (hasOrphanedTasks) {
+      console.log('Cleaning up orphaned tasks...');
+      cleanupOrphanedTasks();
+    }
+  }, [categories?.length]); // Only trigger on category count changes
+
+  const scrollToCategory = (categoryId: string) => {
+    const element = document.getElementById(`category-${categoryId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Get valid tasks (filter out any corrupted data)
+  const validTasks = (tasks || []).filter(task => 
+    task && 
+    task.id && 
+    task.title && 
+    typeof task.completed === 'boolean' &&
+    (categories || []).some(cat => cat.id === task.categoryId)
+  );
+  
+  const totalTasks = validTasks.length;
+  const completedTasks = validTasks.filter(task => task.completed).length;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Check for data inconsistencies
+  const hasDataInconsistencies = (tasks || []).length !== validTasks.length;
+
+  // Debug function to clear all tasks (can be called from browser console)
+  useEffect(() => {
+    (window as any).clearAllTasks = () => {
+      setTasks([]);
+      console.log('All tasks cleared');
+    };
+    
+    (window as any).emergencyReset = emergencyReset;
+    
+    (window as any).showTasksData = () => {
+      console.log('Current tasks:', tasks);
+      console.log('Current categories:', categories);
+      console.log('Valid tasks:', validTasks);
+      console.log('Raw task count:', (tasks || []).length);
+      console.log('Valid task count:', validTasks.length);
+      console.log('Has inconsistencies:', hasDataInconsistencies);
+    };
+  }, [tasks, categories, validTasks, hasDataInconsistencies]);
+  
+  // Function to fix data inconsistencies
+  const fixDataInconsistencies = () => {
+    console.log('Fixing data inconsistencies...', {
+      originalCount: (tasks || []).length,
+      validCount: validTasks.length,
+      removing: (tasks || []).length - validTasks.length
+    });
+    setTasks(validTasks);
+  };
+  
+  // Emergency data reset function (for severe corruption)
+  const emergencyReset = () => {
+    if (confirm('This will delete ALL tasks and categories. Are you sure?')) {
+      setTasks([]);
+      setCategories([
+        { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }
+      ]);
+      console.log('Emergency reset completed');
+    }
+  };
+
   const addTask = (categoryId: string, title: string, description?: string) => {
     const newTask: Task = {
       id: generateId(),
@@ -74,19 +183,22 @@ function App() {
   };
 
   const addSubtask = (parentId: string, title: string) => {
-    const parentTask = tasks?.find(t => t.id === parentId);
-    if (!parentTask) return;
+    setTasks(currentTasks => {
+      const tasksList = currentTasks || [];
+      const parentTask = tasksList.find(t => t.id === parentId);
+      if (!parentTask) return tasksList;
 
-    const newSubtask: Task = {
-      id: generateId(),
-      title,
-      completed: false,
-      categoryId: parentTask.categoryId,
-      parentId,
-      createdAt: new Date().toISOString()
-    };
+      const newSubtask: Task = {
+        id: generateId(),
+        title,
+        completed: false,
+        categoryId: parentTask.categoryId,
+        parentId,
+        createdAt: new Date().toISOString()
+      };
 
-    setTasks(currentTasks => [...(currentTasks || []), newSubtask]);
+      return [...tasksList, newSubtask];
+    });
   };
 
   const toggleTaskComplete = (taskId: string) => {
@@ -112,7 +224,21 @@ function App() {
   };
 
   const deleteTask = (taskId: string) => {
-    setTasks(currentTasks => (currentTasks || []).filter(task => task.id !== taskId));
+    setTasks(currentTasks => {
+      // Find all tasks that need to be deleted (the task and all its subtasks recursively)
+      const tasksToDelete = new Set<string>();
+      
+      const findAllSubtasks = (parentId: string) => {
+        tasksToDelete.add(parentId);
+        const subtasks = (currentTasks || []).filter(task => task.parentId === parentId);
+        subtasks.forEach(subtask => findAllSubtasks(subtask.id));
+      };
+      
+      findAllSubtasks(taskId);
+      
+      // Filter out all tasks that should be deleted
+      return (currentTasks || []).filter(task => !tasksToDelete.has(task.id));
+    });
   };
 
   const addCategory = () => {
@@ -183,19 +309,30 @@ function App() {
     }
   };
 
-  const scrollToCategory = (categoryId: string) => {
-    const element = document.getElementById(`category-${categoryId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
-  const totalTasks = (tasks || []).length;
-  const completedTasks = (tasks || []).filter(task => task.completed).length;
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
   return (
     <div className="min-h-screen bg-background">
+      {/* Data Inconsistency Alert */}
+      {hasDataInconsistencies && (
+        <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2">
+          <div className="flex items-center justify-between max-w-4xl mx-auto">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-destructive">⚠️</span>
+              <span className="text-destructive">
+                Found {(tasks || []).length - validTasks.length} corrupted task(s). This may cause incorrect counts.
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fixDataInconsistencies}
+              className="text-xs h-7"
+            >
+              Fix Now
+            </Button>
+          </div>
+        </div>
+      )}
+      
       {/* Mobile Header */}
       <div className="lg:hidden bg-card/50 border-b border-border px-4 py-4 sticky top-0 z-50 backdrop-blur-md">
         <div className="flex items-center justify-between">
@@ -341,7 +478,7 @@ function App() {
                 {/* Category Navigation */}
                 <div className="space-y-2">
                   {(categories || []).map((category) => {
-                    const categoryTasks = (tasks || []).filter(task => task.categoryId === category.id);
+                    const categoryTasks = validTasks.filter(task => task.categoryId === category.id);
                     const completedCount = categoryTasks.filter(task => task.completed).length;
                     const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
                     
@@ -562,7 +699,7 @@ function App() {
                       {/* Category Navigation */}
                       <div className="space-y-2">
                         {(categories || []).map((category) => {
-                          const categoryTasks = (tasks || []).filter(task => task.categoryId === category.id);
+                          const categoryTasks = validTasks.filter(task => task.categoryId === category.id);
                           const completedCount = categoryTasks.filter(task => task.completed).length;
                           const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
                           
@@ -790,13 +927,13 @@ function App() {
                 <AnimatePresence>
                   {(categories || []).length > 0 ? (
                     (categories || []).map((category) => {
-                      const categoryTasks = (tasks || []).filter(task => task.categoryId === category.id);
+                      const categoryTasks = validTasks.filter(task => task.categoryId === category.id);
                       return (
                         <CategorySection
                           key={category.id}
                           category={category}
                           tasks={categoryTasks}
-                          allTasks={tasks || []}
+                          allTasks={validTasks}
                           onAddTask={addTask}
                           onToggleTaskComplete={toggleTaskComplete}
                           onUpdateTask={updateTask}
@@ -828,7 +965,7 @@ function App() {
 
               <TabsContent value="daily">
                 <DailyView
-                  tasks={tasks || []}
+                  tasks={validTasks}
                   categories={categories || []}
                   selectedDate={selectedDate}
                   onToggleTaskComplete={toggleTaskComplete}

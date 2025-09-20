@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown } from '@phosphor-icons/react';
+import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TaskItemProps {
@@ -143,8 +143,22 @@ export function TaskItem({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.2 }}
+      className="relative"
       style={{ marginLeft: `${marginLeft}px` }}
     >
+      {/* Subtask indicator dots */}
+      {depth > 0 && (
+        <div className="absolute left-[-20px] top-6 flex items-center gap-1">
+          {Array.from({ length: depth }, (_, index) => (
+            <Dot 
+              key={index} 
+              size={16} 
+              className="text-muted-foreground/60"
+              style={{ color: `${categoryColor}60` }}
+            />
+          ))}
+        </div>
+      )}
       <Card 
         className={`transition-all duration-200 group ${
           task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-md'

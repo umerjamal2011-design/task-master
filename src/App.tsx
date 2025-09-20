@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_CATEGORY_ID = 'general';
@@ -27,6 +27,8 @@ function App() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#3B82F6');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [quickAddTaskCategory, setQuickAddTaskCategory] = useState<string | null>(null);
+  const [quickTaskTitle, setQuickTaskTitle] = useState('');
 
   const categoryColors = [
     '#3B82F6', // blue
@@ -114,6 +116,14 @@ function App() {
     }
   };
 
+  const addQuickTask = (categoryId: string) => {
+    if (quickTaskTitle.trim()) {
+      addTask(categoryId, quickTaskTitle.trim());
+      setQuickTaskTitle('');
+      setQuickAddTaskCategory(null);
+    }
+  };
+
   const updateCategory = (categoryId: string, updates: Partial<Category>) => {
     setCategories(currentCategories =>
       (currentCategories || []).map(category =>
@@ -145,6 +155,16 @@ function App() {
       setShowAddCategory(false);
       setNewCategoryName('');
       setNewCategoryColor('#3B82F6');
+    }
+  };
+
+  const handleQuickTaskKeyDown = (e: React.KeyboardEvent, categoryId: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addQuickTask(categoryId);
+    } else if (e.key === 'Escape') {
+      setQuickAddTaskCategory(null);
+      setQuickTaskTitle('');
     }
   };
 
@@ -247,47 +267,109 @@ function App() {
                   const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
                   
                   return (
-                    <button
-                      key={category.id}
-                      onClick={() => scrollToCategory(category.id)}
-                      className="w-full text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group"
-                      style={{
-                        background: `linear-gradient(135deg, ${category.color || '#3B82F6'}08 0%, ${category.color || '#3B82F6'}03 100%)`,
-                        borderColor: `${category.color || '#3B82F6'}20`
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: category.color || '#3B82F6' }}
-                          />
-                          <span className="font-medium text-sm">{category.name}</span>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {completedCount}/{categoryTasks.length}
-                        </Badge>
+                    <div key={category.id} className="space-y-1">
+                      <div className="flex items-center gap-1">
+                        {/* Quick Add Task Button */}
+                        <button
+                          onClick={() => setQuickAddTaskCategory(quickAddTaskCategory === category.id ? null : category.id)}
+                          className="p-1.5 rounded-md hover:bg-secondary/50 transition-colors flex-shrink-0"
+                          title="Add task to this category"
+                          style={{ 
+                            color: category.color || '#3B82F6',
+                            backgroundColor: quickAddTaskCategory === category.id ? `${category.color || '#3B82F6'}15` : 'transparent'
+                          }}
+                        >
+                          <Plus size={14} />
+                        </button>
+                        
+                        {/* Category Button */}
+                        <button
+                          onClick={() => scrollToCategory(category.id)}
+                          className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group"
+                          style={{
+                            background: `linear-gradient(135deg, ${category.color || '#3B82F6'}08 0%, ${category.color || '#3B82F6'}03 100%)`,
+                            borderColor: `${category.color || '#3B82F6'}20`
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: category.color || '#3B82F6' }}
+                              />
+                              <span className="font-medium text-sm">{category.name}</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {completedCount}/{categoryTasks.length}
+                            </Badge>
+                          </div>
+                          {categoryTasks.length > 0 && (
+                            <div className="space-y-1">
+                              <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                                <motion.div
+                                  className="h-full rounded-full"
+                                  style={{ backgroundColor: category.color || '#3B82F6' }}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${categoryProgress}%` }}
+                                  transition={{ duration: 0.3 }}
+                                />
+                              </div>
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>{categoryProgress}%</span>
+                                <span>{categoryTasks.length - completedCount} left</span>
+                              </div>
+                            </div>
+                          )}
+                        </button>
                       </div>
-                      {categoryTasks.length > 0 && (
-                        <div className="space-y-1">
-                          <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                            <motion.div
-                              className="h-full rounded-full"
-                              style={{ backgroundColor: category.color || '#3B82F6' }}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${categoryProgress}%` }}
-                              transition={{ duration: 0.3 }}
-                            />
-                          </div>
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{categoryProgress}%</span>
-                            <span>{categoryTasks.length - completedCount} left</span>
-                          </div>
-                        </div>
-                      )}
-                    </button>
+                      
+                      {/* Quick Add Task Input */}
+                      <AnimatePresence>
+                        {quickAddTaskCategory === category.id && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="ml-6"
+                          >
+                            <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
+                                 style={{ borderColor: `${category.color || '#3B82F6'}30` }}>
+                              <Input
+                                placeholder="Quick task..."
+                                value={quickTaskTitle}
+                                onChange={(e) => setQuickTaskTitle(e.target.value)}
+                                onKeyDown={(e) => handleQuickTaskKeyDown(e, category.id)}
+                                autoFocus
+                                className="flex-1 h-8 text-sm"
+                              />
+                              <Button 
+                                size="sm" 
+                                onClick={() => addQuickTask(category.id)}
+                                disabled={!quickTaskTitle.trim()}
+                                className="h-8 px-3"
+                              >
+                                <Plus size={12} />
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   );
                 })}
+                
+                {/* Add Category Button in Sidebar */}
+                <div className="pt-2 border-t border-border/30">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddCategory(true)}
+                    className="w-full gap-2 text-sm h-10 border-dashed hover:bg-secondary/30"
+                  >
+                    <FolderPlus size={16} />
+                    Add Category
+                  </Button>
+                </div>
               </div>
             </div>
           )}

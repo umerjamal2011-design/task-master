@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Task } from '@/types';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +12,7 @@ interface TaskItemProps {
   task: Task;
   allTasks: Task[];
   categoryName: string;
+  categoryColor: string;
   onToggleComplete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Task>) => void;
   onDelete: (id: string) => void;
@@ -24,7 +24,8 @@ interface TaskItemProps {
 export function TaskItem({ 
   task, 
   allTasks, 
-  categoryName, 
+  categoryName,
+  categoryColor, 
   onToggleComplete, 
   onUpdate, 
   onDelete, 
@@ -125,10 +126,10 @@ export function TaskItem({
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
-      default: return 'outline';
+      case 'high': return { bg: '#EF444415', color: '#EF4444', border: '#EF444430' };
+      case 'medium': return { bg: `${categoryColor}15`, color: categoryColor, border: `${categoryColor}30` };
+      case 'low': return { bg: '#10B98115', color: '#10B981', border: '#10B98130' };
+      default: return { bg: '#6B728015', color: '#6B7280', border: '#6B728030' };
     }
   };
 
@@ -144,9 +145,17 @@ export function TaskItem({
       transition={{ duration: 0.2 }}
       style={{ marginLeft: `${marginLeft}px` }}
     >
-      <Card className={`transition-all duration-200 group ${
-        task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-md'
-      }`}>
+      <Card 
+        className={`transition-all duration-200 group ${
+          task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-md'
+        }`}
+        style={{
+          background: task.completed 
+            ? undefined 
+            : `linear-gradient(135deg, ${categoryColor}04 0%, ${categoryColor}01 100%)`,
+          borderLeft: `3px solid ${task.completed ? '#94A3B8' : categoryColor}30`
+        }}
+      >
         <div className="p-4">
           <div className="flex items-start gap-3">
             {/* Expand/Collapse Button */}
@@ -161,12 +170,20 @@ export function TaskItem({
               </Button>
             )}
 
-            <Checkbox
-              id={`task-${task.id}`}
-              checked={task.completed}
-              onCheckedChange={() => onToggleComplete(task.id)}
-              className="mt-1"
-            />
+            <div 
+              className="flex items-center justify-center w-5 h-5 rounded border-2 transition-all cursor-pointer hover:scale-105"
+              style={{ 
+                borderColor: task.completed ? categoryColor : '#94A3B8',
+                backgroundColor: task.completed ? categoryColor : 'transparent'
+              }}
+              onClick={() => onToggleComplete(task.id)}
+            >
+              {task.completed && (
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
             
             <div className="flex-1 min-w-0">
               {isEditing ? (
@@ -225,7 +242,15 @@ export function TaskItem({
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={handleSave}>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSave}
+                      style={{
+                        backgroundColor: categoryColor,
+                        borderColor: categoryColor,
+                        color: 'white'
+                      }}
+                    >
                       <Check size={16} />
                       Save
                     </Button>
@@ -255,27 +280,59 @@ export function TaskItem({
                   {/* Task metadata */}
                   <div className="flex flex-wrap items-center gap-2">
                     {task.priority && task.priority !== 'medium' && (
-                      <Badge variant={getPriorityColor(task.priority)} className="text-xs">
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs"
+                        style={{
+                          backgroundColor: getPriorityColor(task.priority).bg,
+                          color: getPriorityColor(task.priority).color,
+                          borderColor: getPriorityColor(task.priority).border
+                        }}
+                      >
                         {task.priority}
                       </Badge>
                     )}
                     
                     {task.scheduledDate && (
-                      <Badge variant="outline" className="text-xs flex items-center gap-1">
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs flex items-center gap-1"
+                        style={{
+                          backgroundColor: `${categoryColor}08`,
+                          borderColor: `${categoryColor}30`,
+                          color: categoryColor
+                        }}
+                      >
                         <Calendar size={12} />
                         {formatDate(task.scheduledDate)}
                       </Badge>
                     )}
                     
                     {task.scheduledTime && (
-                      <Badge variant="outline" className="text-xs flex items-center gap-1">
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs flex items-center gap-1"
+                        style={{
+                          backgroundColor: `${categoryColor}08`,
+                          borderColor: `${categoryColor}30`,
+                          color: categoryColor
+                        }}
+                      >
                         <Clock size={12} />
                         {formatTime(task.scheduledTime)}
                       </Badge>
                     )}
 
                     {depth === 0 && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs"
+                        style={{
+                          backgroundColor: `${categoryColor}15`,
+                          color: categoryColor,
+                          borderColor: `${categoryColor}30`
+                        }}
+                      >
                         {categoryName}
                       </Badge>
                     )}
@@ -340,7 +397,16 @@ export function TaskItem({
                   autoFocus
                   className="flex-1 text-sm"
                 />
-                <Button size="sm" onClick={handleAddSubtask} disabled={!newSubtaskTitle.trim()}>
+                <Button 
+                  size="sm" 
+                  onClick={handleAddSubtask} 
+                  disabled={!newSubtaskTitle.trim()}
+                  style={{
+                    backgroundColor: categoryColor,
+                    borderColor: categoryColor,
+                    color: 'white'
+                  }}
+                >
                   <Plus size={14} />
                 </Button>
                 <Button 
@@ -380,6 +446,7 @@ export function TaskItem({
                 task={subtask}
                 allTasks={allTasks}
                 categoryName={categoryName}
+                categoryColor={categoryColor}
                 onToggleComplete={onToggleComplete}
                 onUpdate={onUpdate}
                 onDelete={onDelete}

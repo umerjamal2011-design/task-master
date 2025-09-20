@@ -346,6 +346,7 @@ export function CategorySection({
                     task={task}
                     allTasks={allTasks}
                     categoryName={category.name}
+                    categoryColor={category.color || '#3B82F6'}
                     onToggleComplete={onToggleTaskComplete}
                     onUpdate={onUpdateTask}
                     onDelete={onDeleteTask}

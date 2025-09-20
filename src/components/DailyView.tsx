@@ -43,6 +43,11 @@ export function DailyView({
     return category?.name || 'General';
   };
 
+  const getCategoryColor = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.color || '#3B82F6';
+  };
+
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours);
@@ -137,6 +142,7 @@ export function DailyView({
                     task={task}
                     allTasks={tasks}
                     categoryName={getCategoryName(task.categoryId)}
+                    categoryColor={getCategoryColor(task.categoryId)}
                     onToggleComplete={onToggleTaskComplete}
                     onUpdate={onUpdateTask}
                     onDelete={onDeleteTask}
@@ -174,6 +180,7 @@ export function DailyView({
                   task={task}
                   allTasks={tasks}
                   categoryName={getCategoryName(task.categoryId)}
+                  categoryColor={getCategoryColor(task.categoryId)}
                   onToggleComplete={onToggleTaskComplete}
                   onUpdate={onUpdateTask}
                   onDelete={onDeleteTask}

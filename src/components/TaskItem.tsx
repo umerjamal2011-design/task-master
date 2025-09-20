@@ -134,7 +134,7 @@ export function TaskItem({
   };
 
   const indentLevel = Math.min(depth, 3);
-  const marginLeft = indentLevel * 24;
+  const marginLeft = indentLevel * 32;
 
   return (
     <motion.div
@@ -148,16 +148,21 @@ export function TaskItem({
     >
       {/* Subtask indicator dots */}
       {depth > 0 && (
-        <div className="absolute left-[-20px] top-6 flex items-center gap-0.5">
+        <div className="absolute left-[-28px] top-6 flex items-center gap-1">
           {Array.from({ length: depth }, (_, index) => (
             <div
               key={index}
-              className="w-2 h-2 rounded-full border"
+              className="w-3 h-3 rounded-full border-2 flex items-center justify-center"
               style={{ 
-                backgroundColor: `${categoryColor}40`,
-                borderColor: `${categoryColor}80`
+                backgroundColor: `${categoryColor}20`,
+                borderColor: `${categoryColor}60`
               }}
-            />
+            >
+              <div 
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: categoryColor }}
+              />
+            </div>
           ))}
         </div>
       )}

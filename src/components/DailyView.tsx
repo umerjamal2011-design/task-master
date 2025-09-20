@@ -129,13 +129,13 @@ export function DailyView({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border"
+                className="flex items-start gap-4 p-3 rounded-lg bg-background/50 border"
               >
-                <div className="flex flex-col items-center min-w-[60px] pt-1">
-                  <div className="text-xs font-medium text-primary">
+                <div className="flex flex-col items-center min-w-[80px] pt-1">
+                  <div className="text-sm font-semibold text-primary px-2 py-1 bg-primary/10 rounded-md">
                     {formatTime(task.scheduledTime!)}
                   </div>
-                  <div className="w-px h-6 bg-border mt-1" />
+                  <div className="w-0.5 h-8 bg-primary/30 mt-2 rounded-full" />
                 </div>
                 <div className="flex-1">
                   <TaskItem

@@ -216,133 +216,143 @@ export function TaskItem({
             
             <div className="flex-1 min-w-0">
               {isEditing ? (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Textarea
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value.substring(0, MAX_TITLE_LENGTH))}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSave();
-                        } else if (e.key === 'Escape') {
-                          handleCancel();
-                        }
-                      }}
-                      className="font-medium resize-none min-h-[50px] max-h-[100px] text-sm break-all"
-                      style={{ 
-                        fontSize: '11px',
-                        lineHeight: '14px',
-                        overflowWrap: 'anywhere',
-                        wordBreak: 'break-word'
-                      }}
-                      placeholder="Task title"
-                      autoFocus
-                      rows={2}
-                    />
-                    <div className="absolute bottom-1 right-2 text-xs text-muted-foreground">
-                      {editTitle.length}/{MAX_TITLE_LENGTH}
+                <div className="space-y-1.5">
+                  {/* Title and Description in one row on larger screens */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
+                    <div className="relative">
+                      <Input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value.substring(0, MAX_TITLE_LENGTH))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSave();
+                          } else if (e.key === 'Escape') {
+                            handleCancel();
+                          }
+                        }}
+                        className="font-medium text-xs h-6 pr-10"
+                        placeholder="Task title"
+                        autoFocus
+                      />
+                      <div className="absolute right-1 top-1 text-xs text-muted-foreground pointer-events-none" style={{ fontSize: '8px' }}>
+                        {editTitle.length}/{MAX_TITLE_LENGTH}
+                      </div>
+                    </div>
+                    
+                    <div className="relative">
+                      <Input
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value.substring(0, MAX_DESCRIPTION_LENGTH))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            handleCancel();
+                          }
+                        }}
+                        className="text-xs h-6 pr-10"
+                        placeholder="Description (optional)"
+                      />
+                      <div className="absolute right-1 top-1 text-xs text-muted-foreground pointer-events-none" style={{ fontSize: '8px' }}>
+                        {editDescription.length}/{MAX_DESCRIPTION_LENGTH}
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="relative">
-                    <Textarea
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value.substring(0, MAX_DESCRIPTION_LENGTH))}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          handleCancel();
-                        }
-                      }}
-                      className="resize-none min-h-[40px] max-h-[80px] text-sm break-all"
-                      style={{ 
-                        fontSize: '10px',
-                        lineHeight: '12px',
-                        overflowWrap: 'anywhere',
-                        wordBreak: 'break-word'
-                      }}
-                      placeholder="Description (optional)"
-                      rows={2}
-                    />
-                    <div className="absolute bottom-1 right-2 text-xs text-muted-foreground">
-                      {editDescription.length}/{MAX_DESCRIPTION_LENGTH}
-                    </div>
-                  </div>
-                  
+                  {/* Scheduling and Priority in compact layout */}
                   {showTimeScheduling && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
+                      <div>
+                        <QuickDatePicker
+                          selectedDate={editScheduledDate}
+                          onDateChange={setEditScheduledDate}
+                        />
+                      </div>
+                      
+                      {editScheduledDate && (
                         <div>
-                          <label className="text-xs text-muted-foreground mb-2 block">Schedule Date</label>
-                          <QuickDatePicker
-                            selectedDate={editScheduledDate}
-                            onDateChange={setEditScheduledDate}
+                          <Input
+                            type="time"
+                            value={editScheduledTime}
+                            onChange={(e) => setEditScheduledTime(e.target.value)}
+                            className="text-xs h-6"
+                            placeholder="Time"
                           />
                         </div>
-                        
-                        {editScheduledDate && (
-                          <div>
-                            <label className="text-xs text-muted-foreground mb-1 block">Time (optional)</label>
-                            <Input
-                              type="time"
-                              value={editScheduledTime}
-                              onChange={(e) => setEditScheduledTime(e.target.value)}
-                              className="text-xs h-8"
-                            />
-                          </div>
-                        )}
-                        
-                        {editScheduledDate && (
-                          <RepeatSettings
-                            task={{
-                              repeatType: editRepeatType,
-                              repeatInterval: editRepeatInterval,
-                              repeatEndDate: editRepeatEndDate
-                            }}
-                            onRepeatChange={(repeatSettings) => {
-                              setEditRepeatType(repeatSettings.repeatType || null);
-                              setEditRepeatInterval(repeatSettings.repeatInterval);
-                              setEditRepeatEndDate(repeatSettings.repeatEndDate || '');
-                            }}
-                          />
-                        )}
+                      )}
+                      
+                      <div>
+                        <Select value={editPriority} onValueChange={(value: 'low' | 'medium' | 'high') => setEditPriority(value)}>
+                          <SelectTrigger className="text-xs h-6">
+                            <SelectValue placeholder="Priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          onClick={handleSave}
+                          className="h-6 text-xs px-2"
+                          style={{
+                            backgroundColor: categoryColor,
+                            borderColor: categoryColor,
+                            color: 'white'
+                          }}
+                        >
+                          <Check size={10} />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleCancel} className="h-6 text-xs px-2">
+                          <X size={10} />
+                        </Button>
                       </div>
                     </div>
                   )}
-
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Priority</label>
-                    <Select value={editPriority} onValueChange={(value: 'low' | 'medium' | 'high') => setEditPriority(value)}>
-                      <SelectTrigger className="text-xs h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      onClick={handleSave}
-                      className="h-7 text-xs"
-                      style={{
-                        backgroundColor: categoryColor,
-                        borderColor: categoryColor,
-                        color: 'white'
-                      }}
-                    >
-                      <Check size={12} />
-                      Save
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleCancel} className="h-7 text-xs">
-                      <X size={12} />
-                      Cancel
-                    </Button>
-                  </div>
+                  {/* Repeat settings - only show if date is selected and on separate line */}
+                  {showTimeScheduling && editScheduledDate && (
+                    <div className="pt-1">
+                      <RepeatSettings
+                        task={{
+                          repeatType: editRepeatType,
+                          repeatInterval: editRepeatInterval,
+                          repeatEndDate: editRepeatEndDate
+                        }}
+                        onRepeatChange={(repeatSettings) => {
+                          setEditRepeatType(repeatSettings.repeatType || null);
+                          setEditRepeatInterval(repeatSettings.repeatInterval);
+                          setEditRepeatEndDate(repeatSettings.repeatEndDate || '');
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Fallback save/cancel buttons for when time scheduling is disabled */}
+                  {!showTimeScheduling && (
+                    <div className="flex gap-1 justify-end">
+                      <Button 
+                        size="sm" 
+                        onClick={handleSave}
+                        className="h-6 text-xs px-3"
+                        style={{
+                          backgroundColor: categoryColor,
+                          borderColor: categoryColor,
+                          color: 'white'
+                        }}
+                      >
+                        <Check size={10} />
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleCancel} className="h-6 text-xs px-3">
+                        <X size={10} />
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-0">

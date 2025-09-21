@@ -70,10 +70,10 @@ export function QuickDatePicker({ selectedDate, onDateChange, className }: Quick
   ];
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      {/* Quick Date Options */}
-      <div className="space-y-2">
-        {quickOptions.map((option) => {
+    <div className={`space-y-1.5 ${className}`}>
+      {/* Compact Quick Date Options */}
+      <div className="flex flex-wrap gap-1">
+        {quickOptions.slice(0, 2).map((option) => { // Only show Today/Tomorrow
           const Icon = option.icon;
           const isSelected = selectedDate === option.value;
           
@@ -81,42 +81,43 @@ export function QuickDatePicker({ selectedDate, onDateChange, className }: Quick
             <Button
               key={option.id}
               variant="ghost"
+              size="sm"
               onClick={() => onDateChange(option.value)}
-              className={`w-full justify-between p-3 h-auto text-left ${
+              className={`h-6 px-2 text-xs ${
                 isSelected 
-                  ? 'bg-primary/15 border-primary/30 text-primary' 
+                  ? 'bg-primary/15 border-primary/30 text-primary border' 
                   : 'hover:bg-secondary/50'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Icon size={16} className="flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-sm">{option.label}</div>
-                  {option.sublabel && (
-                    <div className="text-xs text-muted-foreground">{option.sublabel}</div>
-                  )}
-                </div>
-              </div>
-              {isSelected && (
-                <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-              )}
+              <Icon size={10} className="mr-1" />
+              {option.label}
             </Button>
           );
         })}
+        {/* Compact No Date button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDateChange('')}
+          className={`h-6 px-2 text-xs ${
+            selectedDate === '' 
+              ? 'bg-primary/15 border-primary/30 text-primary border' 
+              : 'hover:bg-secondary/50'
+          }`}
+        >
+          <CircleDashed size={10} className="mr-1" />
+          Clear
+        </Button>
       </div>
 
-      {/* Custom Date Picker */}
-      <div className="pt-2 border-t border-border">
-        <label className="text-sm font-medium text-muted-foreground block mb-2">
-          Custom Date
-        </label>
-        <Input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => onDateChange(e.target.value)}
-          className="w-full text-foreground"
-        />
-      </div>
+      {/* Custom Date Picker - more compact */}
+      <Input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => onDateChange(e.target.value)}
+        className="w-full text-foreground text-xs h-6"
+        placeholder="Pick date"
+      />
     </div>
   );
 }

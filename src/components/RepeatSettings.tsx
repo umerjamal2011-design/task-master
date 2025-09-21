@@ -61,22 +61,19 @@ export function RepeatSettings({ task, onRepeatChange, className }: RepeatSettin
   };
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      <div className="flex items-center gap-2">
-        <Repeat size={16} className="text-muted-foreground" />
-        <Label className="text-sm font-medium">Repeat</Label>
-      </div>
-
-      <div className="space-y-3">
+    <div className={`space-y-1.5 ${className}`}>
+      {/* Compact header with repeat toggle */}
+      <div className="flex items-center gap-1.5">
+        <Repeat size={12} className="text-muted-foreground" />
         <Select 
           value={repeatType || 'none'} 
           onValueChange={handleRepeatTypeChange}
         >
-          <SelectTrigger className="text-sm">
+          <SelectTrigger className="text-xs h-6 w-24">
             <SelectValue placeholder="No repeat" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">No repeat</SelectItem>
+            <SelectItem value="none">None</SelectItem>
             <SelectItem value="daily">Daily</SelectItem>
             <SelectItem value="weekly">Weekly</SelectItem>
             <SelectItem value="monthly">Monthly</SelectItem>
@@ -84,56 +81,52 @@ export function RepeatSettings({ task, onRepeatChange, className }: RepeatSettin
           </SelectContent>
         </Select>
 
+        {/* Interval setting - inline when repeat is enabled */}
         {repeatType && repeatType !== null && (
           <>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground flex-shrink-0">Every</Label>
-              <Input
-                type="number"
-                min={1}
-                max={365}
-                value={repeatInterval}
-                onChange={(e) => handleIntervalChange(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-20 text-sm"
-              />
-              <span className="text-sm text-muted-foreground">
-                {repeatType === 'daily' && (repeatInterval === 1 ? 'day' : 'days')}
-                {repeatType === 'weekly' && (repeatInterval === 1 ? 'week' : 'weeks')}
-                {repeatType === 'monthly' && (repeatInterval === 1 ? 'month' : 'months')}
-                {repeatType === 'yearly' && (repeatInterval === 1 ? 'year' : 'years')}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">End repeat (optional)</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={repeatEndDate}
-                  onChange={(e) => handleEndDateChange(e.target.value)}
-                  className="flex-1 text-sm"
-                  placeholder="Never"
-                />
-                {repeatEndDate && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEndDateChange('')}
-                    className="h-9 w-9 p-0 flex-shrink-0"
-                  >
-                    <X size={14} />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="text-xs text-muted-foreground p-2 bg-secondary/30 rounded-md">
-              {getRepeatLabel()}
-              {repeatEndDate && ` until ${new Date(repeatEndDate).toLocaleDateString()}`}
-            </div>
+            <span className="text-xs text-muted-foreground">every</span>
+            <Input
+              type="number"
+              min={1}
+              max={365}
+              value={repeatInterval}
+              onChange={(e) => handleIntervalChange(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-10 text-xs h-6 px-1 text-center"
+            />
+            <span className="text-xs text-muted-foreground">
+              {repeatType === 'daily' && (repeatInterval === 1 ? 'd' : 'days')}
+              {repeatType === 'weekly' && (repeatInterval === 1 ? 'w' : 'wks')}
+              {repeatType === 'monthly' && (repeatInterval === 1 ? 'm' : 'mos')}
+              {repeatType === 'yearly' && (repeatInterval === 1 ? 'y' : 'yrs')}
+            </span>
           </>
         )}
       </div>
+
+      {/* End date - compact format */}
+      {repeatType && repeatType !== null && (
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="text-muted-foreground text-xs">until:</span>
+          <Input
+            type="date"
+            value={repeatEndDate}
+            onChange={(e) => handleEndDateChange(e.target.value)}
+            className="flex-1 text-xs h-6"
+            placeholder="Never"
+          />
+          {repeatEndDate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEndDateChange('')}
+              className="h-6 w-6 p-0 flex-shrink-0"
+              title="Remove end date"
+            >
+              <X size={10} />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

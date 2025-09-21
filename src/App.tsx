@@ -1484,6 +1484,19 @@ function App() {
                           onDeleteCategory={deleteCategory}
                           onAddSubtask={addSubtask}
                           canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID && category.id !== PRAYER_CATEGORY_ID}
+                          prayerSettings={prayerSettings}
+                          onUpdatePrayerSettings={async (settings) => {
+                            setPrayerSettings(settings);
+                            // Update prayer times with new settings
+                            if (settings.location) {
+                              const today = new Date().toISOString().split('T')[0];
+                              const prayerTimes = await getPrayerTimes(settings.location, today);
+                              if (prayerTimes) {
+                                await addPrayerTasks(prayerTimes, today);
+                              }
+                            }
+                          }}
+                          isUpdatingPrayers={isSettingUpPrayers}
                         />
                       );
                     })

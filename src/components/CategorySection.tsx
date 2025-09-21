@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Category, Task } from '@/types';
+import { Category, Task, PrayerSettings } from '@/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TaskItem } from './TaskItem';
 import { QuickDatePicker } from './QuickDatePicker';
 import { RepeatSettings } from './RepeatSettings';
-import { Plus, Folder, Trash, Check, X, Pencil, Palette } from '@phosphor-icons/react';
+import { PrayerLocationManager } from './PrayerLocationManager';
+import { Plus, Folder, Trash, Check, X, Pencil, Palette, MapPin, Warning } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CategorySectionProps {
@@ -26,6 +28,10 @@ interface CategorySectionProps {
   onDeleteCategory: (categoryId: string) => void;
   onAddSubtask: (parentId: string, title: string) => void;
   canDeleteCategory: boolean;
+  // Prayer-specific props
+  prayerSettings?: PrayerSettings;
+  onUpdatePrayerSettings?: (settings: PrayerSettings) => Promise<void>;
+  isUpdatingPrayers?: boolean;
 }
 
 export function CategorySection({
@@ -39,7 +45,10 @@ export function CategorySection({
   onUpdateCategory,
   onDeleteCategory,
   onAddSubtask,
-  canDeleteCategory
+  canDeleteCategory,
+  prayerSettings,
+  onUpdatePrayerSettings,
+  isUpdatingPrayers = false
 }: CategorySectionProps) {
   const [showAddTask, setShowAddTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -48,6 +57,10 @@ export function CategorySection({
   const [newTaskScheduledTime, setNewTaskScheduledTime] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [newTaskRepeatType, setNewTaskRepeatType] = useState<Task['repeatType']>(null);
+
+  // Prayer category identifier
+  const PRAYER_CATEGORY_ID = 'prayers';
+  const isPrayerCategory = category.id === PRAYER_CATEGORY_ID;
   const [newTaskRepeatInterval, setNewTaskRepeatInterval] = useState(1);
   const [newTaskRepeatEndDate, setNewTaskRepeatEndDate] = useState('');
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -304,44 +317,83 @@ export function CategorySection({
                       <Trash size={16} />
                     </Button>
                   )}
-                  <Button
-                    size="sm"
-                    onClick={() => setShowAddTask(true)}
-                    className="gap-2"
-                    style={{
-                      backgroundColor: category.color || '#3B82F6',
-                      borderColor: category.color || '#3B82F6',
-                      color: 'white'
-                    }}
-                  >
-                    <Plus size={16} />
-                    Add Task
-                  </Button>
+                  {!isPrayerCategory && (
+                    <Button
+                      size="sm"
+                      onClick={() => setShowAddTask(true)}
+                      className="gap-2"
+                      style={{
+                        backgroundColor: category.color || '#3B82F6',
+                        borderColor: category.color || '#3B82F6',
+                        color: 'white'
+                      }}
+                    >
+                      <Plus size={16} />
+                      Add Task
+                    </Button>
+                  )}
                 </div>
 
                 {/* Mobile compact button */}
-                <div className="sm:hidden">
-                  <Button
-                    size="sm"
-                    onClick={() => setShowAddTask(true)}
-                    className="h-8 w-8 p-0 rounded-full"
-                    style={{
-                      backgroundColor: category.color || '#3B82F6',
-                      borderColor: category.color || '#3B82F6',
-                      color: 'white'
-                    }}
-                  >
-                    <Plus size={16} />
-                  </Button>
-                </div>
+                {!isPrayerCategory && (
+                  <div className="sm:hidden">
+                    <Button
+                      size="sm"
+                      onClick={() => setShowAddTask(true)}
+                      className="h-8 w-8 p-0 rounded-full"
+                      style={{
+                        backgroundColor: category.color || '#3B82F6',
+                        borderColor: category.color || '#3B82F6',
+                        color: 'white'
+                      }}
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </CardHeader>
 
         <CardContent className="space-y-2 pb-4">
+          {/* Prayer Category Warning and Location Manager */}
+          {isPrayerCategory && (
+            <div className="space-y-3 mb-4">
+              {/* Warning about automatic updates */}
+              <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+                <Warning size={16} className="text-amber-600" />
+                <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
+                  Prayer times update automatically daily based on your location and change throughout the year.
+                </AlertDescription>
+              </Alert>
+
+              {/* Prayer Location Manager - only show if we have the necessary props */}
+              {prayerSettings && onUpdatePrayerSettings && (
+                <div className="bg-muted/30 rounded-lg p-3 border border-muted">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-medium">Prayer Location Settings</span>
+                  </div>
+                  
+                  {prayerSettings.location && (
+                    <div className="text-sm text-muted-foreground mb-3">
+                      Current: {prayerSettings.location.city}, {prayerSettings.location.country}
+                    </div>
+                  )}
+                  
+                  <PrayerLocationManager
+                    prayerSettings={prayerSettings}
+                    onUpdatePrayerSettings={onUpdatePrayerSettings}
+                    isUpdating={isUpdatingPrayers}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           <AnimatePresence>
-            {showAddTask && (
+            {showAddTask && !isPrayerCategory && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}

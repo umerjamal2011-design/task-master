@@ -38,6 +38,15 @@
 - **Daily View**: Time-focused view showing today's scheduled tasks, separated by timed and untimed
 - **Date navigation**: Easy switching between different days
 
+### Automated Prayer Time Integration
+- **Location-based prayer times**: Automatically calculate prayer times based on IP location detection
+- **Daily updates**: Prayer times refresh automatically every day with accurate timings
+- **Location management**: Special prayer location selector allowing users to set custom location
+- **Multiple calculation methods**: Support for different Islamic calculation methods (ISNA, Muslim World League, etc.)
+- **Warning notifications**: Clear alerts that prayer times update automatically based on location
+- **Automatic task creation**: Prayer times automatically generate daily tasks in the prayers category
+- **Protected category**: Prayer category prevents manual task creation (times are generated automatically)
+
 ### Task Management Features
 - **In-place editing**: Click to edit task titles and descriptions
 - **Drag and drop**: (Future enhancement) Reorder tasks and change hierarchy
@@ -73,6 +82,14 @@
 - **White Space Philosophy**: Generous spacing prevents cognitive overload with complex hierarchies
 - **Grid System**: Consistent alignment and spacing create order
 - **Content Density**: Balanced - detailed enough to be useful, clean enough to reduce stress
+
+### Prayer Integration Design
+- **Location Alerts**: Clear warning system informing users that prayer times update automatically
+- **Location Manager**: Dedicated prayer location interface with search, geolocation, and manual entry
+- **Method Selection**: Dropdown for choosing Islamic calculation methods
+- **Visual Consistency**: Prayer category uses Islamic green theme color
+- **Protection Features**: Disabled manual task creation for prayer category
+- **Update Indicators**: Visual feedback when prayer times are being refreshed
 
 ### Component Design
 - **Expandable Cards**: Task cards that can show/hide sub-tasks with smooth animations
@@ -115,6 +132,9 @@
 - **Styling**: Tailwind CSS for rapid, consistent styling
 - **Animation**: Framer Motion for smooth transitions
 - **Icons**: Phosphor Icons for clear, consistent iconography
+- **Prayer Times API**: AlAdhan.com for accurate Islamic prayer timings
+- **Location Services**: IPapi.co for IP-based location detection
+- **Geocoding**: OpenStreetMap Nominatim for location search and reverse geocoding
 
 ## Success Metrics
 - Task completion rates improve with hierarchical breakdown

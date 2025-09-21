@@ -175,7 +175,7 @@ export function TaskItem({
           borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${task.completed ? '#94A3B8' : categoryColor}`
         }}
       >
-        <div className="px-2 py-1">
+        <div className="px-2 py-0.5">
           <div className="flex items-center gap-1">
             {/* Expand/Collapse Button */}
             {hasSubtasks && (

@@ -1026,7 +1026,7 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 lg:overflow-auto">
-          <div className="container mx-auto px-4 lg:px-6 py-6 lg:py-8 max-w-4xl pb-24 lg:pb-8">
+          <div className="container mx-auto px-4 lg:px-6 py-3 lg:py-4 max-w-4xl pb-24 lg:pb-8">
 
             {/* Add Category Form */}
             {currentView === 'categories' && (
@@ -1111,8 +1111,8 @@ function App() {
             )}
 
             {/* Content */}
-            <Tabs value={currentView} className="space-y-6">
-              <TabsContent value="categories" className="space-y-6">
+            <Tabs value={currentView} className="space-y-3">
+              <TabsContent value="categories" className="space-y-3">
                 <AnimatePresence>
                   {(categories || []).length > 0 ? (
                     (categories || []).map((category) => {

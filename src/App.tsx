@@ -680,21 +680,21 @@ function App() {
                           {/* Category Button */}
                           <button
                             onClick={() => scrollToCategory(category.id)}
-                            className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group"
+                            className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group min-w-0"
                             style={{
                               background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
                               borderColor: `${category.color || '#3B82F6'}30`
                             }}
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
                                 <div 
-                                  className="w-3 h-3 rounded-full" 
+                                  className="w-3 h-3 rounded-full flex-shrink-0" 
                                   style={{ backgroundColor: category.color || '#3B82F6' }}
                                 />
-                                <span className="font-medium text-sm">{category.name}</span>
+                                <span className="font-medium text-sm truncate">{category.name}</span>
                               </div>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
                                 {completedCount}/{categoryTasks.length}
                               </Badge>
                             </div>
@@ -726,11 +726,11 @@ function App() {
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
                               transition={{ duration: 0.2 }}
-                              className="ml-6"
+                              className="pl-6 pr-2"
                             >
                               <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
                                    style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
-                                <div className="relative flex-1">
+                                <div className="relative flex-1 min-w-0">
                                   <Input
                                     placeholder="Quick task..."
                                     value={quickTaskTitle}
@@ -747,7 +747,7 @@ function App() {
                                   size="sm" 
                                   onClick={() => addQuickTask(category.id)}
                                   disabled={!quickTaskTitle.trim()}
-                                  className="h-8 px-3"
+                                  className="h-8 px-3 flex-shrink-0"
                                 >
                                   <Plus size={12} />
                                 </Button>
@@ -909,21 +909,21 @@ function App() {
                                     scrollToCategory(category.id);
                                     setIsMobileSidebarOpen(false);
                                   }}
-                                  className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group"
+                                  className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group min-w-0"
                                   style={{
                                     background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
                                     borderColor: `${category.color || '#3B82F6'}30`
                                   }}
                                 >
                                   <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
                                       <div 
-                                        className="w-3 h-3 rounded-full" 
+                                        className="w-3 h-3 rounded-full flex-shrink-0" 
                                         style={{ backgroundColor: category.color || '#3B82F6' }}
                                       />
-                                      <span className="font-medium text-sm">{category.name}</span>
+                                      <span className="font-medium text-sm truncate">{category.name}</span>
                                     </div>
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
                                       {completedCount}/{categoryTasks.length}
                                     </Badge>
                                   </div>
@@ -955,11 +955,11 @@ function App() {
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
                                     transition={{ duration: 0.2 }}
-                                    className="ml-6"
+                                    className="pl-6 pr-2"
                                   >
                                     <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
                                          style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
-                                      <div className="relative flex-1">
+                                      <div className="relative flex-1 min-w-0">
                                         <Input
                                           placeholder="Quick task..."
                                           value={quickTaskTitle}
@@ -976,7 +976,7 @@ function App() {
                                         size="sm" 
                                         onClick={() => addQuickTask(category.id)}
                                         disabled={!quickTaskTitle.trim()}
-                                        className="h-8 px-3"
+                                        className="h-8 px-3 flex-shrink-0"
                                       >
                                         <Plus size={12} />
                                       </Button>

@@ -671,7 +671,7 @@ function App() {
                             title="Add task to this category"
                             style={{ 
                               color: category.color || '#3B82F6',
-                              backgroundColor: quickAddTaskCategory === category.id ? `${category.color || '#3B82F6'}15` : 'transparent'
+                              backgroundColor: quickAddTaskCategory === category.id ? `${category.color || '#3B82F6'}20` : 'transparent'
                             }}
                           >
                             <Plus size={14} />
@@ -682,8 +682,8 @@ function App() {
                             onClick={() => scrollToCategory(category.id)}
                             className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group"
                             style={{
-                              background: `linear-gradient(135deg, ${category.color || '#3B82F6'}08 0%, ${category.color || '#3B82F6'}03 100%)`,
-                              borderColor: `${category.color || '#3B82F6'}20`
+                              background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
+                              borderColor: `${category.color || '#3B82F6'}30`
                             }}
                           >
                             <div className="flex items-center justify-between mb-2">
@@ -729,7 +729,7 @@ function App() {
                               className="ml-6"
                             >
                               <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
-                                   style={{ borderColor: `${category.color || '#3B82F6'}30` }}>
+                                   style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
                                 <Input
                                   placeholder="Quick task..."
                                   value={quickTaskTitle}
@@ -892,7 +892,7 @@ function App() {
                                   title="Add task to this category"
                                   style={{ 
                                     color: category.color || '#3B82F6',
-                                    backgroundColor: quickAddTaskCategory === category.id ? `${category.color || '#3B82F6'}15` : 'transparent'
+                                    backgroundColor: quickAddTaskCategory === category.id ? `${category.color || '#3B82F6'}20` : 'transparent'
                                   }}
                                 >
                                   <Plus size={14} />
@@ -906,8 +906,8 @@ function App() {
                                   }}
                                   className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group"
                                   style={{
-                                    background: `linear-gradient(135deg, ${category.color || '#3B82F6'}08 0%, ${category.color || '#3B82F6'}03 100%)`,
-                                    borderColor: `${category.color || '#3B82F6'}20`
+                                    background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
+                                    borderColor: `${category.color || '#3B82F6'}30`
                                   }}
                                 >
                                   <div className="flex items-center justify-between mb-2">
@@ -953,7 +953,7 @@ function App() {
                                     className="ml-6"
                                   >
                                     <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
-                                         style={{ borderColor: `${category.color || '#3B82F6'}30` }}>
+                                         style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
                                       <Input
                                         placeholder="Quick task..."
                                         value={quickTaskTitle}

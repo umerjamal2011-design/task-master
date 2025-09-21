@@ -126,10 +126,10 @@ export function TaskItem({
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
-      case 'high': return { bg: '#EF444415', color: '#EF4444', border: '#EF444430' };
-      case 'medium': return { bg: `${categoryColor}15`, color: categoryColor, border: `${categoryColor}30` };
-      case 'low': return { bg: '#10B98115', color: '#10B981', border: '#10B98130' };
-      default: return { bg: '#6B728015', color: '#6B7280', border: '#6B728030' };
+      case 'high': return { bg: '#EF444420', color: '#EF4444', border: '#EF444450' };
+      case 'medium': return { bg: `${categoryColor}20`, color: categoryColor, border: `${categoryColor}50` };
+      case 'low': return { bg: '#10B98120', color: '#10B981', border: '#10B98150' };
+      default: return { bg: '#6B728020', color: '#6B7280', border: '#6B728050' };
     }
   };
 
@@ -141,10 +141,10 @@ export function TaskItem({
           {Array.from({ length: depth }, (_, index) => (
             <div
               key={index}
-              className="w-3 h-3 rounded-full border-2 border-current"
+              className="w-3.5 h-3.5 rounded-full border-2 border-current"
               style={{ 
-                backgroundColor: `${categoryColor}20`,
-                borderColor: `${categoryColor}60`
+                backgroundColor: `${categoryColor}25`,
+                borderColor: `${categoryColor}70`
               }}
             />
           ))}
@@ -162,12 +162,12 @@ export function TaskItem({
       <Card 
         className={`transition-all duration-200 group ${
           task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-md'
-        } ${depth > 0 ? 'border-l-2' : 'border-l-3'}`}
+        } ${depth > 0 ? 'border-l-2' : 'border-l-4'}`}
         style={{
           background: task.completed 
             ? undefined 
-            : `linear-gradient(135deg, ${categoryColor}04 0%, ${categoryColor}01 100%)`,
-          borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${task.completed ? '#94A3B8' : categoryColor}30`
+            : `linear-gradient(90deg, ${categoryColor}08 0%, ${categoryColor}02 40%, transparent 100%)`,
+          borderLeft: `${depth > 0 ? '3px' : '4px'} solid ${task.completed ? '#94A3B8' : categoryColor}60`
         }}
       >
         <div className="p-4">
@@ -312,8 +312,8 @@ export function TaskItem({
                         variant="outline" 
                         className="text-xs flex items-center gap-1"
                         style={{
-                          backgroundColor: `${categoryColor}08`,
-                          borderColor: `${categoryColor}30`,
+                          backgroundColor: `${categoryColor}12`,
+                          borderColor: `${categoryColor}40`,
                           color: categoryColor
                         }}
                       >
@@ -327,8 +327,8 @@ export function TaskItem({
                         variant="outline" 
                         className="text-xs flex items-center gap-1"
                         style={{
-                          backgroundColor: `${categoryColor}08`,
-                          borderColor: `${categoryColor}30`,
+                          backgroundColor: `${categoryColor}12`,
+                          borderColor: `${categoryColor}40`,
                           color: categoryColor
                         }}
                       >
@@ -342,9 +342,9 @@ export function TaskItem({
                         variant="secondary" 
                         className="text-xs"
                         style={{
-                          backgroundColor: `${categoryColor}15`,
+                          backgroundColor: `${categoryColor}20`,
                           color: categoryColor,
-                          borderColor: `${categoryColor}30`
+                          borderColor: `${categoryColor}40`
                         }}
                       >
                         {categoryName}

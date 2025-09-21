@@ -124,8 +124,8 @@ export function CategorySection({
       <Card 
         className="w-full group" 
         style={{
-          background: `linear-gradient(135deg, ${category.color || '#3B82F6'}06 0%, ${category.color || '#3B82F6'}02 100%)`,
-          borderColor: `${category.color || '#3B82F6'}20`
+          background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
+          borderColor: `${category.color || '#3B82F6'}40`
         }}
       >
         <CardHeader className="pb-4">
@@ -167,7 +167,8 @@ export function CategorySection({
                       variant="outline" 
                       className="text-xs"
                       style={{ 
-                        borderColor: `${category.color || '#3B82F6'}60`,
+                        backgroundColor: `${category.color || '#3B82F6'}15`,
+                        borderColor: `${category.color || '#3B82F6'}50`,
                         color: category.color || '#3B82F6'
                       }}
                     >
@@ -289,8 +290,8 @@ export function CategorySection({
                 <Card 
                   className="p-4 border-dashed"
                   style={{
-                    backgroundColor: `${category.color || '#3B82F6'}08`,
-                    borderColor: `${category.color || '#3B82F6'}30`
+                    backgroundColor: `${category.color || '#3B82F6'}12`,
+                    borderColor: `${category.color || '#3B82F6'}40`
                   }}
                 >
                   <div className="space-y-3">

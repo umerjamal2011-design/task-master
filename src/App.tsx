@@ -412,7 +412,7 @@ function App() {
 
   const addQuickTask = (categoryId: string) => {
     if (quickTaskTitle.trim()) {
-      addTask(categoryId, quickTaskTitle.trim());
+      addTask(categoryId, quickTaskTitle.trim().substring(0, 150));
       setQuickTaskTitle('');
       setQuickAddTaskCategory(null);
     }
@@ -730,14 +730,19 @@ function App() {
                             >
                               <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
                                    style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
-                                <Input
-                                  placeholder="Quick task..."
-                                  value={quickTaskTitle}
-                                  onChange={(e) => setQuickTaskTitle(e.target.value)}
-                                  onKeyDown={(e) => handleQuickTaskKeyDown(e, category.id)}
-                                  autoFocus
-                                  className="flex-1 h-8 text-sm"
-                                />
+                                <div className="relative flex-1">
+                                  <Input
+                                    placeholder="Quick task..."
+                                    value={quickTaskTitle}
+                                    onChange={(e) => setQuickTaskTitle(e.target.value.substring(0, 150))}
+                                    onKeyDown={(e) => handleQuickTaskKeyDown(e, category.id)}
+                                    autoFocus
+                                    className="flex-1 h-8 text-sm pr-12"
+                                  />
+                                  <div className="absolute right-2 top-2 text-xs text-muted-foreground pointer-events-none">
+                                    {quickTaskTitle.length}/150
+                                  </div>
+                                </div>
                                 <Button 
                                   size="sm" 
                                   onClick={() => addQuickTask(category.id)}
@@ -954,14 +959,19 @@ function App() {
                                   >
                                     <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
                                          style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
-                                      <Input
-                                        placeholder="Quick task..."
-                                        value={quickTaskTitle}
-                                        onChange={(e) => setQuickTaskTitle(e.target.value)}
-                                        onKeyDown={(e) => handleQuickTaskKeyDown(e, category.id)}
-                                        autoFocus
-                                        className="flex-1 h-8 text-sm"
-                                      />
+                                      <div className="relative flex-1">
+                                        <Input
+                                          placeholder="Quick task..."
+                                          value={quickTaskTitle}
+                                          onChange={(e) => setQuickTaskTitle(e.target.value.substring(0, 150))}
+                                          onKeyDown={(e) => handleQuickTaskKeyDown(e, category.id)}
+                                          autoFocus
+                                          className="flex-1 h-8 text-sm pr-12"
+                                        />
+                                        <div className="absolute right-2 top-2 text-xs text-muted-foreground pointer-events-none">
+                                          {quickTaskTitle.length}/150
+                                        </div>
+                                      </div>
                                       <Button 
                                         size="sm" 
                                         onClick={() => addQuickTask(category.id)}

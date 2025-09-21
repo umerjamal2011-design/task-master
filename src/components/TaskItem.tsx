@@ -3,6 +3,7 @@ import { Task } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot } from '@phosphor-icons/react';
@@ -47,11 +48,15 @@ export function TaskItem({
   const subtasks = allTasks.filter(t => t.parentId === task.id);
   const hasSubtasks = subtasks.length > 0;
 
+  const MAX_TITLE_LENGTH = 200;
+  const MAX_DESCRIPTION_LENGTH = 300;
+  const MAX_SUBTASK_LENGTH = 150;
+
   const handleSave = () => {
     if (editTitle.trim()) {
       onUpdate(task.id, {
-        title: editTitle.trim(),
-        description: editDescription.trim() || undefined,
+        title: editTitle.trim().substring(0, MAX_TITLE_LENGTH),
+        description: editDescription.trim().substring(0, MAX_DESCRIPTION_LENGTH) || undefined,
         scheduledDate: editScheduledDate || undefined,
         scheduledTime: editScheduledTime || undefined,
         priority: editPriority as Task['priority']
@@ -80,7 +85,7 @@ export function TaskItem({
 
   const handleAddSubtask = () => {
     if (newSubtaskTitle.trim()) {
-      onAddSubtask(task.id, newSubtaskTitle.trim());
+      onAddSubtask(task.id, newSubtaskTitle.trim().substring(0, MAX_SUBTASK_LENGTH));
       setNewSubtaskTitle('');
       setShowAddSubtask(false);
       setIsExpanded(true);
@@ -137,11 +142,11 @@ export function TaskItem({
     <div className="flex items-start gap-3">
       {/* Subtask indicator dots */}
       {depth > 0 && (
-        <div className="flex items-center gap-1.5 pt-2 flex-shrink-0 ml-2">
+        <div className="flex items-center gap-1 pt-1 flex-shrink-0 ml-1">
           {Array.from({ length: depth }, (_, index) => (
             <div
               key={index}
-              className="w-3.5 h-3.5 rounded-full border-2 border-current"
+              className="w-2.5 h-2.5 rounded-full border-2 border-current"
               style={{ 
                 backgroundColor: `${categoryColor}25`,
                 borderColor: `${categoryColor}70`
@@ -156,8 +161,8 @@ export function TaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.2 }}
-        className={`flex-1 ${depth > 0 ? 'ml-2' : ''}`}
-        style={{ marginLeft: depth > 0 ? `${depth * 8}px` : '0' }}
+        className={`flex-1 ${depth > 0 ? 'ml-1' : ''}`}
+        style={{ marginLeft: depth > 0 ? `${depth * 6}px` : '0' }}
       >
       <Card 
         className={`transition-all duration-200 group ${
@@ -170,22 +175,22 @@ export function TaskItem({
           borderLeft: `${depth > 0 ? '3px' : '4px'} solid ${task.completed ? '#94A3B8' : categoryColor}60`
         }}
       >
-        <div className="p-4">
-          <div className="flex items-start gap-3">
+        <div className="p-3">
+          <div className="flex items-start gap-2">
             {/* Expand/Collapse Button */}
             {hasSubtasks && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 mt-1"
+                className="h-5 w-5 p-0 mt-0.5"
                 onClick={() => setIsExpanded(!isExpanded)}
               >
-                {isExpanded ? <CaretDown size={14} /> : <CaretRight size={14} />}
+                {isExpanded ? <CaretDown size={12} /> : <CaretRight size={12} />}
               </Button>
             )}
 
             <div 
-              className="flex items-center justify-center w-5 h-5 rounded border-2 transition-all cursor-pointer hover:scale-105"
+              className="flex items-center justify-center w-4 h-4 rounded border-2 transition-all cursor-pointer hover:scale-105 mt-0.5"
               style={{ 
                 borderColor: task.completed ? categoryColor : '#94A3B8',
                 backgroundColor: task.completed ? categoryColor : 'transparent'
@@ -193,7 +198,7 @@ export function TaskItem({
               onClick={() => onToggleComplete(task.id)}
             >
               {task.completed && (
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}
@@ -201,22 +206,46 @@ export function TaskItem({
             
             <div className="flex-1 min-w-0">
               {isEditing ? (
-                <div className="space-y-3">
-                  <Input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="font-medium"
-                    placeholder="Task title"
-                    autoFocus
-                  />
-                  <Input
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="text-sm"
-                    placeholder="Description (optional)"
-                  />
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Textarea
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value.substring(0, MAX_TITLE_LENGTH))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSave();
+                        } else if (e.key === 'Escape') {
+                          handleCancel();
+                        }
+                      }}
+                      className="font-medium text-sm resize-none min-h-[60px] max-h-[120px]"
+                      placeholder="Task title"
+                      autoFocus
+                      rows={2}
+                    />
+                    <div className="absolute bottom-1 right-2 text-xs text-muted-foreground">
+                      {editTitle.length}/{MAX_TITLE_LENGTH}
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <Textarea
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value.substring(0, MAX_DESCRIPTION_LENGTH))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          handleCancel();
+                        }
+                      }}
+                      className="text-sm resize-none min-h-[50px] max-h-[100px]"
+                      placeholder="Description (optional)"
+                      rows={2}
+                    />
+                    <div className="absolute bottom-1 right-2 text-xs text-muted-foreground">
+                      {editDescription.length}/{MAX_DESCRIPTION_LENGTH}
+                    </div>
+                  </div>
                   
                   {showTimeScheduling && (
                     <div className="grid grid-cols-2 gap-2">
@@ -226,7 +255,7 @@ export function TaskItem({
                           type="date"
                           value={editScheduledDate}
                           onChange={(e) => setEditScheduledDate(e.target.value)}
-                          className="text-sm"
+                          className="text-xs h-8"
                         />
                       </div>
                       <div>
@@ -235,7 +264,7 @@ export function TaskItem({
                           type="time"
                           value={editScheduledTime}
                           onChange={(e) => setEditScheduledTime(e.target.value)}
-                          className="text-sm"
+                          className="text-xs h-8"
                         />
                       </div>
                     </div>
@@ -244,7 +273,7 @@ export function TaskItem({
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Priority</label>
                     <Select value={editPriority} onValueChange={(value: 'low' | 'medium' | 'high') => setEditPriority(value)}>
-                      <SelectTrigger className="text-sm">
+                      <SelectTrigger className="text-xs h-8">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -259,48 +288,62 @@ export function TaskItem({
                     <Button 
                       size="sm" 
                       onClick={handleSave}
+                      className="h-7 text-xs"
                       style={{
                         backgroundColor: categoryColor,
                         borderColor: categoryColor,
                         color: 'white'
                       }}
                     >
-                      <Check size={16} />
+                      <Check size={12} />
                       Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleCancel}>
-                      <X size={16} />
+                    <Button size="sm" variant="outline" onClick={handleCancel} className="h-7 text-xs">
+                      <X size={12} />
                       Cancel
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div onClick={() => setIsEditing(true)} className="cursor-pointer">
-                    <h3 className={`font-medium leading-tight ${
+                    <h3 className={`font-medium text-sm leading-tight break-words ${
                       task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                    }`}>
+                    }`} style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 4,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      wordBreak: 'break-word'
+                    }}>
                       {task.title}
                     </h3>
                     {task.description && (
-                      <p className={`text-sm mt-1 ${
+                      <p className={`text-xs mt-1 break-words ${
                         task.completed ? 'line-through text-muted-foreground' : 'text-muted-foreground'
-                      }`}>
+                      }`} style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        wordBreak: 'break-word'
+                      }}>
                         {task.description}
                       </p>
                     )}
                   </div>
                   
                   {/* Task metadata */}
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1">
                     {task.priority && task.priority !== 'medium' && (
                       <Badge 
                         variant="outline" 
-                        className="text-xs"
+                        className="text-xs px-1.5 py-0.5 h-5"
                         style={{
                           backgroundColor: getPriorityColor(task.priority).bg,
                           color: getPriorityColor(task.priority).color,
-                          borderColor: getPriorityColor(task.priority).border
+                          borderColor: getPriorityColor(task.priority).border,
+                          fontSize: '10px'
                         }}
                       >
                         {task.priority}
@@ -310,14 +353,15 @@ export function TaskItem({
                     {task.scheduledDate && (
                       <Badge 
                         variant="outline" 
-                        className="text-xs flex items-center gap-1"
+                        className="text-xs flex items-center gap-1 px-1.5 py-0.5 h-5"
                         style={{
                           backgroundColor: `${categoryColor}12`,
                           borderColor: `${categoryColor}40`,
-                          color: categoryColor
+                          color: categoryColor,
+                          fontSize: '10px'
                         }}
                       >
-                        <Calendar size={12} />
+                        <Calendar size={10} />
                         {formatDate(task.scheduledDate)}
                       </Badge>
                     )}
@@ -325,14 +369,15 @@ export function TaskItem({
                     {task.scheduledTime && (
                       <Badge 
                         variant="outline" 
-                        className="text-xs flex items-center gap-1"
+                        className="text-xs flex items-center gap-1 px-1.5 py-0.5 h-5"
                         style={{
                           backgroundColor: `${categoryColor}12`,
                           borderColor: `${categoryColor}40`,
-                          color: categoryColor
+                          color: categoryColor,
+                          fontSize: '10px'
                         }}
                       >
-                        <Clock size={12} />
+                        <Clock size={10} />
                         {formatTime(task.scheduledTime)}
                       </Badge>
                     )}
@@ -340,11 +385,12 @@ export function TaskItem({
                     {depth === 0 && (
                       <Badge 
                         variant="secondary" 
-                        className="text-xs"
+                        className="text-xs px-1.5 py-0.5 h-5"
                         style={{
                           backgroundColor: `${categoryColor}20`,
                           color: categoryColor,
-                          borderColor: `${categoryColor}40`
+                          borderColor: `${categoryColor}40`,
+                          fontSize: '10px'
                         }}
                       >
                         {categoryName}
@@ -364,10 +410,10 @@ export function TaskItem({
                     e.stopPropagation();
                     setShowAddSubtask(true);
                   }}
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 p-0"
                   title="Add subtask"
                 >
-                  <Plus size={14} />
+                  <Plus size={12} />
                 </Button>
                 <Button
                   size="sm"
@@ -376,10 +422,10 @@ export function TaskItem({
                     e.stopPropagation();
                     setIsEditing(true);
                   }}
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 p-0"
                   title="Edit task"
                 >
-                  <Pencil size={14} />
+                  <Pencil size={12} />
                 </Button>
                 <Button
                   size="sm"
@@ -388,10 +434,10 @@ export function TaskItem({
                     e.stopPropagation();
                     onDelete(task.id);
                   }}
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                  className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                   title="Delete task"
                 >
-                  <Trash size={14} />
+                  <Trash size={12} />
                 </Button>
               </div>
             )}
@@ -402,28 +448,34 @@ export function TaskItem({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-3 ml-8"
+              className="mt-2 ml-4"
             >
               <div className="flex gap-2">
-                <Input
-                  placeholder="Add subtask..."
-                  value={newSubtaskTitle}
-                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                  onKeyDown={handleSubtaskKeyDown}
-                  autoFocus
-                  className="flex-1 text-sm"
-                />
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Add subtask..."
+                    value={newSubtaskTitle}
+                    onChange={(e) => setNewSubtaskTitle(e.target.value.substring(0, MAX_SUBTASK_LENGTH))}
+                    onKeyDown={handleSubtaskKeyDown}
+                    autoFocus
+                    className="flex-1 text-xs h-7 pr-12"
+                  />
+                  <div className="absolute right-2 top-1.5 text-xs text-muted-foreground pointer-events-none">
+                    {newSubtaskTitle.length}/{MAX_SUBTASK_LENGTH}
+                  </div>
+                </div>
                 <Button 
                   size="sm" 
                   onClick={handleAddSubtask} 
                   disabled={!newSubtaskTitle.trim()}
+                  className="h-7 px-2"
                   style={{
                     backgroundColor: categoryColor,
                     borderColor: categoryColor,
                     color: 'white'
                   }}
                 >
-                  <Plus size={14} />
+                  <Plus size={12} />
                 </Button>
                 <Button 
                   size="sm" 
@@ -432,15 +484,16 @@ export function TaskItem({
                     setShowAddSubtask(false);
                     setNewSubtaskTitle('');
                   }}
+                  className="h-7 px-2"
                 >
-                  <X size={14} />
+                  <X size={12} />
                 </Button>
               </div>
             </motion.div>
           )}
           
           {task.completed && task.completedAt && (
-            <div className="mt-2 text-xs text-muted-foreground ml-8">
+            <div className="mt-1 text-xs text-muted-foreground ml-4">
               Completed {new Date(task.completedAt).toLocaleDateString()}
             </div>
           )}
@@ -454,7 +507,7 @@ export function TaskItem({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mt-2 space-y-2"
+            className="mt-2 space-y-1"
           >
             {subtasks.map(subtask => (
               <TaskItem

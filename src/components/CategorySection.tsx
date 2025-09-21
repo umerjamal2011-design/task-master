@@ -66,7 +66,7 @@ export function CategorySection({
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
-      onAddTask(category.id, newTaskTitle.trim(), newTaskDescription.trim() || undefined);
+      onAddTask(category.id, newTaskTitle.trim().substring(0, 200), newTaskDescription.trim().substring(0, 300) || undefined);
       setNewTaskTitle('');
       setNewTaskDescription('');
       setShowAddTask(false);
@@ -295,19 +295,31 @@ export function CategorySection({
                   }}
                 >
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Task title"
-                      value={newTaskTitle}
-                      onChange={(e) => setNewTaskTitle(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      autoFocus
-                    />
-                    <Input
-                      placeholder="Description (optional)"
-                      value={newTaskDescription}
-                      onChange={(e) => setNewTaskDescription(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                    />
+                    <div className="relative">
+                      <Input
+                        placeholder="Task title"
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value.substring(0, 200))}
+                        onKeyDown={handleKeyDown}
+                        autoFocus
+                        className="pr-16"
+                      />
+                      <div className="absolute right-2 top-3 text-xs text-muted-foreground">
+                        {newTaskTitle.length}/200
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        placeholder="Description (optional)"
+                        value={newTaskDescription}
+                        onChange={(e) => setNewTaskDescription(e.target.value.substring(0, 300))}
+                        onKeyDown={handleKeyDown}
+                        className="pr-16"
+                      />
+                      <div className="absolute right-2 top-3 text-xs text-muted-foreground">
+                        {newTaskDescription.length}/300
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       <Button 
                         onClick={handleAddTask} 

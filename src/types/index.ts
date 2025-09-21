@@ -26,6 +26,30 @@ export interface Category {
   createdAt: string;
 }
 
+export interface PrayerTimes {
+  fajr: string;
+  sunrise: string;
+  dhuhr: string;
+  asr: string;
+  maghrib: string;
+  isha: string;
+}
+
+export interface LocationData {
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+}
+
+export interface PrayerSettings {
+  enabled: boolean;
+  location?: LocationData;
+  lastUpdated?: string;
+  method?: number; // Calculation method (1-12)
+}
+
 export interface AppState {
   tasks: Task[];
   categories: Category[];

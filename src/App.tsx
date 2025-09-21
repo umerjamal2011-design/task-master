@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
-import { Task, Category } from '@/types';
+import { Task, Category, PrayerTimes, LocationData, PrayerSettings } from '@/types';
 import { CategorySection } from '@/components/CategorySection';
 import { DailyView } from '@/components/DailyView';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_CATEGORY_ID = 'general';
+const PRAYER_CATEGORY_ID = 'prayers';
 
 function App() {
   const [tasks, setTasks] = useKV<Task[]>('tasks', []);
@@ -21,6 +22,10 @@ function App() {
     { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }
   ]);
   const [isDarkMode, setIsDarkMode] = useKV<boolean>('dark-mode', false);
+  const [prayerSettings, setPrayerSettings] = useKV<PrayerSettings>('prayer-settings', {
+    enabled: false,
+    method: 2 // Islamic Society of North America (ISNA)
+  });
   
   const [currentView, setCurrentView] = useState<'categories' | 'daily'>('categories');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -31,6 +36,7 @@ function App() {
   const [quickAddTaskCategory, setQuickAddTaskCategory] = useState<string | null>(null);
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSettingUpPrayers, setIsSettingUpPrayers] = useState(false);
 
   // Apply dark mode to document
   useEffect(() => {
@@ -44,6 +50,198 @@ function App() {
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
+
+  // Prayer functionality
+  const getLocationByIP = async (): Promise<LocationData> => {
+    try {
+      // First try to get IP location
+      const ipResponse = await fetch('https://ipapi.co/json/');
+      if (ipResponse.ok) {
+        const ipData = await ipResponse.json();
+        return {
+          city: ipData.city || 'Unknown',
+          country: ipData.country_name || 'Unknown',
+          latitude: ipData.latitude || 0,
+          longitude: ipData.longitude || 0,
+          timezone: ipData.timezone || 'UTC'
+        };
+      }
+      
+      // Fallback to approximate location based on timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return {
+        city: 'Unknown',
+        country: 'Unknown', 
+        latitude: 0,
+        longitude: 0,
+        timezone: timezone
+      };
+    } catch (error) {
+      console.error('Failed to get location:', error);
+      // Return default values if all else fails
+      return {
+        city: 'Unknown',
+        country: 'Unknown',
+        latitude: 21.422487, // Mecca coordinates as default
+        longitude: 39.826206,
+        timezone: 'UTC'
+      };
+    }
+  };
+
+  const getPrayerTimes = async (location: LocationData, date: string): Promise<PrayerTimes | null> => {
+    try {
+      const method = prayerSettings?.method || 2;
+      const url = `https://api.aladhan.com/v1/timings/${date}?latitude=${location.latitude}&longitude=${location.longitude}&method=${method}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch prayer times');
+      }
+      
+      const data = await response.json();
+      const timings = data.data.timings;
+      
+      return {
+        fajr: timings.Fajr,
+        sunrise: timings.Sunrise,
+        dhuhr: timings.Dhuhr,
+        asr: timings.Asr,
+        maghrib: timings.Maghrib,
+        isha: timings.Isha
+      };
+    } catch (error) {
+      console.error('Failed to get prayer times:', error);
+      return null;
+    }
+  };
+
+  const createPrayerCategory = () => {
+    const categoryList = categories || [];
+    const existingPrayerCategory = categoryList.find(cat => cat.id === PRAYER_CATEGORY_ID);
+    
+    if (!existingPrayerCategory) {
+      const prayerCategory: Category = {
+        id: PRAYER_CATEGORY_ID,
+        name: 'Prayers',
+        color: '#10B981', // Green color for prayers
+        createdAt: new Date().toISOString()
+      };
+      
+      setCategories(currentCategories => [...(currentCategories || []), prayerCategory]);
+    }
+  };
+
+  const addPrayerTasks = async (prayerTimes: PrayerTimes, date: string) => {
+    const prayerNames = [
+      { name: 'Fajr', time: prayerTimes.fajr, description: 'Dawn Prayer' },
+      { name: 'Dhuhr', time: prayerTimes.dhuhr, description: 'Noon Prayer' },
+      { name: 'Asr', time: prayerTimes.asr, description: 'Afternoon Prayer' },
+      { name: 'Maghrib', time: prayerTimes.maghrib, description: 'Sunset Prayer' },
+      { name: 'Isha', time: prayerTimes.isha, description: 'Night Prayer' }
+    ];
+
+    // Remove existing prayer tasks for the date to avoid duplicates
+    setTasks(currentTasks => {
+      const filteredTasks = (currentTasks || []).filter(task => {
+        const isPrayerTask = task.categoryId === PRAYER_CATEGORY_ID;
+        const isForSameDate = task.scheduledDate === date;
+        return !(isPrayerTask && isForSameDate);
+      });
+
+      // Add new prayer tasks
+      const newPrayerTasks = prayerNames.map(prayer => ({
+        id: generateId(),
+        title: `${prayer.name} Prayer`,
+        description: `${prayer.description} - ${prayer.time}`,
+        completed: false,
+        categoryId: PRAYER_CATEGORY_ID,
+        scheduledDate: date,
+        scheduledTime: prayer.time,
+        createdAt: new Date().toISOString(),
+        priority: 'high' as const
+      }));
+
+      return [...filteredTasks, ...newPrayerTasks];
+    });
+  };
+
+  const setupPrayerTimes = async () => {
+    setIsSettingUpPrayers(true);
+    
+    try {
+      // Get location
+      const location = await getLocationByIP();
+      
+      // Create prayer category if it doesn't exist
+      createPrayerCategory();
+      
+      // Get today's prayer times
+      const today = new Date().toISOString().split('T')[0];
+      const prayerTimes = await getPrayerTimes(location, today);
+      
+      if (prayerTimes) {
+        // Add prayer tasks for today
+        await addPrayerTasks(prayerTimes, today);
+        
+        // Update prayer settings
+        setPrayerSettings({
+          enabled: true,
+          location,
+          lastUpdated: new Date().toISOString(),
+          method: prayerSettings?.method || 2
+        });
+        
+        console.log('Prayer times setup completed for', location.city, location.country);
+      }
+    } catch (error) {
+      console.error('Failed to setup prayer times:', error);
+    } finally {
+      setIsSettingUpPrayers(false);
+    }
+  };
+
+  const updateDailyPrayerTimes = async () => {
+    if (!prayerSettings?.enabled || !prayerSettings?.location) return;
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const lastUpdated = prayerSettings?.lastUpdated ? new Date(prayerSettings.lastUpdated).toISOString().split('T')[0] : null;
+      
+      // Only update if we haven't updated today
+      if (lastUpdated !== today) {
+        const prayerTimes = await getPrayerTimes(prayerSettings.location, today);
+        
+        if (prayerTimes) {
+          await addPrayerTasks(prayerTimes, today);
+          
+          setPrayerSettings(prev => ({
+            enabled: prev?.enabled || false,
+            location: prev?.location,
+            method: prev?.method || 2,
+            lastUpdated: new Date().toISOString()
+          }));
+          
+          console.log('Daily prayer times updated');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update daily prayer times:', error);
+    }
+  };
+
+  // Update prayer times daily
+  useEffect(() => {
+    updateDailyPrayerTimes();
+  }, [prayerSettings?.enabled]); // Run when prayer settings change
+
+  // Check for prayer time updates every hour
+  useEffect(() => {
+    if (!prayerSettings?.enabled) return;
+    
+    const interval = setInterval(updateDailyPrayerTimes, 60 * 60 * 1000); // Check every hour
+    return () => clearInterval(interval);
+  }, [prayerSettings?.enabled, prayerSettings?.location]);
 
   const categoryColors = [
     '#3B82F6', // blue
@@ -527,8 +725,8 @@ function App() {
   };
 
   const deleteCategory = (categoryId: string) => {
-    if (categoryId === DEFAULT_CATEGORY_ID) {
-      console.log('Cannot delete default category');
+    if (categoryId === DEFAULT_CATEGORY_ID || categoryId === PRAYER_CATEGORY_ID) {
+      console.log('Cannot delete system category:', categoryId);
       return;
     }
 
@@ -860,7 +1058,33 @@ function App() {
                   })}
                   
                   {/* Add Category Button in Sidebar */}
-                  <div className="pt-2 border-t border-border/30">
+                  <div className="pt-2 border-t border-border/30 space-y-2">
+                    {/* Prayer Times Button */}
+                    <Button
+                      variant={prayerSettings?.enabled ? "default" : "outline"}
+                      onClick={setupPrayerTimes}
+                      disabled={isSettingUpPrayers}
+                      className="w-full gap-2 text-sm h-10 hover:bg-accent/20"
+                    >
+                      <MapPin size={16} />
+                      {isSettingUpPrayers ? 'Setting up...' : prayerSettings?.enabled ? 'Update Prayer Times' : 'Setup Prayer Times'}
+                    </Button>
+                    
+                    {/* Prayer Info */}
+                    {prayerSettings?.enabled && prayerSettings.location && (
+                      <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
+                        <div className="text-xs text-muted-foreground mb-1">Prayer Location:</div>
+                        <div className="text-sm font-medium text-accent">
+                          {prayerSettings.location.city}, {prayerSettings.location.country}
+                        </div>
+                        {prayerSettings.lastUpdated && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Updated: {new Date(prayerSettings.lastUpdated).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     <Button
                       variant="outline"
                       onClick={() => setShowAddCategory(true)}
@@ -1089,7 +1313,36 @@ function App() {
                         })}
                         
                         {/* Add Category Button in Mobile Sidebar */}
-                        <div className="pt-2 border-t border-border/30">
+                        <div className="pt-2 border-t border-border/30 space-y-2">
+                          {/* Prayer Times Button */}
+                          <Button
+                            variant={prayerSettings?.enabled ? "default" : "outline"}
+                            onClick={() => {
+                              setupPrayerTimes();
+                              setIsMobileSidebarOpen(false);
+                            }}
+                            disabled={isSettingUpPrayers}
+                            className="w-full gap-2 text-sm h-10 hover:bg-accent/20"
+                          >
+                            <MapPin size={16} />
+                            {isSettingUpPrayers ? 'Setting up...' : prayerSettings?.enabled ? 'Update Prayer Times' : 'Setup Prayer Times'}
+                          </Button>
+                          
+                          {/* Prayer Info */}
+                          {prayerSettings?.enabled && prayerSettings.location && (
+                            <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
+                              <div className="text-xs text-muted-foreground mb-1">Prayer Location:</div>
+                              <div className="text-sm font-medium text-accent">
+                                {prayerSettings.location.city}, {prayerSettings.location.country}
+                              </div>
+                              {prayerSettings.lastUpdated && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Updated: {new Date(prayerSettings.lastUpdated).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
                           <Button
                             variant="outline"
                             onClick={() => {
@@ -1230,7 +1483,7 @@ function App() {
                           onUpdateCategory={updateCategory}
                           onDeleteCategory={deleteCategory}
                           onAddSubtask={addSubtask}
-                          canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID}
+                          canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID && category.id !== PRAYER_CATEGORY_ID}
                         />
                       );
                     })

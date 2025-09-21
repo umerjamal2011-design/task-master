@@ -129,150 +129,173 @@ export function CategorySection({
         }}
       >
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <div 
-                className="w-5 h-5 rounded-full border-2 border-background shadow-sm" 
+                className="w-5 h-5 rounded-full border-2 border-background shadow-sm flex-shrink-0" 
                 style={{ backgroundColor: category.color || '#3B82F6' }}
               />
               {isEditingCategory ? (
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Input
                     value={editCategoryName}
                     onChange={(e) => setEditCategoryName(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="text-lg font-semibold"
+                    className="text-lg font-semibold flex-1 min-w-0"
                     autoFocus
                   />
-                  <Button size="sm" onClick={handleSaveCategory}>
-                    <Check size={16} />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleCancelEditCategory}>
-                    <X size={16} />
-                  </Button>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button size="sm" onClick={handleSaveCategory}>
+                      <Check size={16} />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleCancelEditCategory}>
+                      <X size={16} />
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   <h2 
                     className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors"
                     onClick={() => setIsEditingCategory(true)}
                   >
                     {category.name}
                   </h2>
-                  <Badge variant="secondary" className="text-xs">
-                    {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
-                  </Badge>
-                  {completedTasks.length > 0 && (
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs"
-                      style={{ 
-                        backgroundColor: `${category.color || '#3B82F6'}15`,
-                        borderColor: `${category.color || '#3B82F6'}50`,
-                        color: category.color || '#3B82F6'
-                      }}
-                    >
-                      {completedTasks.length} completed
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="secondary" className="text-xs">
+                      {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
                     </Badge>
-                  )}
+                    {completedTasks.length > 0 && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs"
+                        style={{ 
+                          backgroundColor: `${category.color || '#3B82F6'}15`,
+                          borderColor: `${category.color || '#3B82F6'}50`,
+                          color: category.color || '#3B82F6'
+                        }}
+                      >
+                        {completedTasks.length} completed
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
             
             {!isEditingCategory && (
-              <div className="flex items-center gap-2">
-                <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Palette size={16} />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Customize Category</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="category-name">Category Name</Label>
-                        <Input
-                          id="category-name"
-                          value={editCategoryName}
-                          onChange={(e) => setEditCategoryName(e.target.value)}
-                          placeholder="Category name"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Choose Color</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {categoryColors.map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => setEditCategoryColor(color)}
-                              className={`w-8 h-8 rounded-full border-2 transition-all ${
-                                editCategoryColor === color 
-                                  ? 'border-foreground scale-110' 
-                                  : 'border-border hover:scale-105'
-                              }`}
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Desktop buttons */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Palette size={16} />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Customize Category</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="category-name">Category Name</Label>
+                          <Input
+                            id="category-name"
+                            value={editCategoryName}
+                            onChange={(e) => setEditCategoryName(e.target.value)}
+                            placeholder="Category name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Choose Color</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {categoryColors.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                onClick={() => setEditCategoryColor(color)}
+                                className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                  editCategoryColor === color 
+                                    ? 'border-foreground scale-110' 
+                                    : 'border-border hover:scale-105'
+                                }`}
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditCategoryName(category.name);
-                          setEditCategoryColor(category.color || '#3B82F6');
-                          setShowCustomizeDialog(false);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSaveCustomization}>
-                        Save Changes
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setIsEditingCategory(true)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Pencil size={16} />
-                </Button>
-                {canDeleteCategory && (
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setEditCategoryName(category.name);
+                            setEditCategoryColor(category.color || '#3B82F6');
+                            setShowCustomizeDialog(false);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button onClick={handleSaveCustomization}>
+                          Save Changes
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onDeleteCategory(category.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                    onClick={() => setIsEditingCategory(true)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <Trash size={16} />
+                    <Pencil size={16} />
                   </Button>
-                )}
-                <Button
-                  size="sm"
-                  onClick={() => setShowAddTask(true)}
-                  className="gap-2"
-                  style={{
-                    backgroundColor: category.color || '#3B82F6',
-                    borderColor: category.color || '#3B82F6',
-                    color: 'white'
-                  }}
-                >
-                  <Plus size={16} />
-                  Add Task
-                </Button>
+                  {canDeleteCategory && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onDeleteCategory(category.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                    >
+                      <Trash size={16} />
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAddTask(true)}
+                    className="gap-2"
+                    style={{
+                      backgroundColor: category.color || '#3B82F6',
+                      borderColor: category.color || '#3B82F6',
+                      color: 'white'
+                    }}
+                  >
+                    <Plus size={16} />
+                    Add Task
+                  </Button>
+                </div>
+
+                {/* Mobile compact button */}
+                <div className="sm:hidden">
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAddTask(true)}
+                    className="h-8 w-8 p-0 rounded-full"
+                    style={{
+                      backgroundColor: category.color || '#3B82F6',
+                      borderColor: category.color || '#3B82F6',
+                      color: 'white'
+                    }}
+                  >
+                    <Plus size={16} />
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -320,10 +343,11 @@ export function CategorySection({
                         {newTaskDescription.length}/200
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
                         onClick={handleAddTask} 
                         disabled={!newTaskTitle.trim()}
+                        className="w-full sm:w-auto"
                         style={{
                           backgroundColor: category.color || '#3B82F6',
                           borderColor: category.color || '#3B82F6',
@@ -335,6 +359,7 @@ export function CategorySection({
                       </Button>
                       <Button
                         variant="outline"
+                        className="w-full sm:w-auto"
                         onClick={() => {
                           setShowAddTask(false);
                           setNewTaskTitle('');

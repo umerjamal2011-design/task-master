@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast, Toaster } from 'sonner';
 
 const DEFAULT_CATEGORY_ID = 'general';
 const PRAYER_CATEGORY_ID = 'prayers';
@@ -37,6 +38,23 @@ function App() {
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingUpPrayers, setIsSettingUpPrayers] = useState(false);
+  const [locationPermissionState, setLocationPermissionState] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown');
+
+  // Check location permission status
+  useEffect(() => {
+    if ('navigator' in window && 'permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' })
+        .then(result => {
+          setLocationPermissionState(result.state);
+          result.onchange = () => {
+            setLocationPermissionState(result.state);
+          };
+        })
+        .catch(() => {
+          setLocationPermissionState('unknown');
+        });
+    }
+  }, []);
 
   // Apply dark mode to document
   useEffect(() => {
@@ -52,22 +70,77 @@ function App() {
   };
 
   // Prayer functionality
-  const getLocationByIP = async (): Promise<LocationData> => {
+  const getCurrentLocation = async (): Promise<LocationData> => {
     try {
-      // First try to get IP location
-      const ipResponse = await fetch('https://ipapi.co/json/');
-      if (ipResponse.ok) {
-        const ipData = await ipResponse.json();
-        return {
-          city: ipData.city || 'Unknown',
-          country: ipData.country_name || 'Unknown',
-          latitude: ipData.latitude || 0,
-          longitude: ipData.longitude || 0,
-          timezone: ipData.timezone || 'UTC'
-        };
+      // First try to use browser's GPS location (most accurate)
+      if ('geolocation' in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              resolve,
+              reject,
+              {
+                enableHighAccuracy: true,
+                timeout: 10000, // 10 seconds
+                maximumAge: 300000, // 5 minutes cache
+              }
+            );
+          });
+
+          // Get location details from coordinates using reverse geocoding
+          const { latitude, longitude } = position.coords;
+          
+          // Try to get city/country from coordinates
+          try {
+            const geocodeResponse = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+            );
+            
+            if (geocodeResponse.ok) {
+              const geocodeData = await geocodeResponse.json();
+              return {
+                city: geocodeData.city || geocodeData.locality || 'Unknown',
+                country: geocodeData.countryName || 'Unknown',
+                latitude,
+                longitude,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+              };
+            }
+          } catch (geocodeError) {
+            console.log('Reverse geocoding failed, using coordinates only:', geocodeError);
+          }
+
+          // If reverse geocoding fails, return coordinates with timezone
+          return {
+            city: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+            country: 'GPS Location',
+            latitude,
+            longitude,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          };
+        } catch (gpsError) {
+          console.log('GPS location failed, trying IP location:', gpsError);
+        }
+      }
+
+      // Fallback to IP-based location
+      try {
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        if (ipResponse.ok) {
+          const ipData = await ipResponse.json();
+          return {
+            city: ipData.city || 'Unknown',
+            country: ipData.country_name || 'Unknown',
+            latitude: ipData.latitude || 0,
+            longitude: ipData.longitude || 0,
+            timezone: ipData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+          };
+        }
+      } catch (ipError) {
+        console.log('IP location failed:', ipError);
       }
       
-      // Fallback to approximate location based on timezone
+      // Final fallback to timezone-based approximation
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       return {
         city: 'Unknown',
@@ -77,7 +150,7 @@ function App() {
         timezone: timezone
       };
     } catch (error) {
-      console.error('Failed to get location:', error);
+      console.error('All location methods failed:', error);
       // Return default values if all else fails
       return {
         city: 'Unknown',
@@ -171,7 +244,8 @@ function App() {
     
     try {
       // Get location
-      const location = await getLocationByIP();
+      const location = await getCurrentLocation();
+      console.log('Location obtained:', location);
       
       // Create prayer category if it doesn't exist
       createPrayerCategory();
@@ -193,9 +267,39 @@ function App() {
         });
         
         console.log('Prayer times setup completed for', location.city, location.country);
+        
+        // Show success message with location source info
+        const locationSource = location.city.startsWith('GPS:') ? '📍 GPS' : 
+                              location.city === 'Unknown' ? '🌐 Default' : '🌐 IP';
+        toast.success(`${locationSource} - Prayer times set for ${location.city}, ${location.country}`);
+        
+        // Update location permission state
+        if (locationPermissionState !== 'granted' && location.city !== 'Unknown') {
+          setLocationPermissionState('granted');
+        }
       }
     } catch (error) {
       console.error('Failed to setup prayer times:', error);
+      
+      // Show specific error message based on the error type
+      let errorMessage = 'Failed to setup prayer times. Please try again or set location manually.';
+      
+      if (error instanceof GeolocationPositionError || error?.code) {
+        switch (error.code) {
+          case 1: // PERMISSION_DENIED
+            errorMessage = 'Location access denied. You can still use prayer times with IP-based location or set manually.';
+            setLocationPermissionState('denied');
+            break;
+          case 2: // POSITION_UNAVAILABLE
+            errorMessage = 'Location unavailable. Using IP-based location instead.';
+            break;
+          case 3: // TIMEOUT
+            errorMessage = 'Location request timed out. Using IP-based location instead.';
+            break;
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSettingUpPrayers(false);
     }
@@ -432,6 +536,18 @@ function App() {
         console.log('Orphaned subtasks found:', orphanedTasks);
       }
       console.log('=== END DEBUG ===');
+    };
+    
+    // Debug function to test location detection
+    (window as any).testLocationDetection = async () => {
+      console.log('Testing location detection...');
+      try {
+        const location = await getCurrentLocation();
+        console.log('Location detection result:', location);
+        console.log('Location permission state:', locationPermissionState);
+      } catch (error) {
+        console.error('Location detection failed:', error);
+      }
     };
     
     // Function to check if current state is consistent
@@ -1067,8 +1183,33 @@ function App() {
                       className="w-full gap-2 text-sm h-10 hover:bg-accent/20"
                     >
                       <MapPin size={16} />
-                      {isSettingUpPrayers ? 'Setting up...' : prayerSettings?.enabled ? 'Update Prayer Times' : 'Setup Prayer Times'}
+                      {isSettingUpPrayers ? 'Getting location...' : prayerSettings?.enabled ? 'Update Prayer Times' : 'Setup Prayer Times'}
                     </Button>
+                    
+                    {/* Location Permission Status */}
+                    {locationPermissionState === 'denied' && (
+                      <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                        <div className="text-xs text-orange-700 dark:text-orange-300">
+                          📍 Location access denied. Prayer times will use IP-based location (less accurate). You can set location manually in the prayer category.
+                        </div>
+                      </div>
+                    )}
+                    
+                    {locationPermissionState === 'prompt' && !prayerSettings?.enabled && (
+                      <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="text-xs text-blue-700 dark:text-blue-300">
+                          💡 For most accurate prayer times, allow location access when prompted. You can also set location manually in the prayer category.
+                        </div>
+                      </div>
+                    )}
+                    
+                    {prayerSettings?.enabled && prayerSettings?.location && (
+                      <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="text-xs text-green-700 dark:text-green-300">
+                          ✅ Prayer times active for {prayerSettings.location.city}, {prayerSettings.location.country}
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Prayer Info */}
                     {prayerSettings?.enabled && prayerSettings.location && (
@@ -1325,8 +1466,33 @@ function App() {
                             className="w-full gap-2 text-sm h-10 hover:bg-accent/20"
                           >
                             <MapPin size={16} />
-                            {isSettingUpPrayers ? 'Setting up...' : prayerSettings?.enabled ? 'Update Prayer Times' : 'Setup Prayer Times'}
+                            {isSettingUpPrayers ? 'Getting location...' : prayerSettings?.enabled ? 'Update Prayer Times' : 'Setup Prayer Times'}
                           </Button>
+                          
+                          {/* Location Permission Status */}
+                          {locationPermissionState === 'denied' && (
+                            <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                              <div className="text-xs text-orange-700 dark:text-orange-300">
+                                📍 Location access denied. Prayer times will use IP-based location (less accurate). You can set location manually in the prayer category.
+                              </div>
+                            </div>
+                          )}
+                          
+                          {locationPermissionState === 'prompt' && !prayerSettings?.enabled && (
+                            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <div className="text-xs text-blue-700 dark:text-blue-300">
+                                💡 For most accurate prayer times, allow location access when prompted. You can also set location manually in the prayer category.
+                              </div>
+                            </div>
+                          )}
+                          
+                          {prayerSettings?.enabled && prayerSettings?.location && (
+                            <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                              <div className="text-xs text-green-700 dark:text-green-300">
+                                ✅ Prayer times active for {prayerSettings.location.city}, {prayerSettings.location.country}
+                              </div>
+                            </div>
+                          )}
                           
                           {/* Prayer Info */}
                           {prayerSettings?.enabled && prayerSettings.location && (
@@ -1544,6 +1710,13 @@ function App() {
           </Button>
         </div>
       </div>
+      
+      {/* Toast Notifications */}
+      <Toaster 
+        theme={isDarkMode ? 'dark' : 'light'}
+        position="bottom-right"
+        richColors
+      />
     </div>
   );
 }

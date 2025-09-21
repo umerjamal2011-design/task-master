@@ -139,7 +139,7 @@ export function TaskItem({
   };
 
   return (
-    <div className="flex items-start gap-1.5">
+    <div className="flex items-start gap-1">
       {/* Subtask indicator dots */}
       {depth > 0 && (
         <div className="flex items-center gap-0.5 pt-0.5 flex-shrink-0">
@@ -161,8 +161,8 @@ export function TaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.2 }}
-        className={`flex-1 ${depth > 0 ? 'ml-1' : ''}`}
-        style={{ marginLeft: depth > 0 ? `${depth * 4}px` : '0' }}
+        className="flex-1"
+        style={{ marginLeft: depth > 0 ? `${depth * 2}px` : '0' }}
       >
       <Card 
         className={`transition-all duration-200 group ${

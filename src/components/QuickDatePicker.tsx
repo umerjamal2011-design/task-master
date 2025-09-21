@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Sun, ClockCounterClockwise, CircleDashed } from '@phosphor-icons/react';
 
 interface QuickDatePickerProps {
@@ -28,6 +29,18 @@ export function QuickDatePicker({ selectedDate, onDateChange, className }: Quick
     return saturday.toISOString().split('T')[0];
   };
 
+  const getNextWeek = () => {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    return nextWeek.toISOString().split('T')[0];
+  };
+
+  const getNextMonth = () => {
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    return nextMonth.toISOString().split('T')[0];
+  };
+
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -38,77 +51,52 @@ export function QuickDatePicker({ selectedDate, onDateChange, className }: Quick
     });
   };
 
-  const quickOptions = [
-    {
-      id: 'today',
-      label: 'Today',
-      sublabel: 'Sun',
-      icon: Calendar,
-      value: getToday()
-    },
-    {
-      id: 'tomorrow',
-      label: 'Tomorrow',
-      sublabel: 'Mon',
-      icon: Sun,
-      value: getTomorrow()
-    },
-    {
-      id: 'weekend',
-      label: 'Next weekend',
-      sublabel: formatDateDisplay(getNextWeekend()),
-      icon: ClockCounterClockwise,
-      value: getNextWeekend()
-    },
-    {
-      id: 'no-date',
-      label: 'No Date',
-      sublabel: '',
-      icon: CircleDashed,
-      value: ''
-    }
-  ];
+  const getSelectedLabel = () => {
+    if (!selectedDate) return 'No Date';
+    
+    const today = getToday();
+    const tomorrow = getTomorrow();
+    const nextWeekend = getNextWeekend();
+    const nextWeek = getNextWeek();
+    
+    if (selectedDate === today) return 'Today';
+    if (selectedDate === tomorrow) return 'Tomorrow';
+    if (selectedDate === nextWeekend) return 'Next Weekend';
+    if (selectedDate === nextWeek) return 'Next Week';
+    
+    return formatDateDisplay(selectedDate);
+  };
 
   return (
     <div className={`space-y-1.5 ${className}`}>
-      {/* Compact Quick Date Options */}
-      <div className="flex flex-wrap gap-1">
-        {quickOptions.slice(0, 2).map((option) => { // Only show Today/Tomorrow
-          const Icon = option.icon;
-          const isSelected = selectedDate === option.value;
-          
-          return (
-            <Button
-              key={option.id}
-              variant="ghost"
-              size="sm"
-              onClick={() => onDateChange(option.value)}
-              className={`h-6 px-2 text-xs ${
-                isSelected 
-                  ? 'bg-primary/15 border-primary/30 text-primary border' 
-                  : 'hover:bg-secondary/50'
-              }`}
-            >
-              <Icon size={10} className="mr-1" />
-              {option.label}
-            </Button>
-          );
-        })}
-        {/* Compact No Date button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onDateChange('')}
-          className={`h-6 px-2 text-xs ${
-            selectedDate === '' 
-              ? 'bg-primary/15 border-primary/30 text-primary border' 
-              : 'hover:bg-secondary/50'
-          }`}
-        >
-          <CircleDashed size={10} className="mr-1" />
-          Clear
-        </Button>
-      </div>
+      {/* Dropdown Quick Date Options */}
+      <Select value={selectedDate} onValueChange={onDateChange}>
+        <SelectTrigger className="text-xs h-6">
+          <SelectValue>
+            {getSelectedLabel()}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={getToday()}>
+            Today - {formatDateDisplay(getToday())}
+          </SelectItem>
+          <SelectItem value={getTomorrow()}>
+            Tomorrow - {formatDateDisplay(getTomorrow())}
+          </SelectItem>
+          <SelectItem value={getNextWeek()}>
+            Next Week - {formatDateDisplay(getNextWeek())}
+          </SelectItem>
+          <SelectItem value={getNextWeekend()}>
+            Next Weekend - {formatDateDisplay(getNextWeekend())}
+          </SelectItem>
+          <SelectItem value={getNextMonth()}>
+            Next Month - {formatDateDisplay(getNextMonth())}
+          </SelectItem>
+          <SelectItem value="">
+            No Date
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Custom Date Picker - more compact */}
       <Input

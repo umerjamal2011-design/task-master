@@ -11,6 +11,12 @@ export interface Task {
   scheduledTime?: string; // HH:mm format
   priority?: 'low' | 'medium' | 'high';
   subtasks?: Task[]; // Computed field for UI
+  // Repetition settings
+  repeatType?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null;
+  repeatInterval?: number; // Every N days/weeks/months/years
+  repeatEndDate?: string; // When to stop repeating
+  originalTaskId?: string; // For repeated instances, reference to original
+  isRepeatedInstance?: boolean; // True if this is a repeated task instance
 }
 
 export interface Category {

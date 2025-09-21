@@ -3,10 +3,14 @@ import { Category, Task } from '@/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TaskItem } from './TaskItem';
+import { QuickDatePicker } from './QuickDatePicker';
+import { RepeatSettings } from './RepeatSettings';
 import { Plus, Folder, Trash, Check, X, Pencil, Palette } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,7 +18,7 @@ interface CategorySectionProps {
   category: Category;
   tasks: Task[];
   allTasks: Task[];
-  onAddTask: (categoryId: string, title: string, description?: string) => void;
+  onAddTask: (categoryId: string, title: string, description?: string, taskOptions?: Partial<Task>) => void;
   onToggleTaskComplete: (taskId: string) => void;
   onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
   onDeleteTask: (taskId: string) => void;
@@ -40,6 +44,12 @@ export function CategorySection({
   const [showAddTask, setShowAddTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskScheduledDate, setNewTaskScheduledDate] = useState('');
+  const [newTaskScheduledTime, setNewTaskScheduledTime] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [newTaskRepeatType, setNewTaskRepeatType] = useState<Task['repeatType']>(null);
+  const [newTaskRepeatInterval, setNewTaskRepeatInterval] = useState(1);
+  const [newTaskRepeatEndDate, setNewTaskRepeatEndDate] = useState('');
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [editCategoryName, setEditCategoryName] = useState(category.name);
   const [editCategoryColor, setEditCategoryColor] = useState(category.color || '#3B82F6');
@@ -66,9 +76,31 @@ export function CategorySection({
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
-      onAddTask(category.id, newTaskTitle.trim().substring(0, 200), newTaskDescription.trim().substring(0, 300) || undefined);
+      const taskOptions: Partial<Task> = {
+        scheduledDate: newTaskScheduledDate || undefined,
+        scheduledTime: newTaskScheduledTime || undefined,
+        priority: newTaskPriority,
+        repeatType: newTaskRepeatType,
+        repeatInterval: newTaskRepeatType ? newTaskRepeatInterval : undefined,
+        repeatEndDate: newTaskRepeatType ? newTaskRepeatEndDate || undefined : undefined
+      };
+
+      onAddTask(
+        category.id, 
+        newTaskTitle.trim().substring(0, 150), 
+        newTaskDescription.trim().substring(0, 300) || undefined,
+        taskOptions
+      );
+      
+      // Reset form
       setNewTaskTitle('');
       setNewTaskDescription('');
+      setNewTaskScheduledDate('');
+      setNewTaskScheduledTime('');
+      setNewTaskPriority('medium');
+      setNewTaskRepeatType(null);
+      setNewTaskRepeatInterval(1);
+      setNewTaskRepeatEndDate('');
       setShowAddTask(false);
     }
   };
@@ -107,6 +139,12 @@ export function CategorySection({
         setShowAddTask(false);
         setNewTaskTitle('');
         setNewTaskDescription('');
+        setNewTaskScheduledDate('');
+        setNewTaskScheduledTime('');
+        setNewTaskPriority('medium');
+        setNewTaskRepeatType(null);
+        setNewTaskRepeatInterval(1);
+        setNewTaskRepeatEndDate('');
       } else if (isEditingCategory) {
         handleCancelEditCategory();
       }
@@ -317,7 +355,7 @@ export function CategorySection({
                     borderColor: `${category.color || '#3B82F6'}40`
                   }}
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="relative">
                       <Input
                         placeholder="Task title"
@@ -331,19 +369,71 @@ export function CategorySection({
                         {newTaskTitle.length}/150
                       </div>
                     </div>
+                    
                     <div className="relative">
-                      <Input
+                      <Textarea
                         placeholder="Description (optional)"
                         value={newTaskDescription}
-                        onChange={(e) => setNewTaskDescription(e.target.value.substring(0, 200))}
+                        onChange={(e) => setNewTaskDescription(e.target.value.substring(0, 300))}
                         onKeyDown={handleKeyDown}
-                        className="pr-14"
+                        className="resize-none min-h-[60px] max-h-[120px] pr-14"
+                        rows={2}
                       />
-                      <div className="absolute right-2 top-3 text-xs text-muted-foreground">
-                        {newTaskDescription.length}/200
+                      <div className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                        {newTaskDescription.length}/300
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
+
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Priority</Label>
+                      <Select value={newTaskPriority} onValueChange={(value: 'low' | 'medium' | 'high') => setNewTaskPriority(value)}>
+                        <SelectTrigger className="text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Schedule Date</Label>
+                      <QuickDatePicker
+                        selectedDate={newTaskScheduledDate}
+                        onDateChange={setNewTaskScheduledDate}
+                      />
+                    </div>
+
+                    {newTaskScheduledDate && (
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Time (optional)</Label>
+                        <Input
+                          type="time"
+                          value={newTaskScheduledTime}
+                          onChange={(e) => setNewTaskScheduledTime(e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                    )}
+
+                    {newTaskScheduledDate && (
+                      <RepeatSettings
+                        task={{
+                          repeatType: newTaskRepeatType,
+                          repeatInterval: newTaskRepeatInterval,
+                          repeatEndDate: newTaskRepeatEndDate
+                        }}
+                        onRepeatChange={(repeatSettings) => {
+                          setNewTaskRepeatType(repeatSettings.repeatType || null);
+                          setNewTaskRepeatInterval(repeatSettings.repeatInterval);
+                          setNewTaskRepeatEndDate(repeatSettings.repeatEndDate || '');
+                        }}
+                      />
+                    )}
+                    
+                    <div className="flex flex-col sm:flex-row gap-2 pt-2">
                       <Button 
                         onClick={handleAddTask} 
                         disabled={!newTaskTitle.trim()}
@@ -364,6 +454,12 @@ export function CategorySection({
                           setShowAddTask(false);
                           setNewTaskTitle('');
                           setNewTaskDescription('');
+                          setNewTaskScheduledDate('');
+                          setNewTaskScheduledTime('');
+                          setNewTaskPriority('medium');
+                          setNewTaskRepeatType(null);
+                          setNewTaskRepeatInterval(1);
+                          setNewTaskRepeatEndDate('');
                         }}
                       >
                         Cancel

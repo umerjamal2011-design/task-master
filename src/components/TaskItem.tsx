@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot } from '@phosphor-icons/react';
+import { QuickDatePicker } from '@/components/QuickDatePicker';
+import { RepeatSettings } from '@/components/RepeatSettings';
+import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot, Repeat } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TaskItemProps {
@@ -43,6 +45,9 @@ export function TaskItem({
   const [editScheduledDate, setEditScheduledDate] = useState(task.scheduledDate || '');
   const [editScheduledTime, setEditScheduledTime] = useState(task.scheduledTime || '');
   const [editPriority, setEditPriority] = useState(task.priority || 'medium');
+  const [editRepeatType, setEditRepeatType] = useState(task.repeatType || null);
+  const [editRepeatInterval, setEditRepeatInterval] = useState(task.repeatInterval || 1);
+  const [editRepeatEndDate, setEditRepeatEndDate] = useState(task.repeatEndDate || '');
 
   // Get subtasks
   const subtasks = allTasks.filter(t => t.parentId === task.id);
@@ -59,7 +64,10 @@ export function TaskItem({
         description: editDescription.trim().substring(0, MAX_DESCRIPTION_LENGTH) || undefined,
         scheduledDate: editScheduledDate || undefined,
         scheduledTime: editScheduledTime || undefined,
-        priority: editPriority as Task['priority']
+        priority: editPriority as Task['priority'],
+        repeatType: editRepeatType,
+        repeatInterval: editRepeatType ? editRepeatInterval : undefined,
+        repeatEndDate: editRepeatType ? editRepeatEndDate || undefined : undefined
       });
       setIsEditing(false);
     }
@@ -71,6 +79,9 @@ export function TaskItem({
     setEditScheduledDate(task.scheduledDate || '');
     setEditScheduledTime(task.scheduledTime || '');
     setEditPriority(task.priority || 'medium');
+    setEditRepeatType(task.repeatType || null);
+    setEditRepeatInterval(task.repeatInterval || 1);
+    setEditRepeatEndDate(task.repeatEndDate || '');
     setIsEditing(false);
   };
 
@@ -259,24 +270,42 @@ export function TaskItem({
                   </div>
                   
                   {showTimeScheduling && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Date</label>
-                        <Input
-                          type="date"
-                          value={editScheduledDate}
-                          onChange={(e) => setEditScheduledDate(e.target.value)}
-                          className="text-xs h-8"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Time</label>
-                        <Input
-                          type="time"
-                          value={editScheduledTime}
-                          onChange={(e) => setEditScheduledTime(e.target.value)}
-                          className="text-xs h-8"
-                        />
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-2 block">Schedule Date</label>
+                          <QuickDatePicker
+                            selectedDate={editScheduledDate}
+                            onDateChange={setEditScheduledDate}
+                          />
+                        </div>
+                        
+                        {editScheduledDate && (
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">Time (optional)</label>
+                            <Input
+                              type="time"
+                              value={editScheduledTime}
+                              onChange={(e) => setEditScheduledTime(e.target.value)}
+                              className="text-xs h-8"
+                            />
+                          </div>
+                        )}
+                        
+                        {editScheduledDate && (
+                          <RepeatSettings
+                            task={{
+                              repeatType: editRepeatType,
+                              repeatInterval: editRepeatInterval,
+                              repeatEndDate: editRepeatEndDate
+                            }}
+                            onRepeatChange={(repeatSettings) => {
+                              setEditRepeatType(repeatSettings.repeatType || null);
+                              setEditRepeatInterval(repeatSettings.repeatInterval);
+                              setEditRepeatEndDate(repeatSettings.repeatEndDate || '');
+                            }}
+                          />
+                        )}
                       </div>
                     </div>
                   )}
@@ -402,6 +431,28 @@ export function TaskItem({
                       >
                         <Clock size={6} />
                         {formatTime(task.scheduledTime)}
+                      </Badge>
+                    )}
+
+                    {task.repeatType && (
+                      <Badge 
+                        variant="outline" 
+                        className="flex items-center gap-0.5 px-1 py-0"
+                        style={{
+                          backgroundColor: `${categoryColor}12`,
+                          borderColor: `${categoryColor}40`,
+                          color: categoryColor,
+                          fontSize: '8px',
+                          height: '14px',
+                          lineHeight: '12px'
+                        }}
+                      >
+                        <Repeat size={6} />
+                        {task.repeatInterval && task.repeatInterval > 1 ? `${task.repeatInterval}` : ''}
+                        {task.repeatType === 'daily' && 'd'}
+                        {task.repeatType === 'weekly' && 'w'}
+                        {task.repeatType === 'monthly' && 'm'}
+                        {task.repeatType === 'yearly' && 'y'}
                       </Badge>
                     )}
 

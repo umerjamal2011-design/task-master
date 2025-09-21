@@ -322,17 +322,86 @@ function App() {
     }
   };
 
-  const addTask = (categoryId: string, title: string, description?: string) => {
+  const addTask = (categoryId: string, title: string, description?: string, taskOptions?: Partial<Task>) => {
     const newTask: Task = {
       id: generateId(),
       title,
       description,
       completed: false,
       categoryId,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      ...taskOptions
     };
 
-    setTasks(currentTasks => [...(currentTasks || []), newTask]);
+    setTasks(currentTasks => {
+      const updatedTasks = [...(currentTasks || []), newTask];
+      
+      // If this is a repeating task, generate repeated instances
+      if (newTask.repeatType && newTask.scheduledDate) {
+        const repeatedTasks = generateRepeatedTasks(newTask);
+        return [...updatedTasks, ...repeatedTasks];
+      }
+      
+      return updatedTasks;
+    });
+    
+    return newTask;
+  };
+
+  // Function to generate repeated task instances
+  const generateRepeatedTasks = (originalTask: Task) => {
+    if (!originalTask.repeatType || !originalTask.scheduledDate) return [];
+
+    const repeatedTasks: Task[] = [];
+    const startDate = new Date(originalTask.scheduledDate);
+    const endDate = originalTask.repeatEndDate ? new Date(originalTask.repeatEndDate) : null;
+    const maxInstances = 100; // Prevent infinite loops
+    
+    let currentDate = new Date(startDate);
+    let instanceCount = 0;
+
+    while (instanceCount < maxInstances) {
+      // Calculate next occurrence based on repeat type
+      switch (originalTask.repeatType) {
+        case 'daily':
+          currentDate.setDate(currentDate.getDate() + (originalTask.repeatInterval || 1));
+          break;
+        case 'weekly':
+          currentDate.setDate(currentDate.getDate() + (originalTask.repeatInterval || 1) * 7);
+          break;
+        case 'monthly':
+          currentDate.setMonth(currentDate.getMonth() + (originalTask.repeatInterval || 1));
+          break;
+        case 'yearly':
+          currentDate.setFullYear(currentDate.getFullYear() + (originalTask.repeatInterval || 1));
+          break;
+        default:
+          break;
+      }
+
+      // Stop if we've reached the end date
+      if (endDate && currentDate > endDate) break;
+
+      // Stop if we're generating too far into the future (1 year)
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+      if (currentDate > oneYearFromNow) break;
+
+      // Create repeated instance
+      const repeatedTask: Task = {
+        ...originalTask,
+        id: generateId(),
+        scheduledDate: currentDate.toISOString().split('T')[0],
+        isRepeatedInstance: true,
+        originalTaskId: originalTask.id,
+        createdAt: new Date().toISOString()
+      };
+
+      repeatedTasks.push(repeatedTask);
+      instanceCount++;
+    }
+
+    return repeatedTasks;
   };
 
   const addSubtask = (parentId: string, title: string) => {
@@ -369,28 +438,59 @@ function App() {
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
-    setTasks(currentTasks =>
-      (currentTasks || []).map(task =>
-        task.id === taskId ? { ...task, ...updates } : task
-      )
-    );
+    setTasks(currentTasks => {
+      const tasksList = currentTasks || [];
+      const updatedTasks = tasksList.map(task => {
+        if (task.id === taskId) {
+          const updatedTask = { ...task, ...updates };
+          
+          // If this is a repeating task being updated, generate repeated instances
+          if (updatedTask.repeatType && updatedTask.scheduledDate && !updatedTask.isRepeatedInstance) {
+            const repeatedTasks = generateRepeatedTasks(updatedTask);
+            
+            // Remove any existing repeated instances for this original task
+            const filteredTasks = tasksList.filter(t => t.originalTaskId !== taskId);
+            
+            // Add the updated original task and new repeated instances
+            return [...filteredTasks.filter(t => t.id !== taskId), updatedTask, ...repeatedTasks];
+          }
+          
+          return updatedTask;
+        }
+        return task;
+      });
+      
+      // Handle the case where repeated tasks were generated (flatten the array)
+      return updatedTasks.flat();
+    });
   };
 
   const deleteTask = (taskId: string) => {
     setTasks(currentTasks => {
+      const tasksList = currentTasks || [];
+      
       // Find all tasks that need to be deleted (the task and all its subtasks recursively)
       const tasksToDelete = new Set<string>();
       
       const findAllSubtasks = (parentId: string) => {
         tasksToDelete.add(parentId);
-        const subtasks = (currentTasks || []).filter(task => task.parentId === parentId);
+        const subtasks = tasksList.filter(task => task.parentId === parentId);
         subtasks.forEach(subtask => findAllSubtasks(subtask.id));
       };
       
+      // Find the task being deleted to check if it's a repeating original task
+      const taskBeingDeleted = tasksList.find(t => t.id === taskId);
+      
       findAllSubtasks(taskId);
       
+      // If deleting an original repeating task, also delete all its repeated instances
+      if (taskBeingDeleted && taskBeingDeleted.repeatType && !taskBeingDeleted.isRepeatedInstance) {
+        const repeatedInstances = tasksList.filter(t => t.originalTaskId === taskId);
+        repeatedInstances.forEach(instance => tasksToDelete.add(instance.id));
+      }
+      
       // Filter out all tasks that should be deleted
-      return (currentTasks || []).filter(task => !tasksToDelete.has(task.id));
+      return tasksList.filter(task => !tasksToDelete.has(task.id));
     });
   };
 
@@ -782,7 +882,7 @@ function App() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                  className="w-full text-foreground"
                 />
               </div>
             )}
@@ -1014,7 +1114,7 @@ function App() {
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full text-foreground [color-scheme:light] dark:[color-scheme:dark]"
+                        className="w-full text-foreground"
                       />
                     </div>
                   )}

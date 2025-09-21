@@ -162,7 +162,7 @@ export function TaskItem({
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.2 }}
         className="flex-1"
-        style={{ marginLeft: depth > 0 ? `${depth * 2}px` : '0' }}
+        style={{ marginLeft: depth > 0 ? `${depth * 1}px` : '0' }}
       >
       <Card 
         className={`transition-all duration-200 group ${

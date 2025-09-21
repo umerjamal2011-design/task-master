@@ -139,7 +139,7 @@ export function TaskItem({
   };
 
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-1.5">
       {/* Subtask indicator dots */}
       {depth > 0 && (
         <div className="flex items-center gap-0.5 pt-0.5 flex-shrink-0">

@@ -66,45 +66,62 @@ function App() {
       if (!currentTasks || currentTasks.length === 0) return [];
       
       const validCategoryIds = new Set((categories || []).map(cat => cat.id));
-      const validTaskIds = new Set(currentTasks.map(task => task.id));
       
-      const cleanedTasks = currentTasks.filter(task => {
-        // Remove tasks with invalid category IDs
-        if (!validCategoryIds.has(task.categoryId)) {
+      // First pass: remove tasks with invalid category IDs
+      let cleanedTasks = currentTasks.filter(task => {
+        // Must be a valid object with required properties
+        if (!task || !task.id || typeof task.completed !== 'boolean') {
+          console.log('Removing invalid task object:', task);
           return false;
         }
         
-        // Remove tasks with invalid parent IDs (orphaned subtasks)
-        if (task.parentId && !validTaskIds.has(task.parentId)) {
+        // Must belong to a valid category
+        if (!validCategoryIds.has(task.categoryId)) {
+          console.log('Removing task with invalid category:', task.id, task.categoryId);
           return false;
         }
         
         return true;
       });
       
-      // Only update if there's a difference to prevent infinite loops
-      return cleanedTasks.length !== currentTasks.length ? cleanedTasks : currentTasks;
+      // Second pass: remove tasks with invalid parent IDs (orphaned subtasks)
+      const validTaskIds = new Set(cleanedTasks.map(task => task.id));
+      cleanedTasks = cleanedTasks.filter(task => {
+        if (task.parentId && !validTaskIds.has(task.parentId)) {
+          console.log('Removing orphaned subtask:', task.id, 'parent:', task.parentId);
+          return false;
+        }
+        return true;
+      });
+      
+      if (cleanedTasks.length !== currentTasks.length) {
+        console.log(`Cleaned up ${currentTasks.length - cleanedTasks.length} invalid tasks`);
+      }
+      
+      return cleanedTasks;
     });
   };
 
-  // Run cleanup when categories change, but with a dependency check to prevent loops
+  // Run cleanup when categories or tasks change
   useEffect(() => {
-    if (!categories || categories.length === 0 || !tasks || tasks.length === 0) return;
+    if (!tasks || tasks.length === 0) return;
+    
+    const validCategoryIds = new Set((categories || []).map(cat => cat.id));
     
     // Check if cleanup is needed
-    const validCategoryIds = new Set(categories.map(cat => cat.id));
-    const validTaskIds = new Set(tasks.map(task => task.id));
-    
-    const hasOrphanedTasks = tasks.some(task => 
+    const hasInvalidTasks = tasks.some(task => 
+      !task || 
+      !task.id || 
+      typeof task.completed !== 'boolean' ||
       !validCategoryIds.has(task.categoryId) ||
-      (task.parentId && !validTaskIds.has(task.parentId))
+      (task.parentId && !tasks.some(t => t.id === task.parentId))
     );
     
-    if (hasOrphanedTasks) {
-      console.log('Cleaning up orphaned tasks...');
+    if (hasInvalidTasks) {
+      console.log('Cleaning up invalid tasks...');
       cleanupOrphanedTasks();
     }
-  }, [categories?.length]); // Only trigger on category count changes
+  }, [categories, tasks?.length]); // Trigger on both category and task changes
 
   const scrollToCategory = (categoryId: string) => {
     const element = document.getElementById(`category-${categoryId}`);
@@ -113,28 +130,82 @@ function App() {
     }
   };
 
-  // Get valid tasks (filter out any corrupted data)
-  const validTasks = (tasks || []).filter(task => 
-    task && 
-    task.id && 
-    task.title && 
-    typeof task.completed === 'boolean' &&
-    (categories || []).some(cat => cat.id === task.categoryId)
-  );
+  // Get valid tasks with comprehensive filtering
+  const validTasks = React.useMemo(() => {
+    if (!tasks || tasks.length === 0 || !categories || categories.length === 0) {
+      console.log('No tasks or categories, returning empty array');
+      return [];
+    }
+    
+    const validCategoryIds = new Set(categories.map(cat => cat.id));
+    console.log('Valid category IDs:', Array.from(validCategoryIds));
+    
+    // First filter: basic validity and category existence
+    const basicValid = tasks.filter(task => {
+      if (!task) {
+        console.log('Filtering out null/undefined task');
+        return false;
+      }
+      if (!task.id) {
+        console.log('Filtering out task without ID:', task);
+        return false;
+      }
+      if (!task.title) {
+        console.log('Filtering out task without title:', task.id);
+        return false;
+      }
+      if (typeof task.completed !== 'boolean') {
+        console.log('Filtering out task with invalid completed field:', task.id, task.completed);
+        return false;
+      }
+      if (!task.categoryId) {
+        console.log('Filtering out task without categoryId:', task.id);
+        return false;
+      }
+      if (!validCategoryIds.has(task.categoryId)) {
+        console.log('Filtering out task with invalid categoryId:', task.id, task.categoryId);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`Basic validation: ${tasks.length} -> ${basicValid.length}`);
+    
+    // Second filter: ensure parent-child relationships are valid
+    const taskIds = new Set(basicValid.map(task => task.id));
+    const fullyValid = basicValid.filter(task => {
+      if (task.parentId && !taskIds.has(task.parentId)) {
+        console.log('Filtering out orphaned subtask:', task.id, 'parent:', task.parentId);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`Final validation: ${basicValid.length} -> ${fullyValid.length}`);
+    return fullyValid;
+  }, [tasks, categories]);
   
   const totalTasks = validTasks.length;
   const completedTasks = validTasks.filter(task => task.completed).length;
+  const pendingTasks = totalTasks - completedTasks;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Check for data inconsistencies
   const hasDataInconsistencies = (tasks || []).length !== validTasks.length;
 
+  // Add a function to force clear all data (for debugging)
+  const forceDataReset = () => {
+    console.log('Force clearing all data...');
+    setTasks([]);
+    // Force a re-render to ensure counts update
+    setTimeout(() => {
+      console.log('Data cleared, tasks should now be 0');
+    }, 100);
+  };
+
   // Debug function to clear all tasks (can be called from browser console)
   useEffect(() => {
-    (window as any).clearAllTasks = () => {
-      setTasks([]);
-      console.log('All tasks cleared');
-    };
+    (window as any).clearAllTasks = forceDataReset;
     
     (window as any).emergencyReset = emergencyReset;
     
@@ -144,28 +215,62 @@ function App() {
       console.log('Valid tasks:', validTasks);
       console.log('Raw task count:', (tasks || []).length);
       console.log('Valid task count:', validTasks.length);
+      console.log('Total tasks:', totalTasks);
+      console.log('Completed tasks:', completedTasks);
+      console.log('Pending tasks:', pendingTasks);
       console.log('Has inconsistencies:', hasDataInconsistencies);
     };
-  }, [tasks, categories, validTasks, hasDataInconsistencies]);
+  }, [tasks, categories, validTasks, totalTasks, completedTasks, pendingTasks, hasDataInconsistencies]);
   
   // Function to fix data inconsistencies
   const fixDataInconsistencies = () => {
+    const originalCount = (tasks || []).length;
+    const validCount = validTasks.length;
+    const toRemove = originalCount - validCount;
+    
     console.log('Fixing data inconsistencies...', {
-      originalCount: (tasks || []).length,
-      validCount: validTasks.length,
-      removing: (tasks || []).length - validTasks.length
+      originalCount,
+      validCount,
+      removing: toRemove
     });
+    
+    // Force update with only valid tasks
     setTasks(validTasks);
+    
+    // Show feedback
+    setTimeout(() => {
+      console.log(`Successfully removed ${toRemove} corrupted tasks`);
+    }, 100);
   };
   
   // Emergency data reset function (for severe corruption)
-  const emergencyReset = () => {
-    if (confirm('This will delete ALL tasks and categories. Are you sure?')) {
+  const emergencyReset = async () => {
+    if (confirm('This will delete ALL tasks and categories and reset the app. Are you sure?')) {
+      console.log('Starting emergency reset...');
+      
+      // Clear state immediately
       setTasks([]);
       setCategories([
         { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }
       ]);
+      
+      // Also try to clear KV storage directly if accessible
+      try {
+        if (typeof window !== 'undefined' && (window as any).spark?.kv) {
+          await (window as any).spark.kv.delete('tasks');
+          await (window as any).spark.kv.delete('categories');
+          console.log('KV storage cleared');
+        }
+      } catch (error) {
+        console.log('Could not clear KV storage:', error);
+      }
+      
       console.log('Emergency reset completed');
+      
+      // Force page reload as last resort
+      if (confirm('Reload page to ensure clean state?')) {
+        window.location.reload();
+      }
     }
   };
 
@@ -274,18 +379,27 @@ function App() {
   };
 
   const deleteCategory = (categoryId: string) => {
-    // Move tasks from deleted category to General
-    setTasks(currentTasks =>
-      (currentTasks || []).map(task =>
-        task.categoryId === categoryId
-          ? { ...task, categoryId: DEFAULT_CATEGORY_ID }
-          : task
-      )
-    );
+    if (categoryId === DEFAULT_CATEGORY_ID) {
+      console.log('Cannot delete default category');
+      return;
+    }
 
-    setCategories(currentCategories =>
-      (currentCategories || []).filter(category => category.id !== categoryId)
-    );
+    console.log('Deleting category:', categoryId);
+    
+    // First, delete all tasks in this category (don't move them)
+    setTasks(currentTasks => {
+      const tasksToDelete = (currentTasks || []).filter(task => task.categoryId === categoryId);
+      console.log(`Deleting ${tasksToDelete.length} tasks from category ${categoryId}`);
+      
+      return (currentTasks || []).filter(task => task.categoryId !== categoryId);
+    });
+
+    // Then delete the category
+    setCategories(currentCategories => {
+      const filtered = (currentCategories || []).filter(category => category.id !== categoryId);
+      console.log(`Categories after deletion: ${filtered.length}`);
+      return filtered;
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -318,17 +432,27 @@ function App() {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-destructive">⚠️</span>
               <span className="text-destructive">
-                Found {(tasks || []).length - validTasks.length} corrupted task(s). This may cause incorrect counts.
+                Found {(tasks || []).length - validTasks.length} corrupted task(s). Raw: {(tasks || []).length}, Valid: {validTasks.length}
               </span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fixDataInconsistencies}
-              className="text-xs h-7"
-            >
-              Fix Now
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fixDataInconsistencies}
+                className="text-xs h-7"
+              >
+                Fix Now
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={emergencyReset}
+                className="text-xs h-7 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                Reset All
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -428,7 +552,7 @@ function App() {
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>{completionRate}% Complete</span>
-                      <span>{totalTasks - completedTasks} Remaining</span>
+                      <span>{pendingTasks} Remaining</span>
                     </div>
                   </div>
                 </CardContent>
@@ -470,7 +594,7 @@ function App() {
                     <div className="text-xs text-muted-foreground">Done</div>
                   </div>
                   <div className="text-center p-2 bg-primary/10 rounded-lg">
-                    <div className="font-semibold text-sm text-primary">{totalTasks - completedTasks}</div>
+                    <div className="font-semibold text-sm text-primary">{pendingTasks}</div>
                     <div className="text-xs text-muted-foreground">Pending</div>
                   </div>
                 </div>
@@ -665,7 +789,7 @@ function App() {
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground">
                             <span>{completionRate}% Complete</span>
-                            <span>{totalTasks - completedTasks} Remaining</span>
+                            <span>{pendingTasks} Remaining</span>
                           </div>
                         </div>
                       </CardContent>
@@ -691,7 +815,7 @@ function App() {
                           <div className="text-xs text-muted-foreground">Done</div>
                         </div>
                         <div className="text-center p-2 bg-primary/10 rounded-lg">
-                          <div className="font-semibold text-sm text-primary">{totalTasks - completedTasks}</div>
+                          <div className="font-semibold text-sm text-primary">{pendingTasks}</div>
                           <div className="text-xs text-muted-foreground">Pending</div>
                         </div>
                       </div>

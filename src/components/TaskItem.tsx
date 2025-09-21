@@ -139,14 +139,14 @@ export function TaskItem({
   };
 
   return (
-    <div className="flex items-start gap-1">
-      {/* Subtask indicator dots */}
+    <div className="flex items-start">
+      {/* Subtask indicator dots with proper alignment */}
       {depth > 0 && (
-        <div className="flex items-center gap-0.5 pt-0.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5 pt-1 flex-shrink-0 mr-1">
           {Array.from({ length: depth }, (_, index) => (
             <div
               key={index}
-              className="w-2.5 h-2.5 rounded-full border border-current"
+              className="w-2 h-2 rounded-full border border-current"
               style={{ 
                 backgroundColor: `${categoryColor}50`,
                 borderColor: `${categoryColor}90`
@@ -162,7 +162,6 @@ export function TaskItem({
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.2 }}
         className="flex-1"
-        style={{ marginLeft: depth > 0 ? `${depth * 1}px` : '0' }}
       >
       <Card 
         className={`transition-all duration-200 group ${
@@ -474,7 +473,8 @@ export function TaskItem({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-1 ml-3"
+              className="mt-1"
+              style={{ marginLeft: `${(depth + 1) * 12 + 4}px` }}
             >
               <div className="flex gap-1">
                 <div className="relative flex-1">
@@ -524,7 +524,11 @@ export function TaskItem({
           )}
           
           {task.completed && task.completedAt && (
-            <div className="mt-0.5 ml-3 text-muted-foreground" style={{ fontSize: '9px' }}>
+            <div className="mt-0.5 text-muted-foreground" 
+                 style={{ 
+                   fontSize: '9px',
+                   marginLeft: `${(depth + 1) * 12 + 4}px`
+                 }}>
               Completed {new Date(task.completedAt).toLocaleDateString()}
             </div>
           )}

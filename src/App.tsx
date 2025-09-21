@@ -782,7 +782,7 @@ function App() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full"
+                  className="w-full text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
             )}
@@ -1014,7 +1014,7 @@ function App() {
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full"
+                        className="w-full text-foreground [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                   )}

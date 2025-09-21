@@ -122,20 +122,20 @@ export function DailyView({
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-1">
             {timedTasks.map((task, index) => (
               <motion.div
                 key={task.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-start gap-4 p-3 rounded-lg bg-background/50 border"
+                className="flex items-start gap-2 p-2 rounded-lg bg-background/30 border"
               >
-                <div className="flex flex-col items-center min-w-[100px] pt-1">
-                  <div className="text-lg font-bold text-primary px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="flex flex-col items-center min-w-[80px] pt-0.5">
+                  <div className="text-sm font-bold text-primary px-2 py-1 bg-primary/10 rounded border border-primary/20">
                     {formatTime(task.scheduledTime!)}
                   </div>
-                  <div className="w-1 h-6 bg-primary/40 mt-3 rounded-full" />
+                  <div className="w-0.5 h-4 bg-primary/50 mt-2 rounded-full" />
                 </div>
                 <div className="flex-1">
                   <TaskItem
@@ -168,7 +168,7 @@ export function DailyView({
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-1">
             {untimedTasks.map((task, index) => (
               <motion.div
                 key={task.id}

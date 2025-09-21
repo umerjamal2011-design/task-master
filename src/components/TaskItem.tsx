@@ -48,8 +48,8 @@ export function TaskItem({
   const subtasks = allTasks.filter(t => t.parentId === task.id);
   const hasSubtasks = subtasks.length > 0;
 
-  const MAX_TITLE_LENGTH = 200;
-  const MAX_DESCRIPTION_LENGTH = 300;
+  const MAX_TITLE_LENGTH = 150;
+  const MAX_DESCRIPTION_LENGTH = 200;
   const MAX_SUBTASK_LENGTH = 150;
 
   const handleSave = () => {
@@ -142,14 +142,14 @@ export function TaskItem({
     <div className="flex items-start gap-3">
       {/* Subtask indicator dots */}
       {depth > 0 && (
-        <div className="flex items-center gap-1 pt-1 flex-shrink-0 ml-1">
+        <div className="flex items-center gap-0.5 pt-1.5 flex-shrink-0">
           {Array.from({ length: depth }, (_, index) => (
             <div
               key={index}
-              className="w-2.5 h-2.5 rounded-full border-2 border-current"
+              className="w-2 h-2 rounded-full border border-current"
               style={{ 
-                backgroundColor: `${categoryColor}25`,
-                borderColor: `${categoryColor}70`
+                backgroundColor: `${categoryColor}30`,
+                borderColor: `${categoryColor}80`
               }}
             />
           ))}
@@ -166,31 +166,31 @@ export function TaskItem({
       >
       <Card 
         className={`transition-all duration-200 group ${
-          task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-md'
+          task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-sm'
         } ${depth > 0 ? 'border-l-2' : 'border-l-4'}`}
         style={{
           background: task.completed 
             ? undefined 
-            : `linear-gradient(90deg, ${categoryColor}08 0%, ${categoryColor}02 40%, transparent 100%)`,
-          borderLeft: `${depth > 0 ? '3px' : '4px'} solid ${task.completed ? '#94A3B8' : categoryColor}60`
+            : `linear-gradient(90deg, ${categoryColor}15 0%, ${categoryColor}08 25%, transparent 70%)`,
+          borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${task.completed ? '#94A3B8' : categoryColor}`
         }}
       >
-        <div className="p-3">
-          <div className="flex items-start gap-2">
+        <div className="px-2 py-1.5">
+          <div className="flex items-center gap-1.5">
             {/* Expand/Collapse Button */}
             {hasSubtasks && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 mt-0.5"
+                className="h-4 w-4 p-0"
                 onClick={() => setIsExpanded(!isExpanded)}
               >
-                {isExpanded ? <CaretDown size={12} /> : <CaretRight size={12} />}
+                {isExpanded ? <CaretDown size={10} /> : <CaretRight size={10} />}
               </Button>
             )}
 
             <div 
-              className="flex items-center justify-center w-4 h-4 rounded border-2 transition-all cursor-pointer hover:scale-105 mt-0.5"
+              className="flex items-center justify-center w-3.5 h-3.5 rounded border-2 transition-all cursor-pointer hover:scale-105"
               style={{ 
                 borderColor: task.completed ? categoryColor : '#94A3B8',
                 backgroundColor: task.completed ? categoryColor : 'transparent'
@@ -198,7 +198,7 @@ export function TaskItem({
               onClick={() => onToggleComplete(task.id)}
             >
               {task.completed && (
-                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}
@@ -305,13 +305,13 @@ export function TaskItem({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-0">
                   <div onClick={() => setIsEditing(true)} className="cursor-pointer">
-                    <h3 className={`font-medium text-sm leading-tight break-words ${
+                    <h3 className={`font-medium text-xs leading-snug break-words ${
                       task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
                     }`} style={{
                       display: '-webkit-box',
-                      WebkitLineClamp: 4,
+                      WebkitLineClamp: 1,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                       wordBreak: 'break-word'
@@ -319,11 +319,11 @@ export function TaskItem({
                       {task.title}
                     </h3>
                     {task.description && (
-                      <p className={`text-xs mt-1 break-words ${
+                      <p className={`text-xs leading-tight break-words ${
                         task.completed ? 'line-through text-muted-foreground' : 'text-muted-foreground'
                       }`} style={{
                         display: '-webkit-box',
-                        WebkitLineClamp: 3,
+                        WebkitLineClamp: 1,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
                         wordBreak: 'break-word'
@@ -334,16 +334,16 @@ export function TaskItem({
                   </div>
                   
                   {/* Task metadata */}
-                  <div className="flex flex-wrap items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
                     {task.priority && task.priority !== 'medium' && (
                       <Badge 
                         variant="outline" 
-                        className="text-xs px-1.5 py-0.5 h-5"
+                        className="text-xs px-1 py-0 h-4"
                         style={{
                           backgroundColor: getPriorityColor(task.priority).bg,
                           color: getPriorityColor(task.priority).color,
                           borderColor: getPriorityColor(task.priority).border,
-                          fontSize: '10px'
+                          fontSize: '9px'
                         }}
                       >
                         {task.priority}
@@ -353,15 +353,15 @@ export function TaskItem({
                     {task.scheduledDate && (
                       <Badge 
                         variant="outline" 
-                        className="text-xs flex items-center gap-1 px-1.5 py-0.5 h-5"
+                        className="text-xs flex items-center gap-0.5 px-1 py-0 h-4"
                         style={{
                           backgroundColor: `${categoryColor}12`,
                           borderColor: `${categoryColor}40`,
                           color: categoryColor,
-                          fontSize: '10px'
+                          fontSize: '9px'
                         }}
                       >
-                        <Calendar size={10} />
+                        <Calendar size={8} />
                         {formatDate(task.scheduledDate)}
                       </Badge>
                     )}
@@ -369,15 +369,15 @@ export function TaskItem({
                     {task.scheduledTime && (
                       <Badge 
                         variant="outline" 
-                        className="text-xs flex items-center gap-1 px-1.5 py-0.5 h-5"
+                        className="text-xs flex items-center gap-0.5 px-1 py-0 h-4"
                         style={{
                           backgroundColor: `${categoryColor}12`,
                           borderColor: `${categoryColor}40`,
                           color: categoryColor,
-                          fontSize: '10px'
+                          fontSize: '9px'
                         }}
                       >
-                        <Clock size={10} />
+                        <Clock size={8} />
                         {formatTime(task.scheduledTime)}
                       </Badge>
                     )}
@@ -385,12 +385,12 @@ export function TaskItem({
                     {depth === 0 && (
                       <Badge 
                         variant="secondary" 
-                        className="text-xs px-1.5 py-0.5 h-5"
+                        className="text-xs px-1 py-0 h-4"
                         style={{
                           backgroundColor: `${categoryColor}20`,
                           color: categoryColor,
                           borderColor: `${categoryColor}40`,
-                          fontSize: '10px'
+                          fontSize: '9px'
                         }}
                       >
                         {categoryName}
@@ -402,7 +402,7 @@ export function TaskItem({
             </div>
             
             {!isEditing && (
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity">
+              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity ml-1">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -410,10 +410,10 @@ export function TaskItem({
                     e.stopPropagation();
                     setShowAddSubtask(true);
                   }}
-                  className="h-6 w-6 p-0"
+                  className="h-5 w-5 p-0"
                   title="Add subtask"
                 >
-                  <Plus size={12} />
+                  <Plus size={10} />
                 </Button>
                 <Button
                   size="sm"
@@ -422,10 +422,10 @@ export function TaskItem({
                     e.stopPropagation();
                     setIsEditing(true);
                   }}
-                  className="h-6 w-6 p-0"
+                  className="h-5 w-5 p-0"
                   title="Edit task"
                 >
-                  <Pencil size={12} />
+                  <Pencil size={10} />
                 </Button>
                 <Button
                   size="sm"
@@ -434,10 +434,10 @@ export function TaskItem({
                     e.stopPropagation();
                     onDelete(task.id);
                   }}
-                  className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                  className="h-5 w-5 p-0 text-destructive hover:text-destructive"
                   title="Delete task"
                 >
-                  <Trash size={12} />
+                  <Trash size={10} />
                 </Button>
               </div>
             )}
@@ -448,9 +448,9 @@ export function TaskItem({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-2 ml-4"
+              className="mt-1 ml-4"
             >
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <div className="relative flex-1">
                   <Input
                     placeholder="Add subtask..."
@@ -458,9 +458,9 @@ export function TaskItem({
                     onChange={(e) => setNewSubtaskTitle(e.target.value.substring(0, MAX_SUBTASK_LENGTH))}
                     onKeyDown={handleSubtaskKeyDown}
                     autoFocus
-                    className="flex-1 text-xs h-7 pr-12"
+                    className="flex-1 text-xs h-6 pr-10"
                   />
-                  <div className="absolute right-2 top-1.5 text-xs text-muted-foreground pointer-events-none">
+                  <div className="absolute right-1.5 top-1 text-xs text-muted-foreground pointer-events-none">
                     {newSubtaskTitle.length}/{MAX_SUBTASK_LENGTH}
                   </div>
                 </div>
@@ -468,14 +468,14 @@ export function TaskItem({
                   size="sm" 
                   onClick={handleAddSubtask} 
                   disabled={!newSubtaskTitle.trim()}
-                  className="h-7 px-2"
+                  className="h-6 px-1.5"
                   style={{
                     backgroundColor: categoryColor,
                     borderColor: categoryColor,
                     color: 'white'
                   }}
                 >
-                  <Plus size={12} />
+                  <Plus size={10} />
                 </Button>
                 <Button 
                   size="sm" 
@@ -484,16 +484,16 @@ export function TaskItem({
                     setShowAddSubtask(false);
                     setNewSubtaskTitle('');
                   }}
-                  className="h-7 px-2"
+                  className="h-6 px-1.5"
                 >
-                  <X size={12} />
+                  <X size={10} />
                 </Button>
               </div>
             </motion.div>
           )}
           
           {task.completed && task.completedAt && (
-            <div className="mt-1 text-xs text-muted-foreground ml-4">
+            <div className="mt-0.5 text-xs text-muted-foreground ml-4">
               Completed {new Date(task.completedAt).toLocaleDateString()}
             </div>
           )}
@@ -507,7 +507,7 @@ export function TaskItem({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mt-2 space-y-1"
+            className="mt-1 space-y-0.5"
           >
             {subtasks.map(subtask => (
               <TaskItem

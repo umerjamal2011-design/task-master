@@ -278,7 +278,7 @@ export function CategorySection({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2 pb-4">
           <AnimatePresence>
             {showAddTask && (
               <motion.div
@@ -299,25 +299,25 @@ export function CategorySection({
                       <Input
                         placeholder="Task title"
                         value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value.substring(0, 200))}
+                        onChange={(e) => setNewTaskTitle(e.target.value.substring(0, 150))}
                         onKeyDown={handleKeyDown}
                         autoFocus
-                        className="pr-16"
+                        className="pr-14"
                       />
                       <div className="absolute right-2 top-3 text-xs text-muted-foreground">
-                        {newTaskTitle.length}/200
+                        {newTaskTitle.length}/150
                       </div>
                     </div>
                     <div className="relative">
                       <Input
                         placeholder="Description (optional)"
                         value={newTaskDescription}
-                        onChange={(e) => setNewTaskDescription(e.target.value.substring(0, 300))}
+                        onChange={(e) => setNewTaskDescription(e.target.value.substring(0, 200))}
                         onKeyDown={handleKeyDown}
-                        className="pr-16"
+                        className="pr-14"
                       />
                       <div className="absolute right-2 top-3 text-xs text-muted-foreground">
-                        {newTaskDescription.length}/300
+                        {newTaskDescription.length}/200
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -352,7 +352,7 @@ export function CategorySection({
 
           <AnimatePresence>
             {sortedTasks.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {sortedTasks.map((task) => (
                   <TaskItem
                     key={task.id}

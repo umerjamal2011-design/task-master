@@ -61,11 +61,11 @@ function App() {
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   // Cleanup function to remove orphaned tasks (tasks with non-existent parent IDs or category IDs)
-  const cleanupOrphanedTasks = () => {
+  const cleanupOrphanedTasks = React.useCallback((currentCategories: Category[]) => {
     setTasks(currentTasks => {
       if (!currentTasks || currentTasks.length === 0) return [];
       
-      const validCategoryIds = new Set((categories || []).map(cat => cat.id));
+      const validCategoryIds = new Set(currentCategories.map(cat => cat.id));
       
       // First pass: remove tasks with invalid category IDs
       let cleanedTasks = currentTasks.filter(task => {
@@ -100,13 +100,13 @@ function App() {
       
       return cleanedTasks;
     });
-  };
+  }, []);
 
-  // Run cleanup when categories or tasks change
+  // Run cleanup when categories change (not on every task change to avoid loops)
   useEffect(() => {
-    if (!tasks || tasks.length === 0) return;
+    if (!tasks || tasks.length === 0 || !categories || categories.length === 0) return;
     
-    const validCategoryIds = new Set((categories || []).map(cat => cat.id));
+    const validCategoryIds = new Set(categories.map(cat => cat.id));
     
     // Check if cleanup is needed
     const hasInvalidTasks = tasks.some(task => 
@@ -114,14 +114,14 @@ function App() {
       !task.id || 
       typeof task.completed !== 'boolean' ||
       !validCategoryIds.has(task.categoryId) ||
-      (task.parentId && !tasks.some(t => t.id === task.parentId))
+      (task.parentId && !tasks.some(t => t?.id === task.parentId))
     );
     
     if (hasInvalidTasks) {
-      console.log('Cleaning up invalid tasks...');
-      cleanupOrphanedTasks();
+      console.log('Auto-cleanup: Found invalid tasks, cleaning up...');
+      cleanupOrphanedTasks(categories);
     }
-  }, [categories, tasks?.length]); // Trigger on both category and task changes
+  }, [categories, cleanupOrphanedTasks]); // Only trigger on category changes to avoid infinite loops
 
   const scrollToCategory = (categoryId: string) => {
     const element = document.getElementById(`category-${categoryId}`);
@@ -196,11 +196,10 @@ function App() {
   // Add a function to force clear all data (for debugging)
   const forceDataReset = () => {
     console.log('Force clearing all data...');
-    setTasks([]);
-    // Force a re-render to ensure counts update
-    setTimeout(() => {
-      console.log('Data cleared, tasks should now be 0');
-    }, 100);
+    setTasks(() => {
+      console.log('Tasks state setter called with empty array');
+      return [];
+    });
   };
 
   // Debug function to clear all tasks (can be called from browser console)
@@ -210,15 +209,59 @@ function App() {
     (window as any).emergencyReset = emergencyReset;
     
     (window as any).showTasksData = () => {
-      console.log('Current tasks:', tasks);
+      console.log('=== CURRENT STATE DEBUG ===');
+      console.log('Raw tasks array:', tasks);
       console.log('Current categories:', categories);
-      console.log('Valid tasks:', validTasks);
+      console.log('Valid tasks (computed):', validTasks);
       console.log('Raw task count:', (tasks || []).length);
       console.log('Valid task count:', validTasks.length);
       console.log('Total tasks:', totalTasks);
       console.log('Completed tasks:', completedTasks);
       console.log('Pending tasks:', pendingTasks);
       console.log('Has inconsistencies:', hasDataInconsistencies);
+      
+      // Check for specific inconsistencies
+      if (tasks && tasks.length > 0) {
+        const categoryIds = new Set((categories || []).map(c => c.id));
+        const invalidTasks = tasks.filter(t => 
+          !t || !t.id || !t.categoryId || !categoryIds.has(t.categoryId)
+        );
+        console.log('Invalid tasks found:', invalidTasks);
+        
+        const orphanedTasks = tasks.filter(t => 
+          t && t.parentId && !tasks.some(parent => parent.id === t.parentId)
+        );
+        console.log('Orphaned subtasks found:', orphanedTasks);
+      }
+      console.log('=== END DEBUG ===');
+    };
+    
+    // Function to check if current state is consistent
+    (window as any).checkConsistency = () => {
+      const rawCount = (tasks || []).length;
+      const validCount = validTasks.length;
+      const difference = rawCount - validCount;
+      
+      console.log(`State consistency check: Raw=${rawCount}, Valid=${validCount}, Diff=${difference}`);
+      
+      if (difference > 0) {
+        console.warn(`Found ${difference} invalid tasks that should be cleaned up`);
+        return false;
+      } else {
+        console.log('State is consistent');
+        return true;
+      }
+    };
+    
+    // Manual cleanup function (for testing)
+    (window as any).manualCleanup = () => {
+      console.log('Running manual cleanup...');
+      cleanupOrphanedTasks(categories || []);
+      
+      setTimeout(() => {
+        console.log('Manual cleanup completed. Checking state...');
+        (window as any).showTasksData();
+      }, 100);
     };
   }, [tasks, categories, validTasks, totalTasks, completedTasks, pendingTasks, hasDataInconsistencies]);
   
@@ -231,16 +274,17 @@ function App() {
     console.log('Fixing data inconsistencies...', {
       originalCount,
       validCount,
-      removing: toRemove
+      removing: toRemove,
+      validTasks: validTasks
     });
     
-    // Force update with only valid tasks
-    setTasks(validTasks);
+    // Force update with only valid tasks using functional setter
+    setTasks(() => {
+      console.log('Setting tasks to valid tasks only:', validTasks);
+      return [...validTasks]; // Create a new array to ensure state change detection
+    });
     
-    // Show feedback
-    setTimeout(() => {
-      console.log(`Successfully removed ${toRemove} corrupted tasks`);
-    }, 100);
+    console.log(`Removed ${toRemove} corrupted tasks immediately`);
   };
   
   // Emergency data reset function (for severe corruption)
@@ -248,11 +292,15 @@ function App() {
     if (confirm('This will delete ALL tasks and categories and reset the app. Are you sure?')) {
       console.log('Starting emergency reset...');
       
-      // Clear state immediately
-      setTasks([]);
-      setCategories([
-        { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }
-      ]);
+      // Clear state immediately with functional setters
+      setTasks(() => {
+        console.log('Emergency reset: clearing all tasks');
+        return [];
+      });
+      setCategories(() => {
+        console.log('Emergency reset: resetting categories to default');
+        return [{ id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }];
+      });
       
       // Also try to clear KV storage directly if accessible
       try {
@@ -388,16 +436,23 @@ function App() {
     
     // First, delete all tasks in this category (don't move them)
     setTasks(currentTasks => {
+      const originalTaskCount = (currentTasks || []).length;
       const tasksToDelete = (currentTasks || []).filter(task => task.categoryId === categoryId);
-      console.log(`Deleting ${tasksToDelete.length} tasks from category ${categoryId}`);
+      const remainingTasks = (currentTasks || []).filter(task => task.categoryId !== categoryId);
       
-      return (currentTasks || []).filter(task => task.categoryId !== categoryId);
+      console.log(`Category ${categoryId}: Deleting ${tasksToDelete.length} tasks, keeping ${remainingTasks.length}/${originalTaskCount} tasks`);
+      console.log('Tasks being deleted:', tasksToDelete.map(t => ({ id: t.id, title: t.title })));
+      console.log('Tasks remaining after category deletion:', remainingTasks.map(t => ({ id: t.id, title: t.title, categoryId: t.categoryId })));
+      
+      return remainingTasks;
     });
 
     // Then delete the category
     setCategories(currentCategories => {
+      const originalCatCount = (currentCategories || []).length;
       const filtered = (currentCategories || []).filter(category => category.id !== categoryId);
-      console.log(`Categories after deletion: ${filtered.length}`);
+      console.log(`Categories: ${originalCatCount} -> ${filtered.length}`);
+      console.log('Remaining categories:', filtered.map(c => ({ id: c.id, name: c.name })));
       return filtered;
     });
   };
@@ -432,7 +487,7 @@ function App() {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-destructive">⚠️</span>
               <span className="text-destructive">
-                Found {(tasks || []).length - validTasks.length} corrupted task(s). Raw: {(tasks || []).length}, Valid: {validTasks.length}
+                Task count mismatch detected - {(tasks || []).length - validTasks.length} corrupted entries
               </span>
             </div>
             <div className="flex gap-2">

@@ -352,7 +352,7 @@ export function CategorySection({
 
           <AnimatePresence>
             {sortedTasks.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {sortedTasks.map((task) => (
                   <TaskItem
                     key={task.id}

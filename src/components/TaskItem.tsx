@@ -42,7 +42,7 @@ export function TaskItem({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || '');
-  const [editScheduledDate, setEditScheduledDate] = useState(task.scheduledDate || '');
+  const [editScheduledDate, setEditScheduledDate] = useState(task.scheduledDate || 'no-date');
   const [editScheduledTime, setEditScheduledTime] = useState(task.scheduledTime || '');
   const [editPriority, setEditPriority] = useState(task.priority || 'medium');
   const [editRepeatType, setEditRepeatType] = useState(task.repeatType || null);
@@ -62,7 +62,7 @@ export function TaskItem({
       onUpdate(task.id, {
         title: editTitle.trim().substring(0, MAX_TITLE_LENGTH),
         description: editDescription.trim().substring(0, MAX_DESCRIPTION_LENGTH) || undefined,
-        scheduledDate: editScheduledDate || undefined,
+        scheduledDate: editScheduledDate === 'no-date' ? undefined : editScheduledDate,
         scheduledTime: editScheduledTime || undefined,
         priority: editPriority as Task['priority'],
         repeatType: editRepeatType,
@@ -76,7 +76,7 @@ export function TaskItem({
   const handleCancel = () => {
     setEditTitle(task.title);
     setEditDescription(task.description || '');
-    setEditScheduledDate(task.scheduledDate || '');
+    setEditScheduledDate(task.scheduledDate || 'no-date');
     setEditScheduledTime(task.scheduledTime || '');
     setEditPriority(task.priority || 'medium');
     setEditRepeatType(task.repeatType || null);
@@ -268,7 +268,7 @@ export function TaskItem({
                         />
                       </div>
                       
-                      {editScheduledDate && (
+                      {editScheduledDate && editScheduledDate !== 'no-date' && (
                         <div>
                           <Input
                             type="time"
@@ -314,7 +314,7 @@ export function TaskItem({
                   )}
                   
                   {/* Repeat settings - only show if date is selected and on separate line */}
-                  {showTimeScheduling && editScheduledDate && (
+                  {showTimeScheduling && editScheduledDate && editScheduledDate !== 'no-date' && (
                     <div className="pt-1">
                       <RepeatSettings
                         task={{

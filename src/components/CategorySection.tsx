@@ -44,7 +44,7 @@ export function CategorySection({
   const [showAddTask, setShowAddTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
-  const [newTaskScheduledDate, setNewTaskScheduledDate] = useState('');
+  const [newTaskScheduledDate, setNewTaskScheduledDate] = useState('no-date');
   const [newTaskScheduledTime, setNewTaskScheduledTime] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [newTaskRepeatType, setNewTaskRepeatType] = useState<Task['repeatType']>(null);
@@ -77,7 +77,7 @@ export function CategorySection({
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
       const taskOptions: Partial<Task> = {
-        scheduledDate: newTaskScheduledDate || undefined,
+        scheduledDate: newTaskScheduledDate === 'no-date' ? undefined : newTaskScheduledDate,
         scheduledTime: newTaskScheduledTime || undefined,
         priority: newTaskPriority,
         repeatType: newTaskRepeatType,
@@ -95,7 +95,7 @@ export function CategorySection({
       // Reset form
       setNewTaskTitle('');
       setNewTaskDescription('');
-      setNewTaskScheduledDate('');
+      setNewTaskScheduledDate('no-date');
       setNewTaskScheduledTime('');
       setNewTaskPriority('medium');
       setNewTaskRepeatType(null);
@@ -139,7 +139,7 @@ export function CategorySection({
         setShowAddTask(false);
         setNewTaskTitle('');
         setNewTaskDescription('');
-        setNewTaskScheduledDate('');
+        setNewTaskScheduledDate('no-date');
         setNewTaskScheduledTime('');
         setNewTaskPriority('medium');
         setNewTaskRepeatType(null);
@@ -406,7 +406,7 @@ export function CategorySection({
                       />
                     </div>
 
-                    {newTaskScheduledDate && (
+                    {newTaskScheduledDate && newTaskScheduledDate !== 'no-date' && (
                       <div>
                         <Label className="text-sm font-medium mb-2 block">Time (optional)</Label>
                         <Input
@@ -418,7 +418,7 @@ export function CategorySection({
                       </div>
                     )}
 
-                    {newTaskScheduledDate && (
+                    {newTaskScheduledDate && newTaskScheduledDate !== 'no-date' && (
                       <RepeatSettings
                         task={{
                           repeatType: newTaskRepeatType,
@@ -454,7 +454,7 @@ export function CategorySection({
                           setShowAddTask(false);
                           setNewTaskTitle('');
                           setNewTaskDescription('');
-                          setNewTaskScheduledDate('');
+                          setNewTaskScheduledDate('no-date');
                           setNewTaskScheduledTime('');
                           setNewTaskPriority('medium');
                           setNewTaskRepeatType(null);

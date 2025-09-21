@@ -52,7 +52,7 @@ export function QuickDatePicker({ selectedDate, onDateChange, className }: Quick
   };
 
   const getSelectedLabel = () => {
-    if (!selectedDate) return 'No Date';
+    if (!selectedDate || selectedDate === 'no-date') return 'No Date';
     
     const today = getToday();
     const tomorrow = getTomorrow();
@@ -92,7 +92,7 @@ export function QuickDatePicker({ selectedDate, onDateChange, className }: Quick
           <SelectItem value={getNextMonth()}>
             Next Month - {formatDateDisplay(getNextMonth())}
           </SelectItem>
-          <SelectItem value="">
+          <SelectItem value="no-date">
             No Date
           </SelectItem>
         </SelectContent>
@@ -101,8 +101,8 @@ export function QuickDatePicker({ selectedDate, onDateChange, className }: Quick
       {/* Custom Date Picker - more compact */}
       <Input
         type="date"
-        value={selectedDate}
-        onChange={(e) => onDateChange(e.target.value)}
+        value={selectedDate === 'no-date' ? '' : selectedDate}
+        onChange={(e) => onDateChange(e.target.value || 'no-date')}
         className="w-full text-foreground text-xs h-6"
         placeholder="Pick date"
       />

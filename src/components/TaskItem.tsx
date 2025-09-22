@@ -171,7 +171,7 @@ export function TaskItem({
 
   // Get task status for visual feedback
   const taskStatus = getTaskStatus(task, currentTime);
-  const isOverdue = isTaskOverdue(task, currentTime);
+  const isOverdue = task.scheduledDate ? isTaskOverdue(task.scheduledDate, currentTime) : false;
 
   const formatTime = (time: string) => {
     if (!task.scheduledDate) return time;

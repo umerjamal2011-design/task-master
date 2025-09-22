@@ -1546,16 +1546,6 @@ function App() {
             {currentView === 'categories' && (
               <>
                 <div className="hidden lg:flex justify-between items-center mb-4">
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={forceSaveData}
-                      disabled={isForceSaving}
-                      className="gap-2"
-                    >
-                      <FloppyDisk size={18} className={isForceSaving ? 'animate-pulse' : ''} />
-                      Force Save
-                    </Button>
                     <Button
                       variant="outline"
                       onClick={refreshTasks}
@@ -1566,6 +1556,16 @@ function App() {
                       Refresh All Data
                     </Button>
                   </div>
+                  <Button
+                    onClick={() => setShowAddCategory(true)}
+                    className="gap-2"
+                  >
+                    <FolderPlus size={18} />
+                    Add Category
+                  </Button>
+                </div>
+
+                <AnimatePresence>
                   <Button
                     onClick={() => setShowAddCategory(true)}
                     className="gap-2"
@@ -1587,16 +1587,6 @@ function App() {
                       <Card className="bg-secondary/50 border-dashed">
                         <CardContent className="pt-6">
                           <div className="space-y-4">
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <Input
-                                placeholder="Category name"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                autoFocus
-                                className="flex-1"
-                              />
-                              <div className="flex gap-2">
                                 <Button onClick={addCategory} disabled={!newCategoryName.trim()}>
                                   <Plus size={16} />
                                   Add
@@ -1669,7 +1659,7 @@ function App() {
                           const today = new Date().toISOString().split('T')[0];
                           const prayerTimes = await getPrayerTimes(settings.location, today);
                           if (prayerTimes) {
-                            await addPrayerTasks(prayerTimes, today);
+                      onAddTaskAtSameLevel={addTaskAtSameLevel}
                           }
                         }
                       }}
@@ -1691,7 +1681,7 @@ function App() {
                       </Button>
                     </motion.div>
                   )}
-                </AnimatePresence>
+                    >
               </TabsContent>
 
               <TabsContent value="daily">
@@ -1713,7 +1703,7 @@ function App() {
         {/* Mobile Floating Add Button */}
         <div className="lg:hidden fixed bottom-6 right-6 z-30">
           <Button
-            onClick={() => setShowAddCategory(true)}
+                  onAddTaskAtSameLevel={addTaskAtSameLevel}
             size="lg"
             className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary text-primary-foreground"
           >
@@ -1731,4 +1721,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;      />

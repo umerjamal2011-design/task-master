@@ -346,15 +346,13 @@ function App() {
       { name: 'Isha', time: prayerTimes.isha, description: 'Night Prayer' }
     ];
 
-    // Remove existing prayer tasks for the date to avoid duplicates
+    // Remove existing prayer tasks for the date and add fresh ones
     setTasks(currentTasks => {
-      const filteredTasks = (currentTasks || []).filter(task => {
-        const isPrayerTask = task.categoryId === PRAYER_CATEGORY_ID;
-        const isForSameDate = task.scheduledDate === date;
-        return !(isPrayerTask && isForSameDate);
-      });
+      const nonPrayerTasks = (currentTasks || []).filter(task => 
+        !(task.categoryId === PRAYER_CATEGORY_ID && task.scheduledDate === date)
+      );
 
-      // Add new prayer tasks
+      // Add new prayer tasks for the specific date
       const newPrayerTasks = prayerNames.map(prayer => ({
         id: generateId(),
         title: `${prayer.name} Prayer`,
@@ -367,7 +365,8 @@ function App() {
         priority: 'high' as const
       }));
 
-      return [...filteredTasks, ...newPrayerTasks];
+      console.log(`Added ${newPrayerTasks.length} prayer tasks for ${date}`);
+      return [...nonPrayerTasks, ...newPrayerTasks];
     });
   };
 
@@ -444,11 +443,28 @@ function App() {
       const today = new Date().toISOString().split('T')[0];
       const lastUpdated = prayerSettings?.lastUpdated ? new Date(prayerSettings.lastUpdated).toISOString().split('T')[0] : null;
       
+      console.log(`Prayer times check: today=${today}, lastUpdated=${lastUpdated}`);
+      
       // Only update if we haven't updated today
       if (lastUpdated !== today) {
+        console.log('Fetching fresh prayer times for today...');
         const prayerTimes = await getPrayerTimes(prayerSettings.location, today);
         
         if (prayerTimes) {
+          // Clean up old prayer tasks first (previous days)
+          setTasks(currentTasks => {
+            const nonPrayerTasks = (currentTasks || []).filter(task => 
+              task.categoryId !== PRAYER_CATEGORY_ID
+            );
+            const todaysPrayerTasks = (currentTasks || []).filter(task => 
+              task.categoryId === PRAYER_CATEGORY_ID && task.scheduledDate === today
+            );
+            
+            console.log(`Keeping ${nonPrayerTasks.length} non-prayer tasks and ${todaysPrayerTasks.length} today's prayer tasks`);
+            return [...nonPrayerTasks, ...todaysPrayerTasks];
+          });
+          
+          // Add fresh prayer tasks for today
           await addPrayerTasks(prayerTimes, today);
           
           setPrayerSettings(prev => ({
@@ -458,24 +474,120 @@ function App() {
             lastUpdated: new Date().toISOString()
           }));
           
-          console.log('Daily prayer times updated');
+          console.log('Daily prayer times updated for', today);
+          toast.success('Prayer times updated for today');
         }
+      } else {
+        console.log('Prayer times already up to date for today');
       }
     } catch (error) {
       console.error('Failed to update daily prayer times:', error);
+      toast.error('Failed to update prayer times');
     }
   };
+
+  // Handle day change detection and cleanup
+  const handleDayChange = async () => {
+    console.log('Day change detected, performing cleanup...');
+    
+    // Clean up overdue scheduled tasks (tasks scheduled for previous days that aren't repeating)
+    setTasks(currentTasks => {
+      const today = new Date().toISOString().split('T')[0];
+      const cleanedTasks = (currentTasks || []).filter(task => {
+        // Keep tasks that:
+        // 1. Are not scheduled for a specific date
+        // 2. Are scheduled for today or future dates
+        // 3. Are repeating tasks (will be handled by repeat logic)
+        // 4. Are prayer tasks (handled separately)
+        // 5. Are completed (for history)
+        
+        if (!task.scheduledDate) return true; // No scheduled date
+        if (task.completed) return true; // Completed tasks kept for history
+        if (task.categoryId === PRAYER_CATEGORY_ID) return true; // Prayer tasks handled separately
+        if (task.repeatType) return true; // Repeating tasks handled by repeat logic
+        if (task.scheduledDate >= today) return true; // Today or future
+        
+        // Remove overdue non-repeating tasks
+        console.log(`Removing overdue task: ${task.title} (scheduled for ${task.scheduledDate})`);
+        return false;
+      });
+      
+      if (cleanedTasks.length !== (currentTasks || []).length) {
+        console.log(`Cleaned up ${(currentTasks || []).length - cleanedTasks.length} overdue tasks`);
+      }
+      
+      return cleanedTasks;
+    });
+    
+    // Update prayer times for the new day
+    if (prayerSettings?.enabled) {
+      console.log('Updating prayer times for new day...');
+      await updateDailyPrayerTimes();
+    }
+    
+    toast.success('Daily update completed');
+  };
+
+  // Initialize app and check for day changes on startup
+  useEffect(() => {
+    const initializeApp = async () => {
+      console.log('Initializing app...');
+      
+      const currentDate = new Date().toISOString().split('T')[0];
+      const lastUpdateDate = localStorage.getItem('lastUpdateDate');
+      
+      console.log(`Current date: ${currentDate}, Last update: ${lastUpdateDate}`);
+      
+      if (lastUpdateDate && lastUpdateDate !== currentDate) {
+        console.log(`Day changed from ${lastUpdateDate} to ${currentDate}, running day change handler`);
+        await handleDayChange();
+      } else if (!lastUpdateDate) {
+        console.log('First app launch, setting initial date');
+        localStorage.setItem('lastUpdateDate', currentDate);
+        
+        // If prayers are enabled, ensure today's prayers are available
+        if (prayerSettings?.enabled) {
+          console.log('Ensuring prayer times are current on first launch');
+          await updateDailyPrayerTimes();
+        }
+      } else {
+        console.log('Same day, no day change detected');
+      }
+    };
+    
+    // Run initialization
+    initializeApp();
+  }, []); // Run only on mount
+
+  // Check for day changes and update accordingly  
+  useEffect(() => {
+    const checkDayChange = () => {
+      const currentDate = new Date().toISOString().split('T')[0];
+      const lastUpdateDate = localStorage.getItem('lastUpdateDate');
+      
+      if (lastUpdateDate && lastUpdateDate !== currentDate) {
+        console.log(`Day changed from ${lastUpdateDate} to ${currentDate}`);
+        handleDayChange();
+      }
+      
+      localStorage.setItem('lastUpdateDate', currentDate);
+    };
+    
+    // Check every 5 minutes for day changes (more frequent than before)
+    const interval = setInterval(checkDayChange, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [prayerSettings?.enabled]);
 
   // Update prayer times daily
   useEffect(() => {
     updateDailyPrayerTimes();
   }, [prayerSettings?.enabled]); // Run when prayer settings change
 
-  // Check for prayer time updates every hour
+  // Check for prayer time updates more frequently (every 10 minutes)
   useEffect(() => {
     if (!prayerSettings?.enabled) return;
     
-    const interval = setInterval(updateDailyPrayerTimes, 60 * 60 * 1000); // Check every hour
+    const interval = setInterval(updateDailyPrayerTimes, 10 * 60 * 1000); // Check every 10 minutes
     return () => clearInterval(interval);
   }, [prayerSettings?.enabled, prayerSettings?.location]);
 
@@ -1691,6 +1803,21 @@ function App() {
               </TabsContent>
 
               <TabsContent value="daily">
+                <div className="mb-4">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-semibold text-foreground">Daily Schedule</h2>
+                    <Button
+                      variant="outline"
+                      onClick={handleDayChange}
+                      disabled={isRefreshing}
+                      className="gap-2"
+                      size="sm"
+                    >
+                      <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                      Update Daily
+                    </Button>
+                  </div>
+                </div>
                 <DailyView
                   tasks={validTasks}
                   categories={categories || []}

@@ -110,47 +110,59 @@ export function getTasksForDate(tasks: Task[], date: string): Task[] {
   const result: Task[] = [];
   const addedTaskIds = new Set<string>(); // Track added tasks to avoid duplicates
   
+  console.log(`Getting tasks for date: ${date}`);
+  
+  // First pass: Handle all tasks directly scheduled for this date (including subtasks)
   tasks.forEach(task => {
-    // Skip if this is already a repeated instance or if we've already added this task
     if (task.isRepeatedInstance || addedTaskIds.has(task.id)) {
       return;
     }
     
-    // Include tasks that are scheduled for this specific date (whether repeating or not)
+    // Include any task that is scheduled for this specific date
     if (task.scheduledDate === date) {
       result.push(task);
       addedTaskIds.add(task.id);
-      
-      // Also include all subtasks of this scheduled task
-      const subtasks = getAllSubtasks(task.id, tasks);
-      subtasks.forEach(subtask => {
-        if (!addedTaskIds.has(subtask.id)) {
-          result.push(subtask);
-          addedTaskIds.add(subtask.id);
-        }
-      });
-      return; // Don't process this task further
+      console.log(`Direct match: ${task.title} (${task.parentId ? 'subtask' : 'parent'})`);
+    }
+  });
+  
+  // Second pass: Handle repeating parent tasks and their subtasks
+  tasks.forEach(task => {
+    if (task.isRepeatedInstance || addedTaskIds.has(task.id) || task.parentId) {
+      return; // Skip repeated instances, already added tasks, and subtasks (handled separately)
     }
     
-    // For repeating tasks, check if they should appear on this date (but not their original date)
+    // For repeating parent tasks, check if they should appear on this date
     if (task.repeatType && task.scheduledDate && shouldTaskAppearOnDate(task, date)) {
-      // Since we already handled the original date above, this creates virtual instances
+      // Only create virtual instance if it's not the original date (already handled above)
       if (task.scheduledDate !== date) {
         const virtualInstance = createVirtualTaskInstance(task, date);
         result.push(virtualInstance);
         addedTaskIds.add(virtualInstance.id);
+        console.log(`Virtual parent: ${virtualInstance.title}`);
         
-        // Also create virtual instances for all subtasks
+        // Create virtual instances for all subtasks of this repeating parent
         const subtasks = getAllSubtasks(task.id, tasks);
         subtasks.forEach(subtask => {
           const virtualSubtask = createVirtualTaskInstance(subtask, date);
           virtualSubtask.parentId = virtualInstance.id; // Link to the virtual parent
           result.push(virtualSubtask);
           addedTaskIds.add(virtualSubtask.id);
+          console.log(`Virtual subtask: ${virtualSubtask.title} -> parent: ${virtualInstance.id}`);
         });
       }
     }
   });
+  
+  console.log(`Total tasks for ${date}: ${result.length}`, 
+    result.map(t => ({ 
+      id: t.id, 
+      title: t.title, 
+      isSubtask: !!t.parentId,
+      scheduledTime: t.scheduledTime,
+      isVirtual: t.isRepeatedInstance 
+    }))
+  );
   
   return result;
 }

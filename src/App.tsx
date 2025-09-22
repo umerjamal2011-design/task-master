@@ -918,7 +918,6 @@ function App() {
           </div>
         </div>
       )}
-      
       {/* Mobile Header */}
       <div className="lg:hidden bg-card/50 border-b border-border px-4 py-4 sticky top-0 z-50 backdrop-blur-md">
         <div className="flex items-center justify-between">
@@ -970,7 +969,6 @@ function App() {
           </Tabs>
         </div>
       </div>
-
       <div className="flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-80 bg-card/50 border-r border-border sticky top-0 h-screen overflow-y-auto">
@@ -1298,7 +1296,7 @@ function App() {
                           
                           {prayerSettings?.enabled && prayerSettings?.location && (
                             <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                              <div className="text-xs text-green-700 dark:text-green-300">
+                              <div className="text-xs dark:text-black-300 text-orange-600">
                                 ✅ Prayer times active for {prayerSettings.location.city}, {prayerSettings.location.country}
                               </div>
                             </div>
@@ -1514,7 +1512,6 @@ function App() {
           </Button>
         </div>
       </div>
-      
       {/* Toast Notifications */}
       <Toaster 
         theme={isDarkMode ? 'dark' : 'light'}

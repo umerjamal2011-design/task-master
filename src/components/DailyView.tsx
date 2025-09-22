@@ -129,13 +129,24 @@ export function DailyView({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-start gap-2 p-2 rounded-lg bg-background/30 border"
+                className={`flex items-start gap-2 p-2 rounded-lg border transition-all duration-200 ${
+                  task.completed 
+                    ? 'bg-muted/50 border-muted/60 opacity-75' 
+                    : 'bg-background/30 border-border'
+                }`}
               >
                 <div className="flex flex-col items-center min-w-[90px] pt-0.5">
-                  <div className="text-base font-bold text-primary px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20">
+                  <div className={`text-base font-bold px-3 py-1.5 rounded-lg border transition-all duration-200 ${
+                    task.completed
+                      ? 'text-muted-foreground bg-muted/30 border-muted line-through'
+                      : 'text-primary bg-primary/10 border-primary/20'
+                  }`}>
+                    {task.completed && <span className="mr-1 no-underline">✓</span>}
                     {formatTime(task.scheduledTime!)}
                   </div>
-                  <div className="w-1 h-6 bg-primary/60 mt-2 rounded-full" />
+                  <div className={`w-1 h-6 mt-2 rounded-full transition-all duration-200 ${
+                    task.completed ? 'bg-muted/60' : 'bg-primary/60'
+                  }`} />
                 </div>
                 <div className="flex-1">
                   <TaskItem

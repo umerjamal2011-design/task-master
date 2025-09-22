@@ -193,7 +193,9 @@ export function TaskItem({
       >
       <Card 
         className={`transition-all duration-200 group ${
-          task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-sm'
+          task.completed 
+            ? 'bg-muted/50 border-muted shadow-none opacity-75' 
+            : 'bg-card hover:shadow-sm border-border'
         } ${depth > 0 ? 'border-l-2' : 'border-l-3'}`}
         style={{
           borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${task.completed ? '#94A3B8' : categoryColor}`
@@ -231,17 +233,27 @@ export function TaskItem({
             )}
 
             <div 
-              className="flex items-center justify-center w-3 h-3 rounded border flex-shrink-0 transition-all cursor-pointer hover:scale-105"
+              className={`flex items-center justify-center w-3 h-3 rounded border flex-shrink-0 transition-all cursor-pointer hover:scale-105 ${
+                task.completed ? 'ring-2 ring-opacity-30' : ''
+              }`}
               style={{ 
                 borderColor: task.completed ? categoryColor : '#94A3B8',
-                backgroundColor: task.completed ? categoryColor : 'transparent'
-              }}
+                backgroundColor: task.completed ? categoryColor : 'transparent',
+                '--tw-ring-color': task.completed ? `${categoryColor}50` : 'transparent'
+              } as React.CSSProperties}
               onClick={() => onToggleComplete(task.id)}
             >
               {task.completed && (
-                <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <motion.svg 
+                  className="w-2 h-2 text-white" 
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                  initial={{ scale: 0, rotate: -90 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+                </motion.svg>
               )}
             </div>
             
@@ -388,8 +400,10 @@ export function TaskItem({
               ) : (
                 <div className="space-y-0">
                   <div onClick={() => setIsEditing(true)} className="cursor-pointer">
-                    <h3 className={`font-medium leading-tight break-all ${
-                      task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                    <h3 className={`font-medium leading-tight break-all transition-all duration-200 ${
+                      task.completed 
+                        ? 'line-through text-muted-foreground opacity-60' 
+                        : 'text-foreground'
                     }`} style={{
                       fontSize: '11px',
                       lineHeight: '14px',
@@ -400,11 +414,14 @@ export function TaskItem({
                       wordBreak: 'break-word',
                       overflowWrap: 'anywhere'
                     }}>
+                      {task.completed && <span className="mr-1">✓</span>}
                       {task.title}
                     </h3>
                     {task.description && (
-                      <p className={`leading-tight break-all mt-0.5 ${
-                        task.completed ? 'line-through text-muted-foreground' : 'text-muted-foreground'
+                      <p className={`leading-tight break-all mt-0.5 transition-all duration-200 ${
+                        task.completed 
+                          ? 'line-through text-muted-foreground opacity-50' 
+                          : 'text-muted-foreground'
                       }`} style={{
                         fontSize: '10px',
                         lineHeight: '12px',

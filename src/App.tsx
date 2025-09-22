@@ -738,17 +738,52 @@ function App() {
   };
 
   const toggleTaskComplete = (taskId: string) => {
-    setTasks(currentTasks =>
-      (currentTasks || []).map(task =>
-        task.id === taskId
-          ? {
-              ...task,
-              completed: !task.completed,
-              completedAt: !task.completed ? new Date().toISOString() : undefined
-            }
-          : task
-      )
-    );
+    setTasks(currentTasks => {
+      const tasksList = currentTasks || [];
+      const targetTask = tasksList.find(t => t.id === taskId);
+      if (!targetTask) return tasksList;
+
+      const newCompletedState = !targetTask.completed;
+
+      // Function to recursively find all subtasks
+      const findAllSubtasks = (parentId: string): string[] => {
+        const directSubtasks = tasksList.filter(task => task.parentId === parentId);
+        let allSubtasks: string[] = [];
+        
+        for (const subtask of directSubtasks) {
+          allSubtasks.push(subtask.id);
+          // Recursively find subtasks of this subtask
+          allSubtasks = allSubtasks.concat(findAllSubtasks(subtask.id));
+        }
+        
+        return allSubtasks;
+      };
+
+      return tasksList.map(task => {
+        // Update the target task
+        if (task.id === taskId) {
+          return {
+            ...task,
+            completed: newCompletedState,
+            completedAt: newCompletedState ? new Date().toISOString() : undefined
+          };
+        }
+
+        // If we're completing a parent task, auto-complete all its subtasks
+        if (newCompletedState && findAllSubtasks(taskId).includes(task.id)) {
+          return {
+            ...task,
+            completed: true,
+            completedAt: new Date().toISOString()
+          };
+        }
+
+        // If we're uncompleting a parent task, we'll leave subtasks as they are
+        // (user might want to keep some completed)
+        
+        return task;
+      });
+    });
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {

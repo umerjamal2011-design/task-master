@@ -72,25 +72,73 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  // Function to refresh tasks
+  // Function to refresh all data
   const refreshTasks = async () => {
     setIsRefreshing(true);
     
     try {
+      console.log('Starting comprehensive data refresh...');
+      
+      // Force reload data from KV storage
+      const freshTasks = (await (window as any).spark.kv.get('tasks') as Task[]) || [];
+      const freshCategories = (await (window as any).spark.kv.get('categories') as Category[]) || [
+        { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString(), order: 0 }
+      ];
+      const freshDarkMode = (await (window as any).spark.kv.get('dark-mode') as boolean) || false;
+      const freshPrayerSettings = (await (window as any).spark.kv.get('prayer-settings') as PrayerSettings) || {
+        enabled: false,
+        method: 2
+      };
+      
+      console.log('Fresh data loaded:', {
+        tasks: freshTasks.length,
+        categories: freshCategories.length,
+        darkMode: freshDarkMode,
+        prayerEnabled: freshPrayerSettings.enabled
+      });
+      
+      // Update all state with fresh data
+      setTasks(freshTasks);
+      setCategories(freshCategories);
+      setIsDarkMode(freshDarkMode);
+      setPrayerSettings(freshPrayerSettings);
+      
+      // Clean up orphaned tasks with fresh data
+      if (freshCategories && freshCategories.length > 0) {
+        const validCategoryIds = new Set(freshCategories.map(cat => cat.id));
+        const cleanTasks = freshTasks.filter(task => 
+          task && 
+          task.id && 
+          typeof task.completed === 'boolean' &&
+          validCategoryIds.has(task.categoryId) &&
+          (!task.parentId || freshTasks.some(t => t.id === task.parentId))
+        );
+        
+        if (cleanTasks.length !== freshTasks.length) {
+          console.log(`Cleaned up ${freshTasks.length - cleanTasks.length} invalid tasks`);
+          setTasks(cleanTasks);
+          await (window as any).spark.kv.set('tasks', cleanTasks);
+        }
+      }
+      
       // If prayer times are enabled, update them
-      if (prayerSettings?.enabled) {
+      if (freshPrayerSettings?.enabled) {
+        console.log('Updating prayer times...');
         await updateDailyPrayerTimes();
       }
       
-      // Clean up orphaned tasks
-      if (categories && categories.length > 0) {
-        cleanupOrphanedTasks(categories);
+      // Apply dark mode to document
+      if (freshDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
       }
       
-      toast.success('Tasks refreshed successfully');
+      console.log('Data refresh completed successfully');
+      toast.success('All data refreshed successfully');
     } catch (error) {
-      console.error('Failed to refresh tasks:', error);
-      toast.error('Failed to refresh tasks');
+      console.error('Failed to refresh data:', error);
+      toast.error('Failed to refresh data: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsRefreshing(false);
     }
@@ -972,7 +1020,7 @@ function App() {
               onClick={refreshTasks}
               disabled={isRefreshing}
               className="h-10 w-10 p-0"
-              title="Refresh tasks"
+              title="Refresh all data"
             >
               <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
             </Button>
@@ -1019,7 +1067,7 @@ function App() {
                     onClick={refreshTasks}
                     disabled={isRefreshing}
                     className="h-8 w-8 p-0"
-                    title="Refresh tasks"
+                    title="Refresh all data"
                   >
                     <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
                   </Button>
@@ -1236,7 +1284,7 @@ function App() {
                         onClick={refreshTasks}
                         disabled={isRefreshing}
                         className="h-8 w-8 p-0"
-                        title="Refresh tasks"
+                        title="Refresh all data"
                       >
                         <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
                       </Button>
@@ -1425,7 +1473,7 @@ function App() {
                     className="gap-2"
                   >
                     <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
-                    Refresh Tasks
+                    Refresh All Data
                   </Button>
                   <Button
                     onClick={() => setShowAddCategory(true)}

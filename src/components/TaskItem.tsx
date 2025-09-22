@@ -25,6 +25,7 @@ interface TaskItemProps {
   onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   showTimeScheduling?: boolean;
   depth?: number;
+  isDailyView?: boolean;
 }
 
 export function TaskItem({ 
@@ -38,7 +39,8 @@ export function TaskItem({
   onAddSubtask,
   onAddTaskAtSameLevel,
   showTimeScheduling = true,
-  depth = 0 
+  depth = 0,
+  isDailyView = false
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -746,9 +748,9 @@ export function TaskItem({
         </div>
       </Card>
 
-      {/* Subtasks */}
+      {/* Subtasks - only render if NOT in daily view */}
       <AnimatePresence>
-        {isExpanded && hasSubtasks && (
+        {!isDailyView && isExpanded && hasSubtasks && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -769,6 +771,7 @@ export function TaskItem({
                 onAddTaskAtSameLevel={onAddTaskAtSameLevel}
                 showTimeScheduling={showTimeScheduling}
                 depth={depth + 1}
+                isDailyView={isDailyView}
               />
             ))}
           </motion.div>

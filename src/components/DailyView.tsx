@@ -31,26 +31,45 @@ export function DailyView({
 }: DailyViewProps) {
   // Get tasks for the selected date using dynamic repeat logic
   const dailyTasksAll = getTasksForDate(tasks, selectedDate);
-  // Include both parent tasks and standalone tasks (but not subtasks, as they'll be shown within parent tasks)
-  const dailyTasks = dailyTasksAll.filter(task => !task.parentId);
+  
+  // For daily view, we want to show all tasks scheduled for this date
+  // This includes both parent tasks and subtasks that are independently scheduled
+  const dailyTasks = dailyTasksAll;
 
   // Debug logging to help identify missing tasks
   React.useEffect(() => {
     console.log('=== Daily View Debug ===');
     console.log('Selected date:', selectedDate);
     console.log('All tasks:', tasks.length);
+    
+    // Log all tasks that match the selected date
+    const directMatches = tasks.filter(t => t.scheduledDate === selectedDate);
     console.log('Tasks with scheduledDate matching selected date:', 
-      tasks.filter(t => t.scheduledDate === selectedDate).map(t => ({
+      directMatches.map(t => ({
         id: t.id,
         title: t.title,
         scheduledDate: t.scheduledDate,
         scheduledTime: t.scheduledTime,
         repeatType: t.repeatType,
         parentId: t.parentId,
+        isSubtask: !!t.parentId,
         isRepeatedInstance: t.isRepeatedInstance
       }))
     );
-    console.log('Tasks returned by getTasksForDate (including subtasks):', 
+    
+    // Log subtasks specifically
+    const subtasks = directMatches.filter(t => t.parentId);
+    console.log('Subtasks scheduled for this date:', 
+      subtasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        parentId: t.parentId,
+        scheduledTime: t.scheduledTime,
+        depth: calculateTaskDepth(t, tasks)
+      }))
+    );
+    
+    console.log('Tasks returned by getTasksForDate (including all tasks):', 
       dailyTasksAll.map(t => ({
         id: t.id,
         title: t.title,
@@ -58,24 +77,25 @@ export function DailyView({
         scheduledTime: t.scheduledTime,
         isRepeatedInstance: t.isRepeatedInstance,
         parentId: t.parentId,
-        isSubtask: !!t.parentId
+        isSubtask: !!t.parentId,
+        depth: calculateTaskDepth(t, tasks)
       }))
     );
-    console.log('Final daily tasks (parent-level only):', 
+    
+    const timedSubtasks = dailyTasksAll.filter(t => t.parentId && t.scheduledTime);
+    const untimedSubtasks = dailyTasksAll.filter(t => t.parentId && !t.scheduledTime);
+    
+    console.log('Timed subtasks for daily view:', timedSubtasks.length);
+    console.log('Untimed subtasks for daily view:', untimedSubtasks.length);
+    
+    console.log('Final daily tasks (all tasks):', 
       dailyTasks.map(t => ({
         id: t.id,
         title: t.title,
         scheduledTime: t.scheduledTime,
         parentId: t.parentId,
-        subtaskCount: dailyTasksAll.filter(st => st.parentId === t.id).length
-      }))
-    );
-    console.log('All subtasks in daily view:', 
-      dailyTasksAll.filter(t => t.parentId).map(t => ({
-        id: t.id,
-        title: t.title,
-        parentId: t.parentId,
-        scheduledTime: t.scheduledTime
+        isSubtask: !!t.parentId,
+        depth: calculateTaskDepth(t, tasks)
       }))
     );
   }, [tasks, selectedDate, dailyTasksAll, dailyTasks]);
@@ -95,6 +115,16 @@ export function DailyView({
   const getCategoryColor = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category?.color || '#3B82F6';
+  };
+
+  // Helper function to calculate task depth for proper indentation in daily view
+  const calculateTaskDepth = (task: Task, allTasks: Task[]): number => {
+    if (!task.parentId) return 0;
+    
+    const parent = allTasks.find(t => t.id === task.parentId);
+    if (!parent) return 0;
+    
+    return calculateTaskDepth(parent, allTasks) + 1;
   };
 
   const formatTime = (time: string) => {
@@ -209,6 +239,8 @@ export function DailyView({
                     onAddSubtask={onAddSubtask}
                     onAddTaskAtSameLevel={onAddTaskAtSameLevel}
                     showTimeScheduling={false}
+                    depth={calculateTaskDepth(task, tasks)}
+                    isDailyView={true}
                   />
                 </div>
               </motion.div>
@@ -233,7 +265,7 @@ export function DailyView({
             {untimedTasks.map((task, index) => (
               <motion.div
                 key={task.id}
-                  onUpdate={onUpdateTask}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
@@ -248,6 +280,8 @@ export function DailyView({
                   onAddSubtask={onAddSubtask}
                   onAddTaskAtSameLevel={onAddTaskAtSameLevel}
                   showTimeScheduling={true}
+                  depth={calculateTaskDepth(task, tasks)}
+                  isDailyView={true}
                 />
               </motion.div>
             ))}

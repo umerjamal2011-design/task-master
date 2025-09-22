@@ -83,23 +83,52 @@ export function createVirtualTaskInstance(originalTask: Task, date: string): Tas
 }
 
 /**
- * Get all tasks that should appear on a specific date, including virtual instances
+ * Get all subtasks for a given parent task (recursively)
+ * @param parentId The parent task ID
+ * @param tasks All tasks array
+ * @returns Task[] - Array of all subtasks (direct and nested)
+ */
+function getAllSubtasks(parentId: string, tasks: Task[]): Task[] {
+  const directSubtasks = tasks.filter(task => task.parentId === parentId);
+  let allSubtasks = [...directSubtasks];
+  
+  // Recursively get subtasks of each direct subtask
+  directSubtasks.forEach(subtask => {
+    allSubtasks = allSubtasks.concat(getAllSubtasks(subtask.id, tasks));
+  });
+  
+  return allSubtasks;
+}
+
+/**
+ * Get all tasks that should appear on a specific date, including virtual instances and subtasks
  * @param tasks All tasks array
  * @param date The date to check (YYYY-MM-DD format)
- * @returns Task[] - Array of tasks (original + virtual instances)
+ * @returns Task[] - Array of tasks (original + virtual instances + subtasks)
  */
 export function getTasksForDate(tasks: Task[], date: string): Task[] {
   const result: Task[] = [];
+  const addedTaskIds = new Set<string>(); // Track added tasks to avoid duplicates
   
   tasks.forEach(task => {
-    // Skip if this is already a repeated instance
-    if (task.isRepeatedInstance) {
+    // Skip if this is already a repeated instance or if we've already added this task
+    if (task.isRepeatedInstance || addedTaskIds.has(task.id)) {
       return;
     }
     
     // Include tasks that are scheduled for this specific date (whether repeating or not)
     if (task.scheduledDate === date) {
       result.push(task);
+      addedTaskIds.add(task.id);
+      
+      // Also include all subtasks of this scheduled task
+      const subtasks = getAllSubtasks(task.id, tasks);
+      subtasks.forEach(subtask => {
+        if (!addedTaskIds.has(subtask.id)) {
+          result.push(subtask);
+          addedTaskIds.add(subtask.id);
+        }
+      });
       return; // Don't process this task further
     }
     
@@ -107,7 +136,18 @@ export function getTasksForDate(tasks: Task[], date: string): Task[] {
     if (task.repeatType && task.scheduledDate && shouldTaskAppearOnDate(task, date)) {
       // Since we already handled the original date above, this creates virtual instances
       if (task.scheduledDate !== date) {
-        result.push(createVirtualTaskInstance(task, date));
+        const virtualInstance = createVirtualTaskInstance(task, date);
+        result.push(virtualInstance);
+        addedTaskIds.add(virtualInstance.id);
+        
+        // Also create virtual instances for all subtasks
+        const subtasks = getAllSubtasks(task.id, tasks);
+        subtasks.forEach(subtask => {
+          const virtualSubtask = createVirtualTaskInstance(subtask, date);
+          virtualSubtask.parentId = virtualInstance.id; // Link to the virtual parent
+          result.push(virtualSubtask);
+          addedTaskIds.add(virtualSubtask.id);
+        });
       }
     }
   });

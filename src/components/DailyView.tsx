@@ -31,6 +31,7 @@ export function DailyView({
 }: DailyViewProps) {
   // Get tasks for the selected date using dynamic repeat logic
   const dailyTasksAll = getTasksForDate(tasks, selectedDate);
+  // Include both parent tasks and standalone tasks (but not subtasks, as they'll be shown within parent tasks)
   const dailyTasks = dailyTasksAll.filter(task => !task.parentId);
 
   // Debug logging to help identify missing tasks
@@ -49,14 +50,15 @@ export function DailyView({
         isRepeatedInstance: t.isRepeatedInstance
       }))
     );
-    console.log('Tasks returned by getTasksForDate:', 
+    console.log('Tasks returned by getTasksForDate (including subtasks):', 
       dailyTasksAll.map(t => ({
         id: t.id,
         title: t.title,
         scheduledDate: t.scheduledDate,
         scheduledTime: t.scheduledTime,
         isRepeatedInstance: t.isRepeatedInstance,
-        parentId: t.parentId
+        parentId: t.parentId,
+        isSubtask: !!t.parentId
       }))
     );
     console.log('Final daily tasks (parent-level only):', 
@@ -64,7 +66,16 @@ export function DailyView({
         id: t.id,
         title: t.title,
         scheduledTime: t.scheduledTime,
-        parentId: t.parentId
+        parentId: t.parentId,
+        subtaskCount: dailyTasksAll.filter(st => st.parentId === t.id).length
+      }))
+    );
+    console.log('All subtasks in daily view:', 
+      dailyTasksAll.filter(t => t.parentId).map(t => ({
+        id: t.id,
+        title: t.title,
+        parentId: t.parentId,
+        scheduledTime: t.scheduledTime
       }))
     );
   }, [tasks, selectedDate, dailyTasksAll, dailyTasks]);
@@ -113,8 +124,8 @@ export function DailyView({
     }
   };
 
-  const completedCount = dailyTasks.filter(task => task.completed).length;
-  const totalCount = dailyTasks.length;
+  const completedCount = dailyTasksAll.filter(task => task.completed).length;
+  const totalCount = dailyTasksAll.length;
 
   return (
     <div className="space-y-6">
@@ -189,7 +200,7 @@ export function DailyView({
                 <div className="flex-1">
                   <TaskItem
                     task={task}
-                    allTasks={tasks}
+                    allTasks={dailyTasksAll}
                     categoryName={getCategoryName(task.categoryId)}
                     categoryColor={getCategoryColor(task.categoryId)}
                     onToggleComplete={onToggleTaskComplete}
@@ -228,7 +239,7 @@ export function DailyView({
               >
                 <TaskItem
                   task={task}
-                  allTasks={tasks}
+                  allTasks={dailyTasksAll}
                   categoryName={getCategoryName(task.categoryId)}
                   categoryColor={getCategoryColor(task.categoryId)}
                   onToggleComplete={onToggleTaskComplete}
@@ -245,7 +256,7 @@ export function DailyView({
       )}
 
       {/* Empty State */}
-      {dailyTasks.length === 0 && (
+      {dailyTasksAll.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

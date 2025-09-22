@@ -1,11 +1,11 @@
 import { Task } from '@/types/index';
 
-// Get relative date labels based on current time
-export const getRelativeDateLabel = (date: string, currentTime: Date = new Date()): string => {
   const taskDate = new Date(date);
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
   
-  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate(
+  tomorrow.setDate(today.getDate() + 1);
+  
+  // Compare dates
   yesterday.setDate(today.getDate() - 1);
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
@@ -14,54 +14,54 @@ export const getRelativeDateLabel = (date: string, currentTime: Date = new Date(
   
   // Compare dates
   if (taskDateOnly.getTime() === today.getTime()) {
-    return 'Today';
-  } else if (taskDateOnly.getTime() === yesterday.getTime()) {
-    return 'Yesterday';
-  } else if (taskDateOnly.getTime() === tomorrow.getTime()) {
-    return 'Tomorrow';
-  } else if (taskDateOnly < today) {
-    // Past dates
-    const daysDiff = Math.floor((today.getTime() - taskDateOnly.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff <= 7) {
-      return `${daysDiff} day${daysDiff > 1 ? 's' : ''} ago`;
-    } else if (daysDiff <= 30) {
-      const weeksDiff = Math.floor(daysDiff / 7);
-      return `${weeksDiff} week${weeksDiff > 1 ? 's' : ''} ago`;
-    } else {
-      return taskDate.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: taskDate.getFullYear() !== currentTime.getFullYear() ? 'numeric' : undefined
+        day: 'numer
       });
-    }
   } else {
-    // Future dates
-    const daysDiff = Math.floor((taskDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff <= 7) {
-      return `In ${daysDiff} day${daysDiff > 1 ? 's' : ''}`;
-    } else if (daysDiff <= 30) {
-      const weeksDiff = Math.floor(daysDiff / 7);
-      return `In ${weeksDiff} week${weeksDiff > 1 ? 's' : ''}`;
+    const daysDiff = Math.floor((taskDateOnly.getTime() - tod
+      return `In ${day
+      const weeksDiff = Math.floor(d
     } else {
-      return taskDate.toLocaleDateString('en-US', { 
         month: 'short', 
-        day: 'numeric',
-        year: taskDate.getFullYear() !== currentTime.getFullYear() ? 'numeric' : undefined
-      });
+        year: taskDate.g
     }
-  }
 };
-
-// Get time label with minutes until/since for today's tasks
-export const getTimeLabel = (time: string, currentTime: Date = new Date()): string => {
+// Get time label with minutes until/since for to
   const [hours, minutes] = time.split(':').map(Number);
-  const taskTime = new Date();
-  taskTime.setHours(hours, minutes, 0, 0);
-  
-  const timeString = taskTime.toLocaleTimeString('en-US', {
-    hour: 'numeric',
+  taskTime.s
+  const timeString = taskTime.toLocaleTimeString('en
     minute: '2-digit',
-    hour12: true
+  });
+  const timeDiff = taskTime.getTime() - currentTime.getTime();
+  
+    r
+    if (mi
+    } else if (minu
+      return `${timeString} (in ${hoursUntil}h)`;
+      return `${timeStri
+  } else {
+    if (minutesSince < 60) {
+    } else if (minutesSince < 24 * 60) {
+      return `${timeString} (${hoursSince}h ago)`;
+      return
+  }
+
+export const isTaskOver
+  const taskDate = new Date(task.scheduledDate);
+  
+    c
+   
+  
+
+
+export const getTaskStatus = (task: Task, currentTime: Date = new Date()): 'overdue' | 
+  
+  const today = new Date(curre
+  
+  
+    taskDateTime.setHours(hours, minutes, 0, 0);
+    if (taskDateTime
+    } else if (taskDat
+    } else {
   });
   
   const timeDiff = taskTime.getTime() - currentTime.getTime();
@@ -77,7 +77,7 @@ export const getTimeLabel = (time: string, currentTime: Date = new Date()): stri
       return `${timeString} (in ${hoursUntil}h)`;
     } else {
       return `${timeString}`;
-    }
+    /
   } else {
     const minutesSince = Math.abs(minutesUntil);
     if (minutesSince < 60) {
@@ -130,13 +130,13 @@ export const getTaskStatus = (task: Task, currentTime: Date = new Date()): 'over
   }
   
   if (taskDateOnly < today) {
-    return 'overdue';
+
   } else if (taskDateOnly.getTime() === today.getTime()) {
-    return 'current';
+
   } else {
     return 'upcoming';
   }
-};
+
 
 // Sort tasks by their scheduled time and status
 export const sortTasksBySchedule = (tasks: Task[], currentTime: Date = new Date()): Task[] => {
@@ -144,27 +144,27 @@ export const sortTasksBySchedule = (tasks: Task[], currentTime: Date = new Date(
     // Completed tasks go to the end
     if (a.completed && !b.completed) return 1;
     if (!a.completed && b.completed) return -1;
-    
+
     // If both have scheduled dates
     if (a.scheduledDate && b.scheduledDate) {
       const dateComparison = a.scheduledDate.localeCompare(b.scheduledDate);
-      if (dateComparison !== 0) return dateComparison;
+
       
-      // If same date, sort by time
+
       if (a.scheduledTime && b.scheduledTime) {
         return a.scheduledTime.localeCompare(b.scheduledTime);
       }
-      
+
       // Tasks with time come before tasks without time on same date
       if (a.scheduledTime && !b.scheduledTime) return -1;
       if (!a.scheduledTime && b.scheduledTime) return 1;
-    }
+
     
     // If only one has a scheduled date, it comes first
     if (a.scheduledDate && !b.scheduledDate) return -1;
     if (!a.scheduledDate && b.scheduledDate) return 1;
     
-    // Fall back to creation date
+
     return a.createdAt.localeCompare(b.createdAt);
-  });
+
 };

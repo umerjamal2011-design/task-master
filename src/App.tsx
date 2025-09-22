@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'sonner';
 import { getTasksForDate, isRepeatingTask } from '@/lib/repeat-utils';
@@ -41,6 +41,7 @@ function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingUpPrayers, setIsSettingUpPrayers] = useState(false);
   const [locationPermissionState, setLocationPermissionState] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check location permission status
   useEffect(() => {
@@ -69,6 +70,30 @@ function App() {
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  // Function to refresh tasks
+  const refreshTasks = async () => {
+    setIsRefreshing(true);
+    
+    try {
+      // If prayer times are enabled, update them
+      if (prayerSettings?.enabled) {
+        await updateDailyPrayerTimes();
+      }
+      
+      // Clean up orphaned tasks
+      if (categories && categories.length > 0) {
+        cleanupOrphanedTasks(categories);
+      }
+      
+      toast.success('Tasks refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh tasks:', error);
+      toast.error('Failed to refresh tasks');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Prayer functionality
@@ -944,6 +969,16 @@ function App() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={refreshTasks}
+              disabled={isRefreshing}
+              className="h-10 w-10 p-0"
+              title="Refresh tasks"
+            >
+              <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={toggleDarkMode}
               className="h-10 w-10 p-0"
               title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
@@ -977,15 +1012,27 @@ function App() {
             <div className="mb-8">
               <div className="flex items-center justify-between mb-1">
                 <h1 className="text-xl font-bold text-foreground">TaskFlow</h1>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleDarkMode}
-                  className="h-8 w-8 p-0"
-                  title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-                >
-                  {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={refreshTasks}
+                    disabled={isRefreshing}
+                    className="h-8 w-8 p-0"
+                    title="Refresh tasks"
+                  >
+                    <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleDarkMode}
+                    className="h-8 w-8 p-0"
+                    title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                  >
+                    {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                  </Button>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground">Organize your day</p>
             </div>
@@ -1182,14 +1229,26 @@ function App() {
                       <h1 className="text-xl font-bold text-foreground">TaskFlow</h1>
                       <p className="text-sm text-muted-foreground">Organize your day</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X size={16} />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={refreshTasks}
+                        disabled={isRefreshing}
+                        className="h-8 w-8 p-0"
+                        title="Refresh tasks"
+                      >
+                        <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsMobileSidebarOpen(false)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X size={16} />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Progress Stats */}
@@ -1358,7 +1417,16 @@ function App() {
             {/* Add Category Form */}
             {currentView === 'categories' && (
               <>
-                <div className="hidden lg:flex justify-end mb-4">
+                <div className="hidden lg:flex justify-between items-center mb-4">
+                  <Button
+                    variant="outline"
+                    onClick={refreshTasks}
+                    disabled={isRefreshing}
+                    className="gap-2"
+                  >
+                    <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
+                    Refresh Tasks
+                  </Button>
                   <Button
                     onClick={() => setShowAddCategory(true)}
                     className="gap-2"

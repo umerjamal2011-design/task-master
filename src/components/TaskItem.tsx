@@ -174,7 +174,8 @@ export function TaskItem({
   const isOverdue = isTaskOverdue(task, currentTime);
 
   const formatTime = (time: string) => {
-    return getTimeLabel(time, currentTime);
+    if (!task.scheduledDate) return time;
+    return getTimeLabel(task.scheduledDate, time, currentTime);
   };
 
   const formatDate = (dateStr: string) => {

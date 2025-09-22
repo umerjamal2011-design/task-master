@@ -1,67 +1,58 @@
 import { Task } from '@/types/index';
 
+// Get a human-readable date label for a task
+export const getDateLabel = (date: string, currentTime: Date = new Date()): string => {
   const taskDate = new Date(date);
-  const tomorrow = new Date(today);
-  const yesterday = new Date(today
+  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
+  const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
   
-  
-  if (taskDateOnly.getTime() === today.g
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   
-  const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
   
   // Compare dates
   if (taskDateOnly.getTime() === today.getTime()) {
     return 'Today';
-      if (daysAgo <= 7) {
-      } else {
-          month: 'short', 
-          year: taskDat
-      }
-  }
-
-export const getTimeLab
-  const taskTime = new Dat
-  
-    hour: 'num
-    hour12: true
-  
-  const
-  if (Math.a
-  } else if (minutesUntil > 0) {
-      return `${timeStrin
-      const hoursUntil = Math.floor(minutesUntil / 60);
+  } else if (taskDateOnly.getTime() === yesterday.getTime()) {
+    return 'Yesterday';
+  } else if (taskDateOnly.getTime() === tomorrow.getTime()) {
+    return 'Tomorrow';
+  } else {
+    const daysAgo = Math.floor((today.getTime() - taskDateOnly.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysAgo > 0 && daysAgo <= 7) {
+      return `${daysAgo} days ago`;
+    } else if (daysAgo < 0 && Math.abs(daysAgo) <= 7) {
+      return `In ${Math.abs(daysAgo)} days`;
     } else {
+      return taskDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: taskDate.getFullYear() !== currentTime.getFullYear() ? 'numeric' : undefined
+      });
     }
-    const minutesSince = M
-      return `${timeStrin
-      const hoursSince = Math.floor(minutesSince / 60);
-    } else 
-    }
-};
-// 
-  
-
-  
-    // If both have scheduled date and time, compare datetime
-    const taskDateTime = new Date(taskDate);
-    
   }
-  
+};
 
-export const getTask
+// Get a time label with context about when it occurs
+export const getTimeLabel = (date: string, time: string, currentTime: Date = new Date()): string => {
+  const taskDate = new Date(date);
+  const [hours, minutes] = time.split(':').map(Number);
+  const taskDateTime = new Date(taskDate);
+  taskDateTime.setHours(hours, minutes, 0, 0);
   
-  const today = 
+  const timeString = taskDateTime.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
   
+  const minutesUntil = Math.floor((taskDateTime.getTime() - currentTime.getTime()) / (1000 * 60));
   
-    taskDateTime.setHours(hours, minutes, 0, 0);
-    if (taskDateTime < currentTime) {
-  
-    }
-
-    return 'overdue';
-    return 'current';
+  if (minutesUntil > 0) {
+    if (minutesUntil < 60) {
       return `${timeString} (in ${minutesUntil}m)`;
     } else if (minutesUntil < 24 * 60) {
       const hoursUntil = Math.floor(minutesUntil / 60);
@@ -126,13 +117,13 @@ export const getTaskStatus = (task: Task, currentTime: Date = new Date()): 'over
   } else if (taskDateOnly.getTime() === today.getTime()) {
     return 'current';
   } else {
-
+    return 'upcoming';
   }
+};
 
-
-
+// Sort tasks by their scheduled date and time
 export const sortTasksBySchedule = (tasks: Task[], currentTime: Date = new Date()): Task[] => {
-
+  return tasks.sort((a, b) => {
     // Completed tasks go to the bottom
     if (a.completed && !b.completed) return 1;
     if (!a.completed && b.completed) return -1;
@@ -154,7 +145,7 @@ export const sortTasksBySchedule = (tasks: Task[], currentTime: Date = new Date(
       if (!a.scheduledTime && b.scheduledTime) return 1;
 
       return 0;
-
+    }
 
     // If only one has a scheduled date, it comes first
     if (a.scheduledDate && !b.scheduledDate) return -1;

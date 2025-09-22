@@ -55,6 +55,21 @@ export function TaskItem({
   const subtasks = allTasks.filter(t => t.parentId === task.id);
   const hasSubtasks = subtasks.length > 0;
 
+  // Get total subtask count (including nested subtasks)
+  const getTotalSubtaskCount = (taskId: string): number => {
+    const directSubtasks = allTasks.filter(t => t.parentId === taskId);
+    let total = directSubtasks.length;
+    
+    // Recursively count subtasks of subtasks
+    for (const subtask of directSubtasks) {
+      total += getTotalSubtaskCount(subtask.id);
+    }
+    
+    return total;
+  };
+
+  const totalSubtasks = getTotalSubtaskCount(task.id);
+
   const MAX_TITLE_LENGTH = 150;
   const MAX_DESCRIPTION_LENGTH = 200;
   const MAX_SUBTASK_LENGTH = 150;
@@ -186,16 +201,33 @@ export function TaskItem({
       >
         <div className="px-2 py-0.5">
           <div className="flex items-center gap-1">
-            {/* Expand/Collapse Button */}
+            {/* Expand/Collapse Button with Subtask Counter */}
             {hasSubtasks && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-3 w-3 p-0 flex-shrink-0"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                {isExpanded ? <CaretDown size={8} /> : <CaretRight size={8} />}
-              </Button>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-3 w-3 p-0"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                >
+                  {isExpanded ? <CaretDown size={8} /> : <CaretRight size={8} />}
+                </Button>
+                <Badge
+                  variant="secondary"
+                  className="px-1 py-0 text-xs min-w-0"
+                  style={{
+                    backgroundColor: `${categoryColor}20`,
+                    color: categoryColor,
+                    borderColor: `${categoryColor}40`,
+                    fontSize: '8px',
+                    height: '12px',
+                    lineHeight: '10px'
+                  }}
+                  title={`${totalSubtasks} total subtask${totalSubtasks !== 1 ? 's' : ''} (${subtasks.length} direct)`}
+                >
+                  {totalSubtasks}
+                </Badge>
+              </div>
             )}
 
             <div 

@@ -68,6 +68,32 @@ function SortableCategoryNavItem({
   const completedCount = tasks.filter(task => task.completed).length;
   const categoryProgress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
+  // Count subtasks in this category
+  const getSubtaskCount = (categoryTasks: Task[]): number => {
+    // Find all parent tasks in this category
+    const parentTasks = categoryTasks.filter(task => !task.parentId);
+    let totalSubtasks = 0;
+
+    const countSubtasksRecursively = (parentId: string): number => {
+      const subtasks = categoryTasks.filter(task => task.parentId === parentId);
+      let count = subtasks.length;
+      
+      for (const subtask of subtasks) {
+        count += countSubtasksRecursively(subtask.id);
+      }
+      
+      return count;
+    };
+
+    for (const parentTask of parentTasks) {
+      totalSubtasks += countSubtasksRecursively(parentTask.id);
+    }
+
+    return totalSubtasks;
+  };
+
+  const subtaskCount = getSubtaskCount(tasks);
+
   const handleQuickTaskKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -120,6 +146,23 @@ function SortableCategoryNavItem({
                 style={{ backgroundColor: category.color || '#3B82F6' }}
               />
               <span className="font-medium text-sm truncate">{category.name}</span>
+              {subtaskCount > 0 && (
+                <Badge 
+                  variant="outline" 
+                  className="text-xs flex-shrink-0 ml-1"
+                  style={{
+                    backgroundColor: `${category.color || '#3B82F6'}15`,
+                    borderColor: `${category.color || '#3B82F6'}40`,
+                    color: category.color || '#3B82F6',
+                    fontSize: '9px',
+                    height: '16px',
+                    padding: '0 4px'
+                  }}
+                  title={`${subtaskCount} subtask${subtaskCount !== 1 ? 's' : ''}`}
+                >
+                  +{subtaskCount}
+                </Badge>
+              )}
             </div>
             <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
               {completedCount}/{tasks.length}

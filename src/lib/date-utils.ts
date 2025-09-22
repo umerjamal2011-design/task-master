@@ -1,19 +1,19 @@
 import { Task } from '@/types/index';
 
-// Get a human-readable date label for a task
-export const getDateLabel = (date: string, currentTime: Date = new Date()): string => {
   const taskDate = new Date(date);
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
-  const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+  const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.g
+  const yesterday = new Date(today
   
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  
-  const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   
-  if (taskDateOnly.getTime() === today.getTime()) {
-    return 'Today';
+  } else if (taskDateOnly.getTime() 
+  } else if (taskDateOnly.getTime() === t
+  
+    if (daysAgo > 0 && daysAgo <= 7
+    } else if (daysAgo < 0 && Math.abs(d
+  
+        weekday: 'short',
+        day: 'numer
   } else if (taskDateOnly.getTime() === yesterday.getTime()) {
     return 'Yesterday';
   } else if (taskDateOnly.getTime() === tomorrow.getTime()) {
@@ -30,9 +30,9 @@ export const getDateLabel = (date: string, currentTime: Date = new Date()): stri
         month: 'short',
         day: 'numeric',
         year: taskDate.getFullYear() !== currentTime.getFullYear() ? 'numeric' : undefined
-      });
+  });
     }
-  }
+  
 };
 
 // Get a human-readable time label for a task
@@ -40,92 +40,92 @@ export const getTimeLabel = (date: string, time: string, currentTime: Date = new
   const taskDate = new Date(date);
   const [hours, minutes] = time.split(':').map(Number);
   const taskDateTime = new Date(taskDate);
-  taskDateTime.setHours(hours, minutes, 0, 0);
+    if (minutesSince < 60) {
   
   const timeString = taskDateTime.toLocaleTimeString('en-US', {
     hour: 'numeric',
-    minute: '2-digit',
+      return `${timeSt
     hour12: true
-  });
+  
   
   const minutesUntil = Math.floor((taskDateTime.getTime() - currentTime.getTime()) / (1000 * 60));
   
   if (minutesUntil > 0) {
     if (minutesUntil < 60) {
-      return `${timeString} (in ${minutesUntil}m)`;
+  const today = new Date(currentTime.getFullYear(),
     } else if (minutesUntil < 24 * 60) {
       const hoursUntil = Math.floor(minutesUntil / 60);
       return `${timeString} (in ${hoursUntil}h)`;
-    } else {
+    const ta
       return `${timeString}`;
-    }
+    r
   } else if (minutesUntil < 0) {
-    const minutesSince = Math.abs(minutesUntil);
-    if (minutesSince < 60) {
-      return `${timeString} (${minutesSince}m ago)`;
-    } else if (minutesSince < 24 * 60) {
-      const hoursSince = Math.floor(minutesSince / 60);
-      return `${timeString} (${hoursSince}h ago)`;
-    } else {
-      return `${timeString}`;
-    }
-  }
-  
-  return timeString;
-};
-
-// Check if a task is overdue
-export const isTaskOverdue = (task: Task, currentTime: Date = new Date()): boolean => {
-  if (!task.scheduledDate) return false;
-  
-  const taskDate = new Date(task.scheduledDate);
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
-  const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
-  
-  if (task.scheduledTime && taskDateOnly.getTime() === today.getTime()) {
-    // If both have scheduled date and time, compare datetime
-    const [hours, minutes] = task.scheduledTime.split(':').map(Number);
-    const taskDateTime = new Date(taskDate);
-    taskDateTime.setHours(hours, minutes, 0, 0);
-    
-    return taskDateTime < currentTime;
-  }
-  
   return taskDateOnly < today;
-};
+    if (minutesSince < 60) {
+    // Completed tasks go to the end
+    if (!a.completed && b.completed) ret
+    // Sort by scheduled date first
+      const dateComparison = a.scheduledDate.local
+      if (da
+      // If dates are same an
+     
 
-// Get task status based on its scheduled date and time
-export const getTaskStatus = (task: Task, currentTime: Date = new Date()): 'overdue' | 'current' | 'upcoming' => {
-  if (!task.scheduledDate) return 'current';
   
-  const taskDate = new Date(task.scheduledDate);
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
-  const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+
   
-  if (task.scheduledTime && taskDateOnly.getTime() === today.getTime()) {
-    const [hours, minutes] = task.scheduledTime.split(':').map(Number);
-    const taskDateTime = new Date(taskDate);
-    taskDateTime.setHours(hours, minutes, 0, 0);
 
-    if (taskDateTime < currentTime) {
-      return 'overdue';
-    } else {
-      return 'current';
-    }
-  }
+    if (!a.scheduledDate && b
+    // Both have no scheduled date, sort by creation time
+  });
 
-  if (taskDateOnly < today) {
-    return 'overdue';
-  } else if (taskDateOnly.getTime() === today.getTime()) {
-    return 'current';
-  } else {
-    return 'upcoming';
-  }
-};
 
-// Sort tasks by their scheduled date and time
-export const sortTasksBySchedule = (tasks: Task[], currentTime: Date = new Date()): Task[] => {
-  return tasks.sort((a, b) => {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Completed tasks go to the end
     if (a.completed && !b.completed) return 1;
     if (!a.completed && b.completed) return -1;

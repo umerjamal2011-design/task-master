@@ -37,6 +37,13 @@ interface SortableCategoryItemProps {
   prayerSettings?: any;
   onUpdatePrayerSettings?: any;
   isUpdatingPrayers?: boolean;
+  // Category ordering props
+  onMoveCategoryUp?: (categoryId: string) => void;
+  onMoveCategoryDown?: (categoryId: string) => void;
+  onMoveCategoryToTop?: (categoryId: string) => void;
+  onMoveCategoryToBottom?: (categoryId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 function SortableCategoryItem(props: SortableCategoryItemProps) {
@@ -69,7 +76,28 @@ function SortableCategoryItem(props: SortableCategoryItemProps) {
       
       {/* Add padding to make room for drag handle */}
       <div className="pl-2">
-        <CategorySection {...props} />
+        <CategorySection 
+          category={props.category}
+          tasks={props.tasks}
+          allTasks={props.allTasks}
+          onAddTask={props.onAddTask}
+          onToggleTaskComplete={props.onToggleTaskComplete}
+          onUpdateTask={props.onUpdateTask}
+          onDeleteTask={props.onDeleteTask}
+          onUpdateCategory={props.onUpdateCategory}
+          onDeleteCategory={props.onDeleteCategory}
+          onAddSubtask={props.onAddSubtask}
+          canDeleteCategory={props.canDeleteCategory}
+          prayerSettings={props.prayerSettings}
+          onUpdatePrayerSettings={props.onUpdatePrayerSettings}
+          isUpdatingPrayers={props.isUpdatingPrayers}
+          onMoveCategoryUp={props.onMoveCategoryUp}
+          onMoveCategoryDown={props.onMoveCategoryDown}
+          onMoveCategoryToTop={props.onMoveCategoryToTop}
+          onMoveCategoryToBottom={props.onMoveCategoryToBottom}
+          isFirst={props.isFirst}
+          isLast={props.isLast}
+        />
       </div>
     </div>
   );
@@ -124,6 +152,55 @@ export function SortableCategoryList({
     return orderA - orderB;
   });
 
+  // Category ordering functions
+  const moveCategoryUp = (categoryId: string) => {
+    const currentIndex = sortedCategories.findIndex(cat => cat.id === categoryId);
+    if (currentIndex > 0) {
+      const reorderedCategories = arrayMove(sortedCategories, currentIndex, currentIndex - 1);
+      const updatedCategories = reorderedCategories.map((category, index) => ({
+        ...category,
+        order: index
+      }));
+      onReorderCategories(updatedCategories);
+    }
+  };
+
+  const moveCategoryDown = (categoryId: string) => {
+    const currentIndex = sortedCategories.findIndex(cat => cat.id === categoryId);
+    if (currentIndex < sortedCategories.length - 1) {
+      const reorderedCategories = arrayMove(sortedCategories, currentIndex, currentIndex + 1);
+      const updatedCategories = reorderedCategories.map((category, index) => ({
+        ...category,
+        order: index
+      }));
+      onReorderCategories(updatedCategories);
+    }
+  };
+
+  const moveCategoryToTop = (categoryId: string) => {
+    const currentIndex = sortedCategories.findIndex(cat => cat.id === categoryId);
+    if (currentIndex > 0) {
+      const reorderedCategories = arrayMove(sortedCategories, currentIndex, 0);
+      const updatedCategories = reorderedCategories.map((category, index) => ({
+        ...category,
+        order: index
+      }));
+      onReorderCategories(updatedCategories);
+    }
+  };
+
+  const moveCategoryToBottom = (categoryId: string) => {
+    const currentIndex = sortedCategories.findIndex(cat => cat.id === categoryId);
+    if (currentIndex < sortedCategories.length - 1) {
+      const reorderedCategories = arrayMove(sortedCategories, currentIndex, sortedCategories.length - 1);
+      const updatedCategories = reorderedCategories.map((category, index) => ({
+        ...category,
+        order: index
+      }));
+      onReorderCategories(updatedCategories);
+    }
+  };
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
@@ -156,7 +233,7 @@ export function SortableCategoryList({
     >
       <SortableContext items={sortedCategories.map(cat => cat.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-3">
-          {sortedCategories.map((category) => {
+          {sortedCategories.map((category, index) => {
             const categoryTasks = tasks.filter(task => task.categoryId === category.id);
             return (
               <SortableCategoryItem
@@ -175,6 +252,12 @@ export function SortableCategoryList({
                 prayerSettings={prayerSettings}
                 onUpdatePrayerSettings={onUpdatePrayerSettings}
                 isUpdatingPrayers={isUpdatingPrayers}
+                onMoveCategoryUp={moveCategoryUp}
+                onMoveCategoryDown={moveCategoryDown}
+                onMoveCategoryToTop={moveCategoryToTop}
+                onMoveCategoryToBottom={moveCategoryToBottom}
+                isFirst={index === 0}
+                isLast={index === sortedCategories.length - 1}
               />
             );
           })}

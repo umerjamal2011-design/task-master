@@ -13,7 +13,7 @@ import { TaskItem } from './TaskItem';
 import { QuickDatePicker } from './QuickDatePicker';
 import { RepeatSettings } from './RepeatSettings';
 import { PrayerLocationManager } from './PrayerLocationManager';
-import { Plus, Folder, Trash, Check, X, Pencil, Palette, MapPin, Warning } from '@phosphor-icons/react';
+import { Plus, Folder, Trash, Check, X, Pencil, Palette, MapPin, Warning, CaretUp, CaretDown, ArrowUp, ArrowDown } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CategorySectionProps {
@@ -32,6 +32,13 @@ interface CategorySectionProps {
   prayerSettings?: PrayerSettings;
   onUpdatePrayerSettings?: (settings: PrayerSettings) => Promise<void>;
   isUpdatingPrayers?: boolean;
+  // Category ordering props
+  onMoveCategoryUp?: (categoryId: string) => void;
+  onMoveCategoryDown?: (categoryId: string) => void;
+  onMoveCategoryToTop?: (categoryId: string) => void;
+  onMoveCategoryToBottom?: (categoryId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 export function CategorySection({
@@ -48,7 +55,13 @@ export function CategorySection({
   canDeleteCategory,
   prayerSettings,
   onUpdatePrayerSettings,
-  isUpdatingPrayers = false
+  isUpdatingPrayers = false,
+  onMoveCategoryUp,
+  onMoveCategoryDown,
+  onMoveCategoryToTop,
+  onMoveCategoryToBottom,
+  isFirst = false,
+  isLast = false
 }: CategorySectionProps) {
   const [showAddTask, setShowAddTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -235,6 +248,59 @@ export function CategorySection({
             
             {!isEditingCategory && (
               <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Category ordering controls */}
+                {(onMoveCategoryUp || onMoveCategoryDown || onMoveCategoryToTop || onMoveCategoryToBottom) && (
+                  <div className="flex items-center gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Top/Bottom controls */}
+                    <div className="flex flex-col gap-0.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onMoveCategoryToTop?.(category.id)}
+                        disabled={isFirst}
+                        className="h-5 w-6 p-0 hover:bg-secondary"
+                        title="Move to top"
+                      >
+                        <ArrowUp size={12} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onMoveCategoryToBottom?.(category.id)}
+                        disabled={isLast}
+                        className="h-5 w-6 p-0 hover:bg-secondary"
+                        title="Move to bottom"
+                      >
+                        <ArrowDown size={12} />
+                      </Button>
+                    </div>
+                    
+                    {/* Up/Down controls */}
+                    <div className="flex flex-col gap-0.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onMoveCategoryUp?.(category.id)}
+                        disabled={isFirst}
+                        className="h-5 w-6 p-0 hover:bg-secondary"
+                        title="Move up"
+                      >
+                        <CaretUp size={12} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onMoveCategoryDown?.(category.id)}
+                        disabled={isLast}
+                        className="h-5 w-6 p-0 hover:bg-secondary"
+                        title="Move down"
+                      >
+                        <CaretDown size={12} />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Desktop buttons */}
                 <div className="hidden sm:flex items-center gap-2">
                   <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>

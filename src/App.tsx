@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Task, Category, PrayerTimes, LocationData, PrayerSettings } from '@/types';
 import { SortableCategoryList } from '@/components/SortableCategoryList';
+import { SortableCategoryNavigation } from '@/components/SortableCategoryNavigation';
 import { DailyView } from '@/components/DailyView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1028,111 +1029,18 @@ function App() {
                 </div>
 
                 {/* Category Navigation */}
-                <div className="space-y-2">
-                  {(categories || [])
-                    .sort((a, b) => {
-                      const orderA = a.order ?? new Date(a.createdAt).getTime();
-                      const orderB = b.order ?? new Date(b.createdAt).getTime();
-                      return orderA - orderB;
-                    })
-                    .map((category) => {
-                      const categoryTasks = nonRepeatedTasks.filter(task => task.categoryId === category.id);
-                      const completedCount = categoryTasks.filter(task => task.completed).length;
-                      const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
-                    
-                    return (
-                      <div key={category.id} className="space-y-1">
-                        <div className="flex items-center gap-1">
-                          {/* Quick Add Task Button */}
-                          <button
-                            onClick={() => setQuickAddTaskCategory(quickAddTaskCategory === category.id ? null : category.id)}
-                            className="p-1.5 rounded-md hover:bg-secondary/50 transition-colors flex-shrink-0"
-                            title="Add task to this category"
-                            style={{ 
-                              color: category.color || '#3B82F6',
-                              backgroundColor: quickAddTaskCategory === category.id ? `${category.color || '#3B82F6'}20` : 'transparent'
-                            }}
-                          >
-                            <Plus size={14} />
-                          </button>
-                          
-                          {/* Category Button */}
-                          <button
-                            onClick={() => scrollToCategory(category.id)}
-                            className="flex-1 text-left p-3 rounded-lg bg-card hover:bg-secondary/50 transition-colors border border-border hover:border-border group min-w-0"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <div 
-                                  className="w-3 h-3 rounded-full flex-shrink-0" 
-                                  style={{ backgroundColor: category.color || '#3B82F6' }}
-                                />
-                                <span className="font-medium text-sm truncate">{category.name}</span>
-                              </div>
-                              <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
-                                {completedCount}/{categoryTasks.length}
-                              </Badge>
-                            </div>
-                            {categoryTasks.length > 0 && (
-                              <div className="space-y-1">
-                                <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                                  <motion.div
-                                    className="h-full rounded-full"
-                                    style={{ backgroundColor: category.color || '#3B82F6' }}
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${categoryProgress}%` }}
-                                    transition={{ duration: 0.3 }}
-                                  />
-                                </div>
-                                <div className="flex justify-between text-xs text-muted-foreground">
-                                  <span>{categoryProgress}%</span>
-                                  <span>{categoryTasks.length - completedCount} left</span>
-                                </div>
-                              </div>
-                            )}
-                          </button>
-                        </div>
-                        
-                        {/* Quick Add Task Input */}
-                        <AnimatePresence>
-                          {quickAddTaskCategory === category.id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="pl-6 pr-2"
-                            >
-                              <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
-                                   style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
-                                <div className="relative flex-1 min-w-0">
-                                  <Input
-                                    placeholder="Quick task..."
-                                    value={quickTaskTitle}
-                                    onChange={(e) => setQuickTaskTitle(e.target.value.substring(0, 150))}
-                                    onKeyDown={(e) => handleQuickTaskKeyDown(e, category.id)}
-                                    autoFocus
-                                    className="flex-1 h-8 text-sm pr-12"
-                                  />
-                                  <div className="absolute right-2 top-2 text-xs text-muted-foreground pointer-events-none">
-                                    {quickTaskTitle.length}/150
-                                  </div>
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => addQuickTask(category.id)}
-                                  disabled={!quickTaskTitle.trim()}
-                                  className="h-8 px-3 flex-shrink-0"
-                                >
-                                  <Plus size={12} />
-                                </Button>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-4">
+                  <SortableCategoryNavigation
+                    categories={categories || []}
+                    tasks={validTasks}
+                    onReorderCategories={reorderCategories}
+                    onScrollToCategory={scrollToCategory}
+                    quickAddTaskCategory={quickAddTaskCategory}
+                    onQuickAddTaskCategory={setQuickAddTaskCategory}
+                    quickTaskTitle={quickTaskTitle}
+                    onQuickTaskTitleChange={setQuickTaskTitle}
+                    onQuickTaskSubmit={addQuickTask}
+                  />
                   
                   {/* Add Category Button in Sidebar */}
                   <div className="pt-2 border-t border-border/30 space-y-2">
@@ -1307,114 +1215,20 @@ function App() {
                       </div>
 
                       {/* Category Navigation */}
-                      <div className="space-y-2">
-                        {(categories || [])
-                          .sort((a, b) => {
-                            const orderA = a.order ?? new Date(a.createdAt).getTime();
-                            const orderB = b.order ?? new Date(b.createdAt).getTime();
-                            return orderA - orderB;
-                          })
-                          .map((category) => {
-                            const categoryTasks = nonRepeatedTasks.filter(task => task.categoryId === category.id);
-                            const completedCount = categoryTasks.filter(task => task.completed).length;
-                            const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
-                          
-                          return (
-                            <div key={category.id} className="space-y-1">
-                              <div className="flex items-center gap-1">
-                                {/* Quick Add Task Button */}
-                                <button
-                                  onClick={() => setQuickAddTaskCategory(quickAddTaskCategory === category.id ? null : category.id)}
-                                  className="p-1.5 rounded-md hover:bg-secondary/50 transition-colors flex-shrink-0"
-                                  title="Add task to this category"
-                                  style={{ 
-                                    color: category.color || '#3B82F6',
-                                    backgroundColor: quickAddTaskCategory === category.id ? `${category.color || '#3B82F6'}20` : 'transparent'
-                                  }}
-                                >
-                                  <Plus size={14} />
-                                </button>
-                                
-                                {/* Category Button */}
-                                <button
-                                  onClick={() => {
-                                    scrollToCategory(category.id);
-                                    setIsMobileSidebarOpen(false);
-                                  }}
-                                  className="flex-1 text-left p-3 rounded-lg bg-card hover:bg-secondary/50 transition-colors border border-border hover:border-border group min-w-0"
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                                      <div 
-                                        className="w-3 h-3 rounded-full flex-shrink-0" 
-                                        style={{ backgroundColor: category.color || '#3B82F6' }}
-                                      />
-                                      <span className="font-medium text-sm truncate">{category.name}</span>
-                                    </div>
-                                    <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
-                                      {completedCount}/{categoryTasks.length}
-                                    </Badge>
-                                  </div>
-                                  {categoryTasks.length > 0 && (
-                                    <div className="space-y-1">
-                                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                                        <motion.div
-                                          className="h-full rounded-full"
-                                          style={{ backgroundColor: category.color || '#3B82F6' }}
-                                          initial={{ width: 0 }}
-                                          animate={{ width: `${categoryProgress}%` }}
-                                          transition={{ duration: 0.3 }}
-                                        />
-                                      </div>
-                                      <div className="flex justify-between text-xs text-muted-foreground">
-                                        <span>{categoryProgress}%</span>
-                                        <span>{categoryTasks.length - completedCount} left</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </button>
-                              </div>
-                              
-                              {/* Quick Add Task Input */}
-                              <AnimatePresence>
-                                {quickAddTaskCategory === category.id && (
-                                  <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="pl-6 pr-2"
-                                  >
-                                    <div className="flex gap-2 p-2 bg-secondary/20 rounded-md border border-dashed"
-                                         style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
-                                      <div className="relative flex-1 min-w-0">
-                                        <Input
-                                          placeholder="Quick task..."
-                                          value={quickTaskTitle}
-                                          onChange={(e) => setQuickTaskTitle(e.target.value.substring(0, 150))}
-                                          onKeyDown={(e) => handleQuickTaskKeyDown(e, category.id)}
-                                          autoFocus
-                                          className="flex-1 h-8 text-sm pr-12"
-                                        />
-                                        <div className="absolute right-2 top-2 text-xs text-muted-foreground pointer-events-none">
-                                          {quickTaskTitle.length}/150
-                                        </div>
-                                      </div>
-                                      <Button 
-                                        size="sm" 
-                                        onClick={() => addQuickTask(category.id)}
-                                        disabled={!quickTaskTitle.trim()}
-                                        className="h-8 px-3 flex-shrink-0"
-                                      >
-                                        <Plus size={12} />
-                                      </Button>
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                          );
-                        })}
+                      <div className="space-y-4">
+                        <SortableCategoryNavigation
+                          categories={categories || []}
+                          tasks={validTasks}
+                          onReorderCategories={reorderCategories}
+                          onScrollToCategory={scrollToCategory}
+                          quickAddTaskCategory={quickAddTaskCategory}
+                          onQuickAddTaskCategory={setQuickAddTaskCategory}
+                          quickTaskTitle={quickTaskTitle}
+                          onQuickTaskTitleChange={setQuickTaskTitle}
+                          onQuickTaskSubmit={addQuickTask}
+                          isMobile={true}
+                          onMobileClose={() => setIsMobileSidebarOpen(false)}
+                        />
                         
                         {/* Add Category Button in Mobile Sidebar */}
                         <div className="pt-2 border-t border-border/30 space-y-2">

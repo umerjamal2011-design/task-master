@@ -176,19 +176,28 @@ export function TaskItem({
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    const today = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    const todayStr = today.toISOString().split('T')[0];
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
     
-    if (dateStr === today) {
+    if (dateStr === todayStr) {
       return 'Today';
+    } else if (dateStr === yesterdayStr) {
+      return 'Yesterday';
     } else if (dateStr === tomorrowStr) {
       return 'Tomorrow';
     } else {
+      // For dates further away, show month and day (and year if different)
       return date.toLocaleDateString('en-US', { 
         month: 'short', 
-        day: 'numeric' 
+        day: 'numeric',
+        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
       });
     }
   };

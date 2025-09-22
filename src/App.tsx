@@ -43,6 +43,7 @@ function App() {
   const [locationPermissionState, setLocationPermissionState] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isForceSaving, setIsForceSaving] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Force refresh key
 
   // Check location permission status
   useEffect(() => {
@@ -151,6 +152,16 @@ function App() {
         }
       }
       
+      // Check if day has changed and handle it
+      const currentDate = new Date().toISOString().split('T')[0];
+      const lastUpdateDate = localStorage.getItem('lastUpdateDate');
+      
+      if (lastUpdateDate && lastUpdateDate !== currentDate) {
+        console.log(`Day change detected during refresh: ${lastUpdateDate} -> ${currentDate}`);
+        localStorage.setItem('lastUpdateDate', currentDate);
+        await handleDayChange();
+      }
+      
       // If prayer times are enabled, update them
       if (freshPrayerSettings?.enabled) {
         console.log('Updating prayer times...');
@@ -163,6 +174,12 @@ function App() {
       } else {
         document.documentElement.classList.remove('dark');
       }
+      
+      // Force component re-renders by updating key state
+      setTimeout(() => {
+        setSelectedDate(current => current); // Trigger daily view refresh
+        setRefreshKey(prev => prev + 1); // Force refresh
+      }, 100);
       
       console.log('Data refresh completed successfully');
       toast.success('All data refreshed successfully');
@@ -488,11 +505,16 @@ function App() {
 
   // Handle day change detection and cleanup
   const handleDayChange = async () => {
-    console.log('Day change detected, performing cleanup...');
+    console.log('Day change detected, performing comprehensive cleanup...');
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    console.log(`Day transition: from ${yesterdayStr} to ${today}`);
     
     // Clean up overdue scheduled tasks (tasks scheduled for previous days that aren't repeating)
     setTasks(currentTasks => {
-      const today = new Date().toISOString().split('T')[0];
       const cleanedTasks = (currentTasks || []).filter(task => {
         // Keep tasks that:
         // 1. Are not scheduled for a specific date
@@ -525,7 +547,16 @@ function App() {
       await updateDailyPrayerTimes();
     }
     
-    toast.success('Daily update completed');
+    // Force a state refresh to update any cached data
+    setTimeout(() => {
+      console.log('Forcing state refresh after day change...');
+      setTasks(current => [...(current || [])]);
+      setCategories(current => [...(current || [])]);
+      setRefreshKey(prev => prev + 1); // Force refresh
+    }, 100);
+    
+    console.log(`Daily update completed for ${today}`);
+    toast.success(`Daily update completed - Welcome to ${new Date().toLocaleDateString()}`);
   };
 
   // Initialize app and check for day changes on startup
@@ -540,6 +571,7 @@ function App() {
       
       if (lastUpdateDate && lastUpdateDate !== currentDate) {
         console.log(`Day changed from ${lastUpdateDate} to ${currentDate}, running day change handler`);
+        localStorage.setItem('lastUpdateDate', currentDate);
         await handleDayChange();
       } else if (!lastUpdateDate) {
         console.log('First app launch, setting initial date');
@@ -552,6 +584,8 @@ function App() {
         }
       } else {
         console.log('Same day, no day change detected');
+        // Still update localStorage to ensure it's current
+        localStorage.setItem('lastUpdateDate', currentDate);
       }
     };
     
@@ -559,24 +593,30 @@ function App() {
     initializeApp();
   }, []); // Run only on mount
 
-  // Check for day changes and update accordingly  
+  // Check for day changes and update accordingly - runs more frequently  
   useEffect(() => {
-    const checkDayChange = () => {
+    const checkDayChange = async () => {
       const currentDate = new Date().toISOString().split('T')[0];
       const lastUpdateDate = localStorage.getItem('lastUpdateDate');
       
       if (lastUpdateDate && lastUpdateDate !== currentDate) {
-        console.log(`Day changed from ${lastUpdateDate} to ${currentDate}`);
-        handleDayChange();
+        console.log(`Day changed from ${lastUpdateDate} to ${currentDate} - running handler`);
+        localStorage.setItem('lastUpdateDate', currentDate);
+        await handleDayChange();
+      } else if (!lastUpdateDate) {
+        // Set initial date if missing
+        localStorage.setItem('lastUpdateDate', currentDate);
+        console.log(`Set initial last update date to ${currentDate}`);
       }
-      
-      localStorage.setItem('lastUpdateDate', currentDate);
     };
     
-    // Check every 5 minutes for day changes (more frequent than before)
-    const interval = setInterval(checkDayChange, 5 * 60 * 1000);
+    // Check immediately on effect run
+    checkDayChange();
+    
+    // Check every 2 minutes for day changes (more frequent monitoring)
+    const interval = setInterval(checkDayChange, 2 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [prayerSettings?.enabled]);
+  }, [prayerSettings?.enabled]); // Remove handleDayChange from dependencies to avoid issues
 
   // Update prayer times daily
   useEffect(() => {
@@ -1806,19 +1846,32 @@ function App() {
                 <div className="mb-4">
                   <div className="flex justify-between items-center">
                     <h2 className="text-lg font-semibold text-foreground">Daily Schedule</h2>
-                    <Button
-                      variant="outline"
-                      onClick={handleDayChange}
-                      disabled={isRefreshing}
-                      className="gap-2"
-                      size="sm"
-                    >
-                      <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                      Update Daily
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={refreshTasks}
+                        disabled={isRefreshing}
+                        className="gap-2"
+                        size="sm"
+                      >
+                        <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                        Refresh
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleDayChange}
+                        disabled={isRefreshing}
+                        className="gap-2"
+                        size="sm"
+                      >
+                        <Calendar size={16} />
+                        Update Daily
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <DailyView
+                  key={`daily-${selectedDate}-${refreshKey}-${validTasks.length}`}
                   tasks={validTasks}
                   categories={categories || []}
                   selectedDate={selectedDate}

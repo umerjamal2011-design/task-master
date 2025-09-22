@@ -138,18 +138,28 @@ export function DailyView({
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
     
-    if (dateStr === today.toISOString().split('T')[0]) {
+    const todayStr = today.toISOString().split('T')[0];
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    if (dateStr === todayStr) {
       return 'Today';
-    } else if (dateStr === tomorrow.toISOString().split('T')[0]) {
+    } else if (dateStr === yesterdayStr) {
+      return 'Yesterday';
+    } else if (dateStr === tomorrowStr) {
       return 'Tomorrow';
     } else {
+      // For dates further away, show full date
       return date.toLocaleDateString('en-US', { 
         weekday: 'long', 
         month: 'short', 
-        day: 'numeric' 
+        day: 'numeric',
+        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
       });
     }
   };

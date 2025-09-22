@@ -12,7 +12,7 @@ import { RepeatIndicator } from '@/components/RepeatIndicator';
 import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot, Repeat } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isRepeatingTask } from '@/lib/repeat-utils';
-import { getRelativeDateLabel, getTimeLabel, isTaskOverdue, getTaskStatus } from '@/lib/date-utils';
+import { getDateLabel, getTimeLabel, isTaskOverdue, getTaskStatus } from '@/lib/date-utils';
 
 interface TaskItemProps {
   task: Task;
@@ -178,7 +178,7 @@ export function TaskItem({
   };
 
   const formatDate = (dateStr: string) => {
-    return getRelativeDateLabel(dateStr, currentTime);
+    return getDateLabel(dateStr, currentTime);
   };
 
   const getPriorityColor = (priority?: string) => {

@@ -1094,11 +1094,7 @@ function App() {
                           {/* Category Button */}
                           <button
                             onClick={() => scrollToCategory(category.id)}
-                            className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group min-w-0"
-                            style={{
-                              background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
-                              borderColor: `${category.color || '#3B82F6'}30`
-                            }}
+                            className="flex-1 text-left p-3 rounded-lg bg-card hover:bg-secondary/50 transition-colors border border-border hover:border-border group min-w-0"
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1374,11 +1370,7 @@ function App() {
                                     scrollToCategory(category.id);
                                     setIsMobileSidebarOpen(false);
                                   }}
-                                  className="flex-1 text-left p-3 rounded-lg bg-background hover:bg-secondary/30 transition-colors border border-border/50 hover:border-border group min-w-0"
-                                  style={{
-                                    background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
-                                    borderColor: `${category.color || '#3B82F6'}30`
-                                  }}
+                                  className="flex-1 text-left p-3 rounded-lg bg-card hover:bg-secondary/50 transition-colors border border-border hover:border-border group min-w-0"
                                 >
                                   <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2 min-w-0 flex-1">

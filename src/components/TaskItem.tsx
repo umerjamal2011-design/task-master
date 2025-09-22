@@ -179,9 +179,6 @@ export function TaskItem({
           task.completed ? 'bg-muted/30' : 'bg-card hover:shadow-sm'
         } ${depth > 0 ? 'border-l-2' : 'border-l-3'}`}
         style={{
-          background: task.completed 
-            ? undefined 
-            : `linear-gradient(90deg, ${categoryColor}18 0%, ${categoryColor}10 30%, transparent 65%)`,
           borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${task.completed ? '#94A3B8' : categoryColor}`
         }}
       >

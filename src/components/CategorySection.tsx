@@ -173,9 +173,8 @@ export function CategorySection({
       transition={{ duration: 0.3 }}
     >
       <Card 
-        className="w-full group" 
+        className="w-full group border" 
         style={{
-          background: `linear-gradient(135deg, ${category.color || '#3B82F6'}12 0%, ${category.color || '#3B82F6'}05 100%)`,
           borderColor: `${category.color || '#3B82F6'}40`
         }}
       >

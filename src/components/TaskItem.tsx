@@ -442,11 +442,11 @@ export function TaskItem({
                     {task.priority && task.priority !== 'medium' && (
                       <Badge 
                         variant="outline" 
-                        className="px-1 py-0"
+                        className={`px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
                         style={{
-                          backgroundColor: getPriorityColor(task.priority).bg,
-                          color: getPriorityColor(task.priority).color,
-                          borderColor: getPriorityColor(task.priority).border,
+                          backgroundColor: task.completed ? '#94A3B850' : getPriorityColor(task.priority).bg,
+                          color: task.completed ? '#64748B' : getPriorityColor(task.priority).color,
+                          borderColor: task.completed ? '#94A3B870' : getPriorityColor(task.priority).border,
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'
@@ -459,11 +459,11 @@ export function TaskItem({
                     {task.scheduledDate && (
                       <Badge 
                         variant="outline" 
-                        className="flex items-center gap-0.5 px-1 py-0"
+                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
                         style={{
-                          backgroundColor: `${categoryColor}12`,
-                          borderColor: `${categoryColor}40`,
-                          color: categoryColor,
+                          backgroundColor: task.completed ? '#94A3B820' : `${categoryColor}12`,
+                          borderColor: task.completed ? '#94A3B850' : `${categoryColor}40`,
+                          color: task.completed ? '#64748B' : categoryColor,
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'
@@ -477,11 +477,11 @@ export function TaskItem({
                     {task.scheduledTime && (
                       <Badge 
                         variant="outline" 
-                        className="flex items-center gap-0.5 px-1 py-0"
+                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
                         style={{
-                          backgroundColor: `${categoryColor}12`,
-                          borderColor: `${categoryColor}40`,
-                          color: categoryColor,
+                          backgroundColor: task.completed ? '#94A3B820' : `${categoryColor}12`,
+                          borderColor: task.completed ? '#94A3B850' : `${categoryColor}40`,
+                          color: task.completed ? '#64748B' : categoryColor,
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'
@@ -496,11 +496,11 @@ export function TaskItem({
                     {task.isRepeatedInstance && (
                       <Badge 
                         variant="outline" 
-                        className="flex items-center gap-0.5 px-1 py-0"
+                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
                         style={{
-                          backgroundColor: '#E0F2FE',
-                          borderColor: '#0EA5E9',
-                          color: '#0284C7',
+                          backgroundColor: task.completed ? '#94A3B820' : '#E0F2FE',
+                          borderColor: task.completed ? '#94A3B850' : '#0EA5E9',
+                          color: task.completed ? '#64748B' : '#0284C7',
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'
@@ -518,11 +518,11 @@ export function TaskItem({
                     {depth === 0 && (
                       <Badge 
                         variant="secondary" 
-                        className="px-1 py-0"
+                        className={`px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
                         style={{
-                          backgroundColor: `${categoryColor}20`,
-                          color: categoryColor,
-                          borderColor: `${categoryColor}40`,
+                          backgroundColor: task.completed ? '#94A3B830' : `${categoryColor}20`,
+                          color: task.completed ? '#64748B' : categoryColor,
+                          borderColor: task.completed ? '#94A3B850' : `${categoryColor}40`,
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'

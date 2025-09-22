@@ -1,11 +1,11 @@
 import { Task } from '@/types/index';
 
-// Get relative date label for tasks
-export const getDateLabel = (date: string, currentTime: Date = new Date()): string => {
   const taskDate = new Date(date);
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
   const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
+  const yesterday = new Date(today
+  
+  
+  if (taskDateOnly.getTime() === today.g
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   
@@ -14,54 +14,54 @@ export const getDateLabel = (date: string, currentTime: Date = new Date()): stri
   // Compare dates
   if (taskDateOnly.getTime() === today.getTime()) {
     return 'Today';
-  } else if (taskDateOnly.getTime() === tomorrow.getTime()) {
-    return 'Tomorrow';
-  } else if (taskDateOnly.getTime() === yesterday.getTime()) {
-    return 'Yesterday';
-  } else {
-    const daysDiff = Math.floor((taskDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysDiff > 0) {
-      if (daysDiff <= 7) {
-        return `In ${daysDiff} day${daysDiff > 1 ? 's' : ''}`;
-      } else {
-        const weeksDiff = Math.floor(daysDiff / 7);
-        return `In ${weeksDiff} week${weeksDiff > 1 ? 's' : ''}`;
-      }
-    } else {
-      const daysAgo = Math.abs(daysDiff);
       if (daysAgo <= 7) {
-        return `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
       } else {
-        return taskDate.toLocaleDateString('en-US', {
           month: 'short', 
-          day: 'numeric',
-          year: taskDate.getFullYear() !== currentTime.getFullYear() ? 'numeric' : undefined
-        });
+          year: taskDat
       }
-    }
   }
-};
 
-// Get time label with minutes until/since for today's tasks
-export const getTimeLabel = (time: string, currentTime: Date = new Date()): string => {
-  const [hours, minutes] = time.split(':').map(Number);
-  const taskTime = new Date(currentTime);
-  taskTime.setHours(hours, minutes, 0, 0);
+export const getTimeLab
+  const taskTime = new Dat
   
-  const timeString = taskTime.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
+    hour: 'num
     hour12: true
-  });
   
-  const timeDiff = taskTime.getTime() - currentTime.getTime();
-  const minutesUntil = Math.round(timeDiff / (1000 * 60));
-  
-  if (Math.abs(minutesUntil) < 1) {
-    return `${timeString} (now)`;
+  const
+  if (Math.a
   } else if (minutesUntil > 0) {
-    if (minutesUntil < 60) {
+      return `${timeStrin
+      const hoursUntil = Math.floor(minutesUntil / 60);
+    } else {
+    }
+    const minutesSince = M
+      return `${timeStrin
+      const hoursSince = Math.floor(minutesSince / 60);
+    } else 
+    }
+};
+// 
+  
+
+  
+    // If both have scheduled date and time, compare datetime
+    const taskDateTime = new Date(taskDate);
+    
+  }
+  
+
+export const getTask
+  
+  const today = 
+  
+  
+    taskDateTime.setHours(hours, minutes, 0, 0);
+    if (taskDateTime < currentTime) {
+  
+    }
+
+    return 'overdue';
+    return 'current';
       return `${timeString} (in ${minutesUntil}m)`;
     } else if (minutesUntil < 24 * 60) {
       const hoursUntil = Math.floor(minutesUntil / 60);
@@ -126,13 +126,13 @@ export const getTaskStatus = (task: Task, currentTime: Date = new Date()): 'over
   } else if (taskDateOnly.getTime() === today.getTime()) {
     return 'current';
   } else {
-    return 'upcoming';
-  }
-};
 
-// Sort tasks by their scheduled time and status
+  }
+
+
+
 export const sortTasksBySchedule = (tasks: Task[], currentTime: Date = new Date()): Task[] => {
-  return [...tasks].sort((a, b) => {
+
     // Completed tasks go to the bottom
     if (a.completed && !b.completed) return 1;
     if (!a.completed && b.completed) return -1;
@@ -154,7 +154,7 @@ export const sortTasksBySchedule = (tasks: Task[], currentTime: Date = new Date(
       if (!a.scheduledTime && b.scheduledTime) return 1;
 
       return 0;
-    }
+
 
     // If only one has a scheduled date, it comes first
     if (a.scheduledDate && !b.scheduledDate) return -1;

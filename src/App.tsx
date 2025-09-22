@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
-import { Task, Category, PrayerTimes, LocationData, PrayerSettings } from '@/types';
+import { Task, Category, PrayerTimes, LocationData, PrayerSettings } from '@/types/index';
 import { SortableCategoryList } from '@/components/SortableCategoryList';
 import { SortableCategoryNavigation } from '@/components/SortableCategoryNavigation';
 import { DailyView } from '@/components/DailyView';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise, FloppyDisk } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise, FloppyDisk, Clock } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'sonner';
 import { getTasksForDate, isRepeatingTask } from '@/lib/repeat-utils';
@@ -44,6 +44,8 @@ function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isForceSaving, setIsForceSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Force refresh key
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [userLocation, setUserLocation] = useState<LocationData | null>(null);
 
   // Check location permission status
   useEffect(() => {
@@ -70,8 +72,151 @@ function App() {
     }
   }, [isDarkMode]);
 
+  // Clock functionality - update time every second
+  useEffect(() => {
+    const updateClock = () => {
+      setCurrentTime(new Date());
+    };
+
+    // Update immediately
+    updateClock();
+    
+    // Update every second
+    const interval = setInterval(updateClock, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load user location on app start
+  useEffect(() => {
+    const loadUserLocation = async () => {
+      try {
+        // Check if we have prayer settings with location first
+        if (prayerSettings?.location) {
+          setUserLocation(prayerSettings.location);
+          return;
+        }
+
+        // Otherwise, try to get current location
+        const location = await getCurrentLocation();
+        setUserLocation(location);
+      } catch (error) {
+        console.log('Could not load user location for clock:', error);
+        // Set fallback location with browser timezone
+        setUserLocation({
+          city: 'Unknown',
+          country: 'Unknown',
+          latitude: 0,
+          longitude: 0,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        });
+      }
+    };
+
+    loadUserLocation();
+  }, []);
+
+  // Update location when prayer settings change
+  useEffect(() => {
+    if (prayerSettings?.location) {
+      setUserLocation(prayerSettings.location);
+    }
+  }, [prayerSettings?.location]);
+
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  // Clock component for sidebar
+  const ClockDisplay = () => {
+    const formatTime = (date: Date, timezone?: string) => {
+      try {
+        // Detect user's 12/24 hour preference from their locale
+        const testFormat = new Date().toLocaleTimeString();
+        const is12Hour = testFormat.includes('AM') || testFormat.includes('PM');
+        
+        const options: Intl.DateTimeFormatOptions = {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: is12Hour,
+          timeZone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+        return date.toLocaleTimeString('en-US', options);
+      } catch (error) {
+        // Fallback if timezone is invalid
+        return date.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: true 
+        });
+      }
+    };
+
+    const formatDate = (date: Date, timezone?: string) => {
+      try {
+        const options: Intl.DateTimeFormatOptions = {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+        return date.toLocaleDateString('en-US', options);
+      } catch (error) {
+        // Fallback if timezone is invalid
+        return date.toLocaleDateString('en-US', { 
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric' 
+        });
+      }
+    };
+
+    const timezone = userLocation?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const locationText = userLocation?.city !== 'Unknown' && userLocation?.city
+      ? `${userLocation.city}, ${userLocation.country}`
+      : timezone.split('/').pop()?.replace('_', ' ') || 'Local Time';
+
+    return (
+      <Card className="mb-6 bg-secondary/20 border-secondary/40 hover:bg-secondary/30 transition-colors duration-200">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-full bg-primary/10">
+              <Clock size={18} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              {/* Time Display */}
+              <div className="font-mono text-lg font-bold text-foreground mb-1 tracking-wide">
+                {formatTime(currentTime, timezone)}
+              </div>
+              
+              {/* Date Display */}
+              <div className="text-sm text-muted-foreground mb-2 font-medium">
+                {formatDate(currentTime, timezone)}
+              </div>
+              
+              {/* Location Display */}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                <MapPin size={12} className="flex-shrink-0" />
+                <span className="truncate font-medium">
+                  {locationText}
+                </span>
+              </div>
+              
+              {/* Timezone Display */}
+              {timezone && (
+                <div className="text-xs text-muted-foreground/60">
+                  {timezone.includes('/') ? timezone.replace('_', ' ') : timezone}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   // Function to force save all data to KV storage
@@ -853,6 +998,26 @@ function App() {
       }
     };
     
+    // Debug function for clock and timing
+    (window as any).showClockInfo = () => {
+      console.log('=== CLOCK INFO ===');
+      console.log('Current time:', currentTime);
+      console.log('User location:', userLocation);
+      console.log('System timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+      console.log('Prayer settings location:', prayerSettings?.location);
+      console.log('Last update date:', localStorage.getItem('lastUpdateDate'));
+      console.log('Current date string:', new Date().toISOString().split('T')[0]);
+      
+      if (userLocation?.timezone) {
+        try {
+          console.log('Time in user timezone:', new Date().toLocaleString('en-US', { timeZone: userLocation.timezone }));
+        } catch (error) {
+          console.log('Error formatting time in user timezone:', error);
+        }
+      }
+      console.log('=== END CLOCK INFO ===');
+    };
+    
     // Manual cleanup function (for testing)
     (window as any).manualCleanup = () => {
       console.log('Running manual cleanup...');
@@ -1312,6 +1477,9 @@ function App() {
               <p className="text-sm text-muted-foreground">Organize your day</p>
             </div>
 
+            {/* Clock Display */}
+            <ClockDisplay />
+
             {/* Progress Stats */}
             {totalTasks > 0 && (
               <Card className="mb-6 bg-primary/5 border-primary/20">
@@ -1535,6 +1703,9 @@ function App() {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Clock Display */}
+                  <ClockDisplay />
 
                   {/* Progress Stats */}
                   {totalTasks > 0 && (

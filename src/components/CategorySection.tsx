@@ -32,6 +32,7 @@ interface CategorySectionProps {
   prayerSettings?: PrayerSettings;
   onUpdatePrayerSettings?: (settings: PrayerSettings) => Promise<void>;
   isUpdatingPrayers?: boolean;
+  getMissedPrayersCount?: (prayerName: string) => number;
   // Category ordering props
   onMoveCategoryUp?: (categoryId: string) => void;
   onMoveCategoryDown?: (categoryId: string) => void;
@@ -56,6 +57,7 @@ export function CategorySection({
   prayerSettings,
   onUpdatePrayerSettings,
   isUpdatingPrayers = false,
+  getMissedPrayersCount,
   onMoveCategoryUp,
   onMoveCategoryDown,
   onMoveCategoryToTop,
@@ -240,6 +242,26 @@ export function CategorySection({
                       >
                         {completedTasks.length} completed
                       </Badge>
+                    )}
+                    
+                    {/* Missed prayers counter for prayer category */}
+                    {isPrayerCategory && getMissedPrayersCount && (
+                      <>
+                        {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map(prayerName => {
+                          const missedCount = getMissedPrayersCount(prayerName);
+                          if (missedCount === 0) return null;
+                          
+                          return (
+                            <Badge 
+                              key={prayerName}
+                              variant="destructive" 
+                              className="text-xs bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-200 dark:border-red-800"
+                            >
+                              {prayerName}: {missedCount} missed
+                            </Badge>
+                          );
+                        })}
+                      </>
                     )}
                   </div>
                 </div>

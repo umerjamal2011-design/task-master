@@ -22,6 +22,9 @@ import { Category, Task } from '@/types';
 import { CategorySection } from './CategorySection';
 import { DotsSixVertical } from '@phosphor-icons/react';
 
+const DEFAULT_CATEGORY_ID = 'general';
+const PRAYER_CATEGORY_ID = 'prayers';
+
 interface SortableCategoryItemProps {
   category: Category;
   tasks: Task[];
@@ -37,6 +40,7 @@ interface SortableCategoryItemProps {
   prayerSettings?: any;
   onUpdatePrayerSettings?: any;
   isUpdatingPrayers?: boolean;
+  getMissedPrayersCount?: (prayerName: string) => number;
   // Category ordering props
   onMoveCategoryUp?: (categoryId: string) => void;
   onMoveCategoryDown?: (categoryId: string) => void;
@@ -91,6 +95,7 @@ function SortableCategoryItem(props: SortableCategoryItemProps) {
           prayerSettings={props.prayerSettings}
           onUpdatePrayerSettings={props.onUpdatePrayerSettings}
           isUpdatingPrayers={props.isUpdatingPrayers}
+          getMissedPrayersCount={props.getMissedPrayersCount}
           onMoveCategoryUp={props.onMoveCategoryUp}
           onMoveCategoryDown={props.onMoveCategoryDown}
           onMoveCategoryToTop={props.onMoveCategoryToTop}
@@ -117,6 +122,7 @@ interface SortableCategoryListProps {
   prayerSettings?: any;
   onUpdatePrayerSettings?: any;
   isUpdatingPrayers?: boolean;
+  getMissedPrayersCount?: (prayerName: string) => number;
 }
 
 export function SortableCategoryList({
@@ -132,7 +138,8 @@ export function SortableCategoryList({
   onReorderCategories,
   prayerSettings,
   onUpdatePrayerSettings,
-  isUpdatingPrayers = false
+  isUpdatingPrayers,
+  getMissedPrayersCount
 }: SortableCategoryListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -248,10 +255,11 @@ export function SortableCategoryList({
                 onUpdateCategory={onUpdateCategory}
                 onDeleteCategory={onDeleteCategory}
                 onAddSubtask={onAddSubtask}
-                canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID && category.id !== PRAYER_CATEGORY_ID}
+                canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID}
                 prayerSettings={prayerSettings}
                 onUpdatePrayerSettings={onUpdatePrayerSettings}
                 isUpdatingPrayers={isUpdatingPrayers}
+                getMissedPrayersCount={getMissedPrayersCount}
                 onMoveCategoryUp={moveCategoryUp}
                 onMoveCategoryDown={moveCategoryDown}
                 onMoveCategoryToTop={moveCategoryToTop}

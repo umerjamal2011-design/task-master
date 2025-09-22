@@ -209,6 +209,31 @@ function App() {
     }
   };
 
+  // Get missed prayers count from previous days
+  const getMissedPrayersCount = (prayerName: string): number => {
+    if (!prayerSettings?.enabled) return 0;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const missedCount = validTasks.filter(task => {
+      return task.categoryId === PRAYER_CATEGORY_ID &&
+             task.title.includes(prayerName) &&
+             task.scheduledDate &&
+             task.scheduledDate !== today &&
+             !task.completed &&
+             task.scheduledDate < today; // Only count previous days
+    }).length;
+    
+    return missedCount;
+  };
+
+  // Get today's prayer tasks for daily view
+  const getTodaysPrayerTasks = (date: string) => {
+    return validTasks.filter(task => {
+      return task.categoryId === PRAYER_CATEGORY_ID &&
+             task.scheduledDate === date;
+    });
+  };
+
   const addPrayerTasks = async (prayerTimes: PrayerTimes, date: string) => {
     const prayerNames = [
       { name: 'Fajr', time: prayerTimes.fajr, description: 'Dawn Prayer' },
@@ -801,9 +826,17 @@ function App() {
   };
 
   const deleteCategory = (categoryId: string) => {
-    if (categoryId === DEFAULT_CATEGORY_ID || categoryId === PRAYER_CATEGORY_ID) {
-      console.log('Cannot delete system category:', categoryId);
+    if (categoryId === DEFAULT_CATEGORY_ID) {
+      console.log('Cannot delete default category:', categoryId);
       return;
+    }
+
+    // Special handling for prayer category - disable prayer settings when deleted
+    if (categoryId === PRAYER_CATEGORY_ID) {
+      setPrayerSettings({
+        enabled: false,
+        method: 2
+      });
     }
 
     console.log('Deleting category:', categoryId);
@@ -1435,6 +1468,7 @@ function App() {
                         }
                       }}
                       isUpdatingPrayers={isSettingUpPrayers}
+                      getMissedPrayersCount={getMissedPrayersCount}
                     />
                   ) : (
                     <motion.div

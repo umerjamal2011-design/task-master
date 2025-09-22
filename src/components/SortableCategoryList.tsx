@@ -1,0 +1,185 @@
+import React from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Category, Task } from '@/types';
+import { CategorySection } from './CategorySection';
+import { DotsSixVertical } from '@phosphor-icons/react';
+
+interface SortableCategoryItemProps {
+  category: Category;
+  tasks: Task[];
+  allTasks: Task[];
+  onAddTask: (categoryId: string, title: string, description?: string, taskOptions?: Partial<Task>) => void;
+  onToggleTaskComplete: (taskId: string) => void;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
+  onDeleteTask: (taskId: string) => void;
+  onUpdateCategory: (categoryId: string, updates: Partial<Category>) => void;
+  onDeleteCategory: (categoryId: string) => void;
+  onAddSubtask: (parentId: string, title: string) => void;
+  canDeleteCategory: boolean;
+  prayerSettings?: any;
+  onUpdatePrayerSettings?: any;
+  isUpdatingPrayers?: boolean;
+}
+
+function SortableCategoryItem(props: SortableCategoryItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      {/* Drag handle */}
+      <div 
+        {...attributes} 
+        {...listeners}
+        className="absolute left-2 top-6 z-10 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing bg-background/80 backdrop-blur-sm p-1 rounded border border-border/50 hover:bg-muted"
+        title="Drag to reorder category"
+      >
+        <DotsSixVertical size={16} className="text-muted-foreground" />
+      </div>
+      
+      {/* Add padding to make room for drag handle */}
+      <div className="pl-2">
+        <CategorySection {...props} />
+      </div>
+    </div>
+  );
+}
+
+interface SortableCategoryListProps {
+  categories: Category[];
+  tasks: Task[];
+  onAddTask: (categoryId: string, title: string, description?: string, taskOptions?: Partial<Task>) => void;
+  onToggleTaskComplete: (taskId: string) => void;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
+  onDeleteTask: (taskId: string) => void;
+  onUpdateCategory: (categoryId: string, updates: Partial<Category>) => void;
+  onDeleteCategory: (categoryId: string) => void;
+  onAddSubtask: (parentId: string, title: string) => void;
+  onReorderCategories: (categories: Category[]) => void;
+  prayerSettings?: any;
+  onUpdatePrayerSettings?: any;
+  isUpdatingPrayers?: boolean;
+}
+
+export function SortableCategoryList({
+  categories,
+  tasks,
+  onAddTask,
+  onToggleTaskComplete,
+  onUpdateTask,
+  onDeleteTask,
+  onUpdateCategory,
+  onDeleteCategory,
+  onAddSubtask,
+  onReorderCategories,
+  prayerSettings,
+  onUpdatePrayerSettings,
+  isUpdatingPrayers = false
+}: SortableCategoryListProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px of movement before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Sort categories by order, with fallback to creation date
+  const sortedCategories = [...categories].sort((a, b) => {
+    const orderA = a.order ?? new Date(a.createdAt).getTime();
+    const orderB = b.order ?? new Date(b.createdAt).getTime();
+    return orderA - orderB;
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = sortedCategories.findIndex(cat => cat.id === active.id);
+      const newIndex = sortedCategories.findIndex(cat => cat.id === over?.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reorderedCategories = arrayMove(sortedCategories, oldIndex, newIndex);
+        
+        // Update order values
+        const updatedCategories = reorderedCategories.map((category, index) => ({
+          ...category,
+          order: index
+        }));
+        
+        onReorderCategories(updatedCategories);
+      }
+    }
+  }
+
+  const DEFAULT_CATEGORY_ID = 'general';
+  const PRAYER_CATEGORY_ID = 'prayers';
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={sortedCategories.map(cat => cat.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-3">
+          {sortedCategories.map((category) => {
+            const categoryTasks = tasks.filter(task => task.categoryId === category.id);
+            return (
+              <SortableCategoryItem
+                key={category.id}
+                category={category}
+                tasks={categoryTasks}
+                allTasks={tasks}
+                onAddTask={onAddTask}
+                onToggleTaskComplete={onToggleTaskComplete}
+                onUpdateTask={onUpdateTask}
+                onDeleteTask={onDeleteTask}
+                onUpdateCategory={onUpdateCategory}
+                onDeleteCategory={onDeleteCategory}
+                onAddSubtask={onAddSubtask}
+                canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID && category.id !== PRAYER_CATEGORY_ID}
+                prayerSettings={prayerSettings}
+                onUpdatePrayerSettings={onUpdatePrayerSettings}
+                isUpdatingPrayers={isUpdatingPrayers}
+              />
+            );
+          })}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}

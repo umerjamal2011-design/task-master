@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { Task, Category, PrayerTimes, LocationData, PrayerSettings } from '@/types';
-import { CategorySection } from '@/components/CategorySection';
+import { SortableCategoryList } from '@/components/SortableCategoryList';
 import { DailyView } from '@/components/DailyView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'sonner';
+import { getTasksForDate, isRepeatingTask } from '@/lib/repeat-utils';
 
 const DEFAULT_CATEGORY_ID = 'general';
 const PRAYER_CATEGORY_ID = 'prayers';
@@ -20,7 +21,7 @@ const PRAYER_CATEGORY_ID = 'prayers';
 function App() {
   const [tasks, setTasks] = useKV<Task[]>('tasks', []);
   const [categories, setCategories] = useKV<Category[]>('categories', [
-    { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }
+    { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString(), order: 0 }
   ]);
   const [isDarkMode, setIsDarkMode] = useKV<boolean>('dark-mode', false);
   const [prayerSettings, setPrayerSettings] = useKV<PrayerSettings>('prayer-settings', {
@@ -194,11 +195,13 @@ function App() {
     const existingPrayerCategory = categoryList.find(cat => cat.id === PRAYER_CATEGORY_ID);
     
     if (!existingPrayerCategory) {
+      const maxOrder = Math.max(...categoryList.map(cat => cat.order ?? new Date(cat.createdAt).getTime()), -1);
       const prayerCategory: Category = {
         id: PRAYER_CATEGORY_ID,
         name: 'Prayers',
         color: '#10B981', // Green color for prayers
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        order: maxOrder + 1
       };
       
       setCategories(currentCategories => [...(currentCategories || []), prayerCategory]);
@@ -432,7 +435,7 @@ function App() {
     }
   };
 
-  // Get valid tasks with comprehensive filtering
+  // Get valid tasks with comprehensive filtering - exclude repeated instances for counting
   const validTasks = React.useMemo(() => {
     if (!tasks || tasks.length === 0 || !categories || categories.length === 0) {
       console.log('No tasks or categories, returning empty array');
@@ -487,8 +490,10 @@ function App() {
     return fullyValid;
   }, [tasks, categories]);
   
-  const totalTasks = validTasks.length;
-  const completedTasks = validTasks.filter(task => task.completed).length;
+  // Count only non-repeated instances for display purposes
+  const nonRepeatedTasks = validTasks.filter(task => !task.isRepeatedInstance);
+  const totalTasks = nonRepeatedTasks.length;
+  const completedTasks = nonRepeatedTasks.filter(task => task.completed).length;
   const pendingTasks = totalTasks - completedTasks;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -613,7 +618,7 @@ function App() {
       });
       setCategories(() => {
         console.log('Emergency reset: resetting categories to default');
-        return [{ id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString() }];
+        return [{ id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString(), order: 0 }];
       });
       
       // Also try to clear KV storage directly if accessible
@@ -649,73 +654,10 @@ function App() {
 
     setTasks(currentTasks => {
       const updatedTasks = [...(currentTasks || []), newTask];
-      
-      // If this is a repeating task, generate repeated instances
-      if (newTask.repeatType && newTask.scheduledDate) {
-        const repeatedTasks = generateRepeatedTasks(newTask);
-        return [...updatedTasks, ...repeatedTasks];
-      }
-      
       return updatedTasks;
     });
     
     return newTask;
-  };
-
-  // Function to generate repeated task instances
-  const generateRepeatedTasks = (originalTask: Task) => {
-    if (!originalTask.repeatType || !originalTask.scheduledDate) return [];
-
-    const repeatedTasks: Task[] = [];
-    const startDate = new Date(originalTask.scheduledDate);
-    const endDate = originalTask.repeatEndDate ? new Date(originalTask.repeatEndDate) : null;
-    const maxInstances = 100; // Prevent infinite loops
-    
-    let currentDate = new Date(startDate);
-    let instanceCount = 0;
-
-    while (instanceCount < maxInstances) {
-      // Calculate next occurrence based on repeat type
-      switch (originalTask.repeatType) {
-        case 'daily':
-          currentDate.setDate(currentDate.getDate() + (originalTask.repeatInterval || 1));
-          break;
-        case 'weekly':
-          currentDate.setDate(currentDate.getDate() + (originalTask.repeatInterval || 1) * 7);
-          break;
-        case 'monthly':
-          currentDate.setMonth(currentDate.getMonth() + (originalTask.repeatInterval || 1));
-          break;
-        case 'yearly':
-          currentDate.setFullYear(currentDate.getFullYear() + (originalTask.repeatInterval || 1));
-          break;
-        default:
-          break;
-      }
-
-      // Stop if we've reached the end date
-      if (endDate && currentDate > endDate) break;
-
-      // Stop if we're generating too far into the future (1 year)
-      const oneYearFromNow = new Date();
-      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-      if (currentDate > oneYearFromNow) break;
-
-      // Create repeated instance
-      const repeatedTask: Task = {
-        ...originalTask,
-        id: generateId(),
-        scheduledDate: currentDate.toISOString().split('T')[0],
-        isRepeatedInstance: true,
-        originalTaskId: originalTask.id,
-        createdAt: new Date().toISOString()
-      };
-
-      repeatedTasks.push(repeatedTask);
-      instanceCount++;
-    }
-
-    return repeatedTasks;
   };
 
   const addSubtask = (parentId: string, title: string) => {
@@ -789,28 +731,12 @@ function App() {
   const updateTask = (taskId: string, updates: Partial<Task>) => {
     setTasks(currentTasks => {
       const tasksList = currentTasks || [];
-      const updatedTasks = tasksList.map(task => {
+      return tasksList.map(task => {
         if (task.id === taskId) {
-          const updatedTask = { ...task, ...updates };
-          
-          // If this is a repeating task being updated, generate repeated instances
-          if (updatedTask.repeatType && updatedTask.scheduledDate && !updatedTask.isRepeatedInstance) {
-            const repeatedTasks = generateRepeatedTasks(updatedTask);
-            
-            // Remove any existing repeated instances for this original task
-            const filteredTasks = tasksList.filter(t => t.originalTaskId !== taskId);
-            
-            // Add the updated original task and new repeated instances
-            return [...filteredTasks.filter(t => t.id !== taskId), updatedTask, ...repeatedTasks];
-          }
-          
-          return updatedTask;
+          return { ...task, ...updates };
         }
         return task;
       });
-      
-      // Handle the case where repeated tasks were generated (flatten the array)
-      return updatedTasks.flat();
     });
   };
 
@@ -827,29 +753,27 @@ function App() {
         subtasks.forEach(subtask => findAllSubtasks(subtask.id));
       };
       
-      // Find the task being deleted to check if it's a repeating original task
-      const taskBeingDeleted = tasksList.find(t => t.id === taskId);
-      
       findAllSubtasks(taskId);
-      
-      // If deleting an original repeating task, also delete all its repeated instances
-      if (taskBeingDeleted && taskBeingDeleted.repeatType && !taskBeingDeleted.isRepeatedInstance) {
-        const repeatedInstances = tasksList.filter(t => t.originalTaskId === taskId);
-        repeatedInstances.forEach(instance => tasksToDelete.add(instance.id));
-      }
       
       // Filter out all tasks that should be deleted
       return tasksList.filter(task => !tasksToDelete.has(task.id));
     });
   };
 
+  const reorderCategories = (reorderedCategories: Category[]) => {
+    setCategories(reorderedCategories);
+  };
+
   const addCategory = () => {
     if (newCategoryName.trim()) {
+      const categoryList = categories || [];
+      const maxOrder = Math.max(...categoryList.map(cat => cat.order ?? new Date(cat.createdAt).getTime()), -1);
       const newCategory: Category = {
         id: generateId(),
         name: newCategoryName.trim(),
         color: newCategoryColor,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        order: maxOrder + 1
       };
 
       setCategories(currentCategories => [...(currentCategories || []), newCategory]);
@@ -1105,10 +1029,16 @@ function App() {
 
                 {/* Category Navigation */}
                 <div className="space-y-2">
-                  {(categories || []).map((category) => {
-                    const categoryTasks = validTasks.filter(task => task.categoryId === category.id);
-                    const completedCount = categoryTasks.filter(task => task.completed).length;
-                    const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
+                  {(categories || [])
+                    .sort((a, b) => {
+                      const orderA = a.order ?? new Date(a.createdAt).getTime();
+                      const orderB = b.order ?? new Date(b.createdAt).getTime();
+                      return orderA - orderB;
+                    })
+                    .map((category) => {
+                      const categoryTasks = nonRepeatedTasks.filter(task => task.categoryId === category.id);
+                      const completedCount = categoryTasks.filter(task => task.completed).length;
+                      const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
                     
                     return (
                       <div key={category.id} className="space-y-1">
@@ -1378,10 +1308,16 @@ function App() {
 
                       {/* Category Navigation */}
                       <div className="space-y-2">
-                        {(categories || []).map((category) => {
-                          const categoryTasks = validTasks.filter(task => task.categoryId === category.id);
-                          const completedCount = categoryTasks.filter(task => task.completed).length;
-                          const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
+                        {(categories || [])
+                          .sort((a, b) => {
+                            const orderA = a.order ?? new Date(a.createdAt).getTime();
+                            const orderB = b.order ?? new Date(b.createdAt).getTime();
+                            return orderA - orderB;
+                          })
+                          .map((category) => {
+                            const categoryTasks = nonRepeatedTasks.filter(task => task.categoryId === category.id);
+                            const completedCount = categoryTasks.filter(task => task.completed).length;
+                            const categoryProgress = categoryTasks.length > 0 ? Math.round((completedCount / categoryTasks.length) * 100) : 0;
                           
                           return (
                             <div key={category.id} className="space-y-1">
@@ -1661,38 +1597,31 @@ function App() {
               <TabsContent value="categories" className="space-y-3">
                 <AnimatePresence>
                   {(categories || []).length > 0 ? (
-                    (categories || []).map((category) => {
-                      const categoryTasks = validTasks.filter(task => task.categoryId === category.id);
-                      return (
-                        <CategorySection
-                          key={category.id}
-                          category={category}
-                          tasks={categoryTasks}
-                          allTasks={validTasks}
-                          onAddTask={addTask}
-                          onToggleTaskComplete={toggleTaskComplete}
-                          onUpdateTask={updateTask}
-                          onDeleteTask={deleteTask}
-                          onUpdateCategory={updateCategory}
-                          onDeleteCategory={deleteCategory}
-                          onAddSubtask={addSubtask}
-                          canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID && category.id !== PRAYER_CATEGORY_ID}
-                          prayerSettings={prayerSettings}
-                          onUpdatePrayerSettings={async (settings) => {
-                            setPrayerSettings(settings);
-                            // Update prayer times with new settings
-                            if (settings.location) {
-                              const today = new Date().toISOString().split('T')[0];
-                              const prayerTimes = await getPrayerTimes(settings.location, today);
-                              if (prayerTimes) {
-                                await addPrayerTasks(prayerTimes, today);
-                              }
-                            }
-                          }}
-                          isUpdatingPrayers={isSettingUpPrayers}
-                        />
-                      );
-                    })
+                    <SortableCategoryList
+                      categories={categories || []}
+                      tasks={validTasks}
+                      onAddTask={addTask}
+                      onToggleTaskComplete={toggleTaskComplete}
+                      onUpdateTask={updateTask}
+                      onDeleteTask={deleteTask}
+                      onUpdateCategory={updateCategory}
+                      onDeleteCategory={deleteCategory}
+                      onAddSubtask={addSubtask}
+                      onReorderCategories={reorderCategories}
+                      prayerSettings={prayerSettings}
+                      onUpdatePrayerSettings={async (settings) => {
+                        setPrayerSettings(settings);
+                        // Update prayer times with new settings
+                        if (settings.location) {
+                          const today = new Date().toISOString().split('T')[0];
+                          const prayerTimes = await getPrayerTimes(settings.location, today);
+                          if (prayerTimes) {
+                            await addPrayerTasks(prayerTimes, today);
+                          }
+                        }
+                      }}
+                      isUpdatingPrayers={isSettingUpPrayers}
+                    />
                   ) : (
                     <motion.div
                       initial={{ opacity: 0 }}

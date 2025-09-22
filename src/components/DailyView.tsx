@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { TaskItem } from '@/components/TaskItem';
 import { CheckCircle, Clock, Calendar, Sun } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
+import { getTasksForDate } from '@/lib/repeat-utils';
 
 interface DailyViewProps {
   tasks: Task[];
@@ -26,10 +27,9 @@ export function DailyView({
   onDeleteTask,
   onAddSubtask
 }: DailyViewProps) {
-  // Get tasks for the selected date
-  const dailyTasks = tasks.filter(task => 
-    task.scheduledDate === selectedDate && !task.parentId
-  );
+  // Get tasks for the selected date using dynamic repeat logic
+  const dailyTasksAll = getTasksForDate(tasks, selectedDate);
+  const dailyTasks = dailyTasksAll.filter(task => !task.parentId);
 
   // Separate timed and untimed tasks
   const timedTasks = dailyTasks

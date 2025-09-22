@@ -24,6 +24,7 @@ export interface Category {
   name: string;
   color?: string;
   createdAt: string;
+  order?: number; // For custom ordering
 }
 
 export interface PrayerTimes {

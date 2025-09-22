@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QuickDatePicker } from '@/components/QuickDatePicker';
 import { RepeatSettings } from '@/components/RepeatSettings';
+import { RepeatIndicator } from '@/components/RepeatIndicator';
 import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot, Repeat } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isRepeatingTask } from '@/lib/repeat-utils';
 
 interface TaskItemProps {
   task: Task;
@@ -441,27 +443,28 @@ export function TaskItem({
                       </Badge>
                     )}
 
-                    {task.repeatType && (
+                    {/* Virtual Instance Indicator for repeated tasks */}
+                    {task.isRepeatedInstance && (
                       <Badge 
                         variant="outline" 
                         className="flex items-center gap-0.5 px-1 py-0"
                         style={{
-                          backgroundColor: `${categoryColor}12`,
-                          borderColor: `${categoryColor}40`,
-                          color: categoryColor,
+                          backgroundColor: '#E0F2FE',
+                          borderColor: '#0EA5E9',
+                          color: '#0284C7',
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'
                         }}
+                        title="This is a repeated instance of a recurring task"
                       >
                         <Repeat size={6} />
-                        {task.repeatInterval && task.repeatInterval > 1 ? `${task.repeatInterval}` : ''}
-                        {task.repeatType === 'daily' && 'd'}
-                        {task.repeatType === 'weekly' && 'w'}
-                        {task.repeatType === 'monthly' && 'm'}
-                        {task.repeatType === 'yearly' && 'y'}
+                        Instance
                       </Badge>
                     )}
+                    
+                    {/* Repeat Indicator */}
+                    <RepeatIndicator task={task} />
 
                     {depth === 0 && (
                       <Badge 

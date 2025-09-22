@@ -92,14 +92,24 @@ export function getTasksForDate(tasks: Task[], date: string): Task[] {
   const result: Task[] = [];
   
   tasks.forEach(task => {
-    // Include regular tasks scheduled for this date
-    if (task.scheduledDate === date && !task.isRepeatedInstance) {
+    // Skip if this is already a repeated instance
+    if (task.isRepeatedInstance) {
+      return;
+    }
+    
+    // For non-repeating tasks, include if scheduled for this date
+    if (!task.repeatType && task.scheduledDate === date) {
       result.push(task);
     }
     
-    // Include virtual instances of repeating tasks
-    if (shouldTaskAppearOnDate(task, date)) {
-      result.push(createVirtualTaskInstance(task, date));
+    // For repeating tasks, check if they should appear on this date
+    if (task.repeatType && shouldTaskAppearOnDate(task, date)) {
+      // If this is the original date, use the original task, otherwise create virtual instance
+      if (task.scheduledDate === date) {
+        result.push(task);
+      } else {
+        result.push(createVirtualTaskInstance(task, date));
+      }
     }
   });
   

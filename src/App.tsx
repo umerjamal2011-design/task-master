@@ -1546,26 +1546,15 @@ function App() {
             {currentView === 'categories' && (
               <>
                 <div className="hidden lg:flex justify-between items-center mb-4">
-                    <Button
-                      variant="outline"
-                      onClick={refreshTasks}
-                      disabled={isRefreshing}
-                      className="gap-2"
-                    >
-                      <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
-                      Refresh All Data
-                    </Button>
-                  </div>
                   <Button
-                    onClick={() => setShowAddCategory(true)}
+                    variant="outline"
+                    onClick={refreshTasks}
+                    disabled={isRefreshing}
                     className="gap-2"
                   >
-                    <FolderPlus size={18} />
-                    Add Category
+                    <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
+                    Refresh All Data
                   </Button>
-                </div>
-
-                <AnimatePresence>
                   <Button
                     onClick={() => setShowAddCategory(true)}
                     className="gap-2"
@@ -1587,21 +1576,16 @@ function App() {
                       <Card className="bg-secondary/50 border-dashed">
                         <CardContent className="pt-6">
                           <div className="space-y-4">
-                                <Button onClick={addCategory} disabled={!newCategoryName.trim()}>
-                                  <Plus size={16} />
-                                  Add
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => {
-                                    setShowAddCategory(false);
-                                    setNewCategoryName('');
-                                    setNewCategoryColor('#3B82F6');
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">Category Name</Label>
+                              <Input
+                                placeholder="Enter category name..."
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                autoFocus
+                                maxLength={50}
+                              />
                             </div>
                             
                             <div className="space-y-2">
@@ -1624,6 +1608,23 @@ function App() {
                                   />
                                 ))}
                               </div>
+                            </div>
+                            
+                            <div className="flex gap-2 pt-2">
+                              <Button onClick={addCategory} disabled={!newCategoryName.trim()}>
+                                <Plus size={16} />
+                                Add
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setShowAddCategory(false);
+                                  setNewCategoryName('');
+                                  setNewCategoryColor('#3B82F6');
+                                }}
+                              >
+                                Cancel
+                              </Button>
                             </div>
                           </div>
                         </CardContent>
@@ -1659,7 +1660,7 @@ function App() {
                           const today = new Date().toISOString().split('T')[0];
                           const prayerTimes = await getPrayerTimes(settings.location, today);
                           if (prayerTimes) {
-                      onAddTaskAtSameLevel={addTaskAtSameLevel}
+                            await addPrayerTasks(prayerTimes, today);
                           }
                         }
                       }}
@@ -1681,7 +1682,7 @@ function App() {
                       </Button>
                     </motion.div>
                   )}
-                    >
+                </AnimatePresence>
               </TabsContent>
 
               <TabsContent value="daily">
@@ -1703,7 +1704,7 @@ function App() {
         {/* Mobile Floating Add Button */}
         <div className="lg:hidden fixed bottom-6 right-6 z-30">
           <Button
-                  onAddTaskAtSameLevel={addTaskAtSameLevel}
+            onClick={() => setShowAddCategory(true)}
             size="lg"
             className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary text-primary-foreground"
           >
@@ -1721,4 +1722,4 @@ function App() {
   );
 }
 
-export default App;      />
+export default App;

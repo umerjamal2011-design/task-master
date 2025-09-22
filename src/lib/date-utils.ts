@@ -135,3 +135,49 @@ export const sortTasksForDailyView = (tasks: Task[]): Task[] => {
     return a.createdAt.localeCompare(b.createdAt);
   });
 };
+
+// Get date strings for yesterday, today, and tomorrow relative to a reference date
+export const getThreeDayRange = (referenceDate: string = new Date().toISOString().split('T')[0]) => {
+  const reference = new Date(referenceDate);
+  const yesterday = new Date(reference);
+  const tomorrow = new Date(reference);
+  
+  yesterday.setDate(reference.getDate() - 1);
+  tomorrow.setDate(reference.getDate() + 1);
+  
+  return {
+    yesterday: yesterday.toISOString().split('T')[0],
+    today: referenceDate,
+    tomorrow: tomorrow.toISOString().split('T')[0]
+  };
+};
+
+// Format date for section headers
+export const formatDateForSection = (dateStr: string, currentTime: Date = new Date()): string => {
+  const date = new Date(dateStr);
+  const today = new Date(currentTime);
+  const yesterday = new Date(today);
+  const tomorrow = new Date(today);
+  
+  yesterday.setDate(today.getDate() - 1);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const todayStr = today.toISOString().split('T')[0];
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  
+  if (dateStr === todayStr) {
+    return 'Today';
+  } else if (dateStr === yesterdayStr) {
+    return 'Yesterday';
+  } else if (dateStr === tomorrowStr) {
+    return 'Tomorrow';
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+    });
+  }
+};

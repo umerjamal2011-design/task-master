@@ -22,6 +22,7 @@ interface TaskItemProps {
   onUpdate: (id: string, updates: Partial<Task>) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (parentId: string, title: string) => void;
+  onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   showTimeScheduling?: boolean;
   depth?: number;
 }
@@ -35,13 +36,16 @@ export function TaskItem({
   onUpdate, 
   onDelete, 
   onAddSubtask,
+  onAddTaskAtSameLevel,
   showTimeScheduling = true,
   depth = 0 
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAddSubtask, setShowAddSubtask] = useState(false);
+  const [showAddSameLevel, setShowAddSameLevel] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [newSameLevelTitle, setNewSameLevelTitle] = useState('');
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description || '');
   const [editScheduledDate, setEditScheduledDate] = useState(task.scheduledDate || 'no-date');
@@ -120,6 +124,14 @@ export function TaskItem({
     }
   };
 
+  const handleAddSameLevel = () => {
+    if (newSameLevelTitle.trim()) {
+      onAddTaskAtSameLevel(task.id, newSameLevelTitle.trim().substring(0, MAX_SUBTASK_LENGTH));
+      setNewSameLevelTitle('');
+      setShowAddSameLevel(false);
+    }
+  };
+
   const handleSubtaskKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -127,6 +139,16 @@ export function TaskItem({
     } else if (e.key === 'Escape') {
       setShowAddSubtask(false);
       setNewSubtaskTitle('');
+    }
+  };
+
+  const handleSameLevelKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSameLevel();
+    } else if (e.key === 'Escape') {
+      setShowAddSameLevel(false);
+      setNewSameLevelTitle('');
     }
   };
 
@@ -555,6 +577,18 @@ export function TaskItem({
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
+                    setShowAddSameLevel(true);
+                  }}
+                  className="h-4 w-4 p-0"
+                  title="Add task at same level"
+                >
+                  <Plus size={8} weight="bold" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setIsEditing(true);
                   }}
                   className="h-4 w-4 p-0"
@@ -632,6 +666,61 @@ export function TaskItem({
               </div>
             </motion.div>
           )}
+
+          {/* Add Same Level Task Input */}
+          {showAddSameLevel && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-1"
+              style={{ marginLeft: `${depth * 12 + 4}px` }}
+            >
+              <div className="flex gap-1">
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Add task at same level..."
+                    value={newSameLevelTitle}
+                    onChange={(e) => setNewSameLevelTitle(e.target.value.substring(0, MAX_SUBTASK_LENGTH))}
+                    onKeyDown={handleSameLevelKeyDown}
+                    autoFocus
+                    className="flex-1 h-5 pr-8 text-xs break-all"
+                    style={{ 
+                      fontSize: '10px',
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word'
+                    }}
+                  />
+                  <div className="absolute right-1 top-0.5 text-xs text-muted-foreground pointer-events-none">
+                    {newSameLevelTitle.length}/{MAX_SUBTASK_LENGTH}
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={handleAddSameLevel} 
+                  disabled={!newSameLevelTitle.trim()}
+                  className="h-5 px-1"
+                  style={{
+                    backgroundColor: categoryColor,
+                    borderColor: categoryColor,
+                    color: 'white'
+                  }}
+                >
+                  <Plus size={8} weight="bold" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddSameLevel(false);
+                    setNewSameLevelTitle('');
+                  }}
+                  className="h-5 px-1"
+                >
+                  <X size={8} />
+                </Button>
+              </div>
+            </motion.div>
+          )}
           
           {task.completed && task.completedAt && (
             <div className="mt-0.5 text-muted-foreground" 
@@ -665,6 +754,7 @@ export function TaskItem({
                 onUpdate={onUpdate}
                 onDelete={onDelete}
                 onAddSubtask={onAddSubtask}
+                onAddTaskAtSameLevel={onAddTaskAtSameLevel}
                 showTimeScheduling={showTimeScheduling}
                 depth={depth + 1}
               />

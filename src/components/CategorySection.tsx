@@ -27,6 +27,7 @@ interface CategorySectionProps {
   onUpdateCategory: (categoryId: string, updates: Partial<Category>) => void;
   onDeleteCategory: (categoryId: string) => void;
   onAddSubtask: (parentId: string, title: string) => void;
+  onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   canDeleteCategory: boolean;
   // Prayer-specific props
   prayerSettings?: PrayerSettings;
@@ -53,6 +54,7 @@ export function CategorySection({
   onUpdateCategory,
   onDeleteCategory,
   onAddSubtask,
+  onAddTaskAtSameLevel,
   canDeleteCategory,
   prayerSettings,
   onUpdatePrayerSettings,
@@ -657,6 +659,7 @@ export function CategorySection({
                     onUpdate={onUpdateTask}
                     onDelete={onDeleteTask}
                     onAddSubtask={onAddSubtask}
+                    onAddTaskAtSameLevel={onAddTaskAtSameLevel}
                   />
                 ))}
               </div>

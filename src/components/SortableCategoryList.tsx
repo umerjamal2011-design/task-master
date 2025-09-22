@@ -36,6 +36,7 @@ interface SortableCategoryItemProps {
   onUpdateCategory: (categoryId: string, updates: Partial<Category>) => void;
   onDeleteCategory: (categoryId: string) => void;
   onAddSubtask: (parentId: string, title: string) => void;
+  onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   canDeleteCategory: boolean;
   prayerSettings?: any;
   onUpdatePrayerSettings?: any;
@@ -91,6 +92,7 @@ function SortableCategoryItem(props: SortableCategoryItemProps) {
           onUpdateCategory={props.onUpdateCategory}
           onDeleteCategory={props.onDeleteCategory}
           onAddSubtask={props.onAddSubtask}
+          onAddTaskAtSameLevel={props.onAddTaskAtSameLevel}
           canDeleteCategory={props.canDeleteCategory}
           prayerSettings={props.prayerSettings}
           onUpdatePrayerSettings={props.onUpdatePrayerSettings}
@@ -118,6 +120,7 @@ interface SortableCategoryListProps {
   onUpdateCategory: (categoryId: string, updates: Partial<Category>) => void;
   onDeleteCategory: (categoryId: string) => void;
   onAddSubtask: (parentId: string, title: string) => void;
+  onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   onReorderCategories: (categories: Category[]) => void;
   prayerSettings?: any;
   onUpdatePrayerSettings?: any;
@@ -135,6 +138,7 @@ export function SortableCategoryList({
   onUpdateCategory,
   onDeleteCategory,
   onAddSubtask,
+  onAddTaskAtSameLevel,
   onReorderCategories,
   prayerSettings,
   onUpdatePrayerSettings,
@@ -255,6 +259,7 @@ export function SortableCategoryList({
                 onUpdateCategory={onUpdateCategory}
                 onDeleteCategory={onDeleteCategory}
                 onAddSubtask={onAddSubtask}
+                onAddTaskAtSameLevel={onAddTaskAtSameLevel}
                 canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID}
                 prayerSettings={prayerSettings}
                 onUpdatePrayerSettings={onUpdatePrayerSettings}

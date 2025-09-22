@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise, FloppyDisk } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'sonner';
 import { getTasksForDate, isRepeatingTask } from '@/lib/repeat-utils';
@@ -42,6 +42,7 @@ function App() {
   const [isSettingUpPrayers, setIsSettingUpPrayers] = useState(false);
   const [locationPermissionState, setLocationPermissionState] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isForceSaving, setIsForceSaving] = useState(false);
 
   // Check location permission status
   useEffect(() => {
@@ -70,6 +71,35 @@ function App() {
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  // Function to force save all data to KV storage
+  const forceSaveData = async () => {
+    setIsForceSaving(true);
+    
+    try {
+      console.log('Force saving all data to storage...');
+      
+      // Force save all current state to KV storage
+      await (window as any).spark.kv.set('tasks', tasks || []);
+      await (window as any).spark.kv.set('categories', categories || []);
+      await (window as any).spark.kv.set('dark-mode', isDarkMode);
+      await (window as any).spark.kv.set('prayer-settings', prayerSettings || { enabled: false, method: 2 });
+      
+      console.log('Force save completed:', {
+        tasks: (tasks || []).length,
+        categories: (categories || []).length,
+        darkMode: isDarkMode,
+        prayerEnabled: prayerSettings?.enabled
+      });
+      
+      toast.success('All data saved successfully');
+    } catch (error) {
+      console.error('Failed to force save data:', error);
+      toast.error('Failed to save data: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsForceSaving(false);
+    }
   };
 
   // Function to refresh all data
@@ -778,6 +808,26 @@ function App() {
     });
   };
 
+  // Function to add a task at the same level as the given task
+  const addTaskAtSameLevel = (referenceTaskId: string, title: string) => {
+    setTasks(currentTasks => {
+      const tasksList = currentTasks || [];
+      const referenceTask = tasksList.find(t => t.id === referenceTaskId);
+      if (!referenceTask) return tasksList;
+
+      const newTask: Task = {
+        id: generateId(),
+        title,
+        completed: false,
+        categoryId: referenceTask.categoryId,
+        parentId: referenceTask.parentId, // Same parent (or no parent for root tasks)
+        createdAt: new Date().toISOString()
+      };
+
+      return [...tasksList, newTask];
+    });
+  };
+
   const toggleTaskComplete = (taskId: string) => {
     setTasks(currentTasks => {
       const tasksList = currentTasks || [];
@@ -1017,6 +1067,16 @@ function App() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={forceSaveData}
+              disabled={isForceSaving}
+              className="h-10 w-10 p-0"
+              title="Force save all data"
+            >
+              <FloppyDisk size={18} className={isForceSaving ? 'animate-pulse' : ''} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={refreshTasks}
               disabled={isRefreshing}
               className="h-10 w-10 p-0"
@@ -1061,6 +1121,16 @@ function App() {
               <div className="flex items-center justify-between mb-1">
                 <h1 className="text-xl font-bold text-foreground">TaskFlow</h1>
                 <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={forceSaveData}
+                    disabled={isForceSaving}
+                    className="h-8 w-8 p-0"
+                    title="Force save all data"
+                  >
+                    <FloppyDisk size={16} className={isForceSaving ? 'animate-pulse' : ''} />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1281,6 +1351,16 @@ function App() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={forceSaveData}
+                        disabled={isForceSaving}
+                        className="h-8 w-8 p-0"
+                        title="Force save all data"
+                      >
+                        <FloppyDisk size={16} className={isForceSaving ? 'animate-pulse' : ''} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={refreshTasks}
                         disabled={isRefreshing}
                         className="h-8 w-8 p-0"
@@ -1466,15 +1546,26 @@ function App() {
             {currentView === 'categories' && (
               <>
                 <div className="hidden lg:flex justify-between items-center mb-4">
-                  <Button
-                    variant="outline"
-                    onClick={refreshTasks}
-                    disabled={isRefreshing}
-                    className="gap-2"
-                  >
-                    <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
-                    Refresh All Data
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={forceSaveData}
+                      disabled={isForceSaving}
+                      className="gap-2"
+                    >
+                      <FloppyDisk size={18} className={isForceSaving ? 'animate-pulse' : ''} />
+                      Force Save
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={refreshTasks}
+                      disabled={isRefreshing}
+                      className="gap-2"
+                    >
+                      <ArrowClockwise size={18} className={isRefreshing ? 'animate-spin' : ''} />
+                      Refresh All Data
+                    </Button>
+                  </div>
                   <Button
                     onClick={() => setShowAddCategory(true)}
                     className="gap-2"
@@ -1568,6 +1659,7 @@ function App() {
                       onUpdateCategory={updateCategory}
                       onDeleteCategory={deleteCategory}
                       onAddSubtask={addSubtask}
+                      onAddTaskAtSameLevel={addTaskAtSameLevel}
                       onReorderCategories={reorderCategories}
                       prayerSettings={prayerSettings}
                       onUpdatePrayerSettings={async (settings) => {
@@ -1611,6 +1703,7 @@ function App() {
                   onUpdateTask={updateTask}
                   onDeleteTask={deleteTask}
                   onAddSubtask={addSubtask}
+                  onAddTaskAtSameLevel={addTaskAtSameLevel}
                 />
               </TabsContent>
             </Tabs>

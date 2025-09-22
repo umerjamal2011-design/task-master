@@ -155,16 +155,15 @@ export function CategorySection({
         taskOptions
       );
       
-      // Reset form
+      // Reset only the title and description for continuous entry
       setNewTaskTitle('');
       setNewTaskDescription('');
-      setNewTaskScheduledDate('no-date');
-      setNewTaskScheduledTime('');
-      setNewTaskPriority('medium');
-      setNewTaskRepeatType(null);
-      setNewTaskRepeatInterval(1);
-      setNewTaskRepeatEndDate('');
-      setShowAddTask(false);
+      // Keep the add task form open and maintain other settings
+      // Auto-focus the title input for next entry
+      setTimeout(() => {
+        const input = document.querySelector(`input[placeholder="Task title..."]`) as HTMLInputElement;
+        if (input) input.focus();
+      }, 50);
     }
   };
 
@@ -532,7 +531,7 @@ export function CategorySection({
                   <div className="space-y-4">
                     <div className="relative">
                       <Input
-                        placeholder="Task title"
+                        placeholder="Task title... (↵ continue, Esc close)"
                         value={newTaskTitle}
                         onChange={(e) => setNewTaskTitle(e.target.value.substring(0, 150))}
                         onKeyDown={handleKeyDown}

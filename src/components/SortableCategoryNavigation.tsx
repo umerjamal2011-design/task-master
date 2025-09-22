@@ -202,7 +202,7 @@ function SortableCategoryNavItem({
                  style={{ borderColor: `${category.color || '#3B82F6'}40` }}>
               <div className="relative flex-1 min-w-0">
                 <Input
-                  placeholder="Quick task..."
+                  placeholder="Quick task... (↵ continue, Esc close)"
                   value={quickTaskTitle}
                   onChange={(e) => onQuickTaskTitleChange(e.target.value.substring(0, 150))}
                   onKeyDown={handleQuickTaskKeyDown}

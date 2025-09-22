@@ -936,7 +936,12 @@ function App() {
     if (quickTaskTitle.trim()) {
       addTask(categoryId, quickTaskTitle.trim().substring(0, 150));
       setQuickTaskTitle('');
-      setQuickAddTaskCategory(null);
+      // Keep the quick add open for continuous entry - don't close it
+      // Auto-focus the input field again for next entry
+      setTimeout(() => {
+        const input = document.querySelector(`input[placeholder="Quick add task..."]`) as HTMLInputElement;
+        if (input) input.focus();
+      }, 50);
     }
   };
 

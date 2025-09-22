@@ -119,8 +119,13 @@ export function TaskItem({
     if (newSubtaskTitle.trim()) {
       onAddSubtask(task.id, newSubtaskTitle.trim().substring(0, MAX_SUBTASK_LENGTH));
       setNewSubtaskTitle('');
-      setShowAddSubtask(false);
+      // Keep the input field open for continuous entry
       setIsExpanded(true);
+      // Auto-focus the input field again for next entry
+      setTimeout(() => {
+        const input = document.querySelector(`input[placeholder="Add subtask..."]`) as HTMLInputElement;
+        if (input) input.focus();
+      }, 50);
     }
   };
 
@@ -128,7 +133,12 @@ export function TaskItem({
     if (newSameLevelTitle.trim()) {
       onAddTaskAtSameLevel(task.id, newSameLevelTitle.trim().substring(0, MAX_SUBTASK_LENGTH));
       setNewSameLevelTitle('');
-      setShowAddSameLevel(false);
+      // Keep the input field open for continuous entry
+      // Auto-focus the input field again for next entry
+      setTimeout(() => {
+        const input = document.querySelector(`input[placeholder="Add task at same level..."]`) as HTMLInputElement;
+        if (input) input.focus();
+      }, 50);
     }
   };
 
@@ -136,6 +146,7 @@ export function TaskItem({
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddSubtask();
+      // Don't close the input - keeps it open for continuous entry
     } else if (e.key === 'Escape') {
       setShowAddSubtask(false);
       setNewSubtaskTitle('');
@@ -146,6 +157,7 @@ export function TaskItem({
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddSameLevel();
+      // Don't close the input - keeps it open for continuous entry
     } else if (e.key === 'Escape') {
       setShowAddSameLevel(false);
       setNewSameLevelTitle('');
@@ -623,7 +635,7 @@ export function TaskItem({
               <div className="flex gap-1">
                 <div className="relative flex-1">
                   <Input
-                    placeholder="Add subtask..."
+                    placeholder="Add subtask... (↵ continue, Esc close)"
                     value={newSubtaskTitle}
                     onChange={(e) => setNewSubtaskTitle(e.target.value.substring(0, MAX_SUBTASK_LENGTH))}
                     onKeyDown={handleSubtaskKeyDown}
@@ -678,7 +690,7 @@ export function TaskItem({
               <div className="flex gap-1">
                 <div className="relative flex-1">
                   <Input
-                    placeholder="Add task at same level..."
+                    placeholder="Add at same level... (↵ continue, Esc close)"
                     value={newSameLevelTitle}
                     onChange={(e) => setNewSameLevelTitle(e.target.value.substring(0, MAX_SUBTASK_LENGTH))}
                     onKeyDown={handleSameLevelKeyDown}

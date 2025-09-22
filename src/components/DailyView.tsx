@@ -33,6 +33,42 @@ export function DailyView({
   const dailyTasksAll = getTasksForDate(tasks, selectedDate);
   const dailyTasks = dailyTasksAll.filter(task => !task.parentId);
 
+  // Debug logging to help identify missing tasks
+  React.useEffect(() => {
+    console.log('=== Daily View Debug ===');
+    console.log('Selected date:', selectedDate);
+    console.log('All tasks:', tasks.length);
+    console.log('Tasks with scheduledDate matching selected date:', 
+      tasks.filter(t => t.scheduledDate === selectedDate).map(t => ({
+        id: t.id,
+        title: t.title,
+        scheduledDate: t.scheduledDate,
+        scheduledTime: t.scheduledTime,
+        repeatType: t.repeatType,
+        parentId: t.parentId,
+        isRepeatedInstance: t.isRepeatedInstance
+      }))
+    );
+    console.log('Tasks returned by getTasksForDate:', 
+      dailyTasksAll.map(t => ({
+        id: t.id,
+        title: t.title,
+        scheduledDate: t.scheduledDate,
+        scheduledTime: t.scheduledTime,
+        isRepeatedInstance: t.isRepeatedInstance,
+        parentId: t.parentId
+      }))
+    );
+    console.log('Final daily tasks (parent-level only):', 
+      dailyTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        scheduledTime: t.scheduledTime,
+        parentId: t.parentId
+      }))
+    );
+  }, [tasks, selectedDate, dailyTasksAll, dailyTasks]);
+
   // Separate timed and untimed tasks
   const timedTasks = dailyTasks
     .filter(task => task.scheduledTime)

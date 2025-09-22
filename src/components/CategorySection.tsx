@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Category, Task, PrayerSettings } from '@/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { TaskItem } from './TaskItem';
 import { QuickDatePicker } from './QuickDatePicker';
 import { RepeatSettings } from './RepeatSettings';
 import { PrayerLocationManager } from './PrayerLocationManager';
-import { Plus, Folder, Trash, Check, X, Pencil, Palette, MapPin, Warning, CaretUp, CaretDown, ArrowUp, ArrowDown } from '@phosphor-icons/react';
+import { Plus, Folder, Trash, Check, X, Pencil, Palette, MapPin, Warning, CaretUp, CaretDown, ArrowUp, ArrowDown, CheckCircle, CaretRight, CaretDown as CaretDownIcon } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CategorySectionProps {
@@ -82,6 +82,7 @@ export function CategorySection({
   const [editCategoryName, setEditCategoryName] = useState(category.name);
   const [editCategoryColor, setEditCategoryColor] = useState(category.color || '#3B82F6');
   const [showCustomizeDialog, setShowCustomizeDialog] = useState(false);
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
 
   const categoryColors = [
     '#3B82F6', // blue
@@ -100,7 +101,39 @@ export function CategorySection({
   const mainTasks = tasks.filter(task => !task.parentId);
   const completedTasks = mainTasks.filter(task => task.completed);
   const pendingTasks = mainTasks.filter(task => !task.completed);
-  const sortedTasks = [...pendingTasks, ...completedTasks];
+  
+  // Group completed tasks by title for repeating tasks
+  const groupedCompletedTasks = useMemo(() => {
+    const grouped = new Map<string, { task: Task; completions: Task[]; count: number; subtaskCount: number }>();
+    
+    completedTasks.forEach(task => {
+      // Count subtasks for this task
+      const subtaskCount = allTasks.filter(t => t.parentId === task.id).length;
+      
+      // For repeating tasks, group by the base title (without date info)
+      const baseTitle = task.title.replace(/ \(.*?\)$/, ''); // Remove date suffixes
+      const key = task.repeatType ? baseTitle : task.id;
+      
+      if (grouped.has(key)) {
+        const existing = grouped.get(key)!;
+        existing.completions.push(task);
+        existing.count++;
+        existing.subtaskCount += subtaskCount;
+      } else {
+        grouped.set(key, {
+          task: task,
+          completions: [task],
+          count: 1,
+          subtaskCount: subtaskCount
+        });
+      }
+    });
+    
+    return Array.from(grouped.values());
+  }, [completedTasks, allTasks]);
+  
+  // Only show pending tasks in main view, not completed
+  const sortedTasks = [...pendingTasks];
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -228,7 +261,7 @@ export function CategorySection({
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-xs">
-                      {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+                      {pendingTasks.length} {pendingTasks.length === 1 ? 'task' : 'tasks'}
                     </Badge>
                     {completedTasks.length > 0 && (
                       <Badge 
@@ -240,7 +273,7 @@ export function CategorySection({
                           color: category.color || '#3B82F6'
                         }}
                       >
-                        {completedTasks.length} completed
+                        {groupedCompletedTasks.length} completed
                       </Badge>
                     )}
                     
@@ -628,17 +661,124 @@ export function CategorySection({
                 ))}
               </div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-8 text-muted-foreground"
-              >
-                <Folder size={48} className="mx-auto mb-3 opacity-50" />
-                <p>No tasks yet</p>
-                <p className="text-sm">Click "Add Task" to get started</p>
-              </motion.div>
+              pendingTasks.length === 0 && completedTasks.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-8 text-muted-foreground"
+                >
+                  <Folder size={48} className="mx-auto mb-3 opacity-50" />
+                  <p>No tasks yet</p>
+                  <p className="text-sm">Click "Add Task" to get started</p>
+                </motion.div>
+              )
             )}
           </AnimatePresence>
+
+          {/* Completed Tasks Section */}
+          {completedTasks.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <Button
+                variant="ghost"
+                onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                className="w-full justify-between text-muted-foreground hover:text-foreground mb-3 h-auto p-2"
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={16} />
+                  <span className="text-sm font-medium">
+                    Completed ({groupedCompletedTasks.length})
+                  </span>
+                </div>
+                {showCompletedTasks ? (
+                  <CaretDownIcon size={16} />
+                ) : (
+                  <CaretRight size={16} />
+                )}
+              </Button>
+
+              <AnimatePresence>
+                {showCompletedTasks && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-1"
+                  >
+                    {groupedCompletedTasks.map((group, index) => (
+                      <Card
+                        key={`completed-${group.task.id}-${index}`}
+                        className="p-3 bg-muted/20 border-muted group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <CheckCircle 
+                              size={16} 
+                              className="text-green-600 dark:text-green-400 flex-shrink-0" 
+                              weight="fill"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-foreground line-through decoration-2 decoration-muted-foreground/50">
+                                {group.task.title}
+                              </div>
+                              {group.task.description && (
+                                <div className="text-xs text-muted-foreground mt-1 line-through">
+                                  {group.task.description}
+                                </div>
+                              )}
+                              {group.task.completedAt && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Completed: {new Date(group.task.completedAt).toLocaleDateString()}
+                                  {group.task.scheduledTime && ` at ${group.task.scheduledTime}`}
+                                </div>
+                              )}
+                              {group.subtaskCount > 0 && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {group.subtaskCount} subtask{group.subtaskCount !== 1 ? 's' : ''}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {group.count > 1 && (
+                              <Badge 
+                                variant="secondary" 
+                                className="text-xs"
+                                style={{ 
+                                  backgroundColor: `${category.color || '#3B82F6'}20`,
+                                  color: category.color || '#3B82F6'
+                                }}
+                              >
+                                {group.count}x completed
+                              </Badge>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onToggleTaskComplete(group.task.id)}
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Mark as incomplete"
+                            >
+                              <X size={12} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onDeleteTask(group.task.id)}
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                              title="Delete task"
+                            >
+                              <Trash size={12} />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>

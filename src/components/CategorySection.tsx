@@ -35,6 +35,7 @@ interface CategorySectionProps {
   onUpdatePrayerSettings?: (settings: PrayerSettings) => Promise<void>;
   isUpdatingPrayers?: boolean;
   getMissedPrayersCount?: (prayerName: string) => number;
+  onAddTodaysPrayers?: () => Promise<void>;
   // Category ordering props
   onMoveCategoryUp?: (categoryId: string) => void;
   onMoveCategoryDown?: (categoryId: string) => void;
@@ -62,6 +63,7 @@ export function CategorySection({
   onUpdatePrayerSettings,
   isUpdatingPrayers = false,
   getMissedPrayersCount,
+  onAddTodaysPrayers,
   onMoveCategoryUp,
   onMoveCategoryDown,
   onMoveCategoryToTop,
@@ -455,6 +457,19 @@ export function CategorySection({
                       Add Task
                     </Button>
                   )}
+                  
+                  {/* Prayer category specific buttons */}
+                  {isPrayerCategory && onAddTodaysPrayers && (
+                    <Button
+                      size="sm"
+                      onClick={onAddTodaysPrayers}
+                      disabled={isUpdatingPrayers}
+                      className="gap-2 bg-green-600 hover:bg-green-700 border-green-600 text-white"
+                    >
+                      <Plus size={16} />
+                      {isUpdatingPrayers ? 'Adding...' : 'Add Today\'s Prayers'}
+                    </Button>
+                  )}
                 </div>
 
                 {/* Mobile compact button */}
@@ -469,6 +484,20 @@ export function CategorySection({
                         borderColor: category.color || '#3B82F6',
                         color: 'white'
                       }}
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Prayer category mobile button */}
+                {isPrayerCategory && onAddTodaysPrayers && (
+                  <div className="sm:hidden">
+                    <Button
+                      size="sm"
+                      onClick={onAddTodaysPrayers}
+                      disabled={isUpdatingPrayers}
+                      className="h-8 w-8 p-0 rounded-full bg-green-600 hover:bg-green-700 border-green-600 text-white"
                     >
                       <Plus size={16} />
                     </Button>

@@ -41,6 +41,7 @@ interface SortableCategoryItemProps {
   onUpdatePrayerSettings?: any;
   isUpdatingPrayers?: boolean;
   getMissedPrayersCount?: (prayerName: string) => number;
+  onAddTodaysPrayers?: () => Promise<void>;
   // Category ordering props
   onMoveCategoryUp?: (categoryId: string) => void;
   onMoveCategoryDown?: (categoryId: string) => void;
@@ -98,6 +99,7 @@ function SortableCategoryItem(props: SortableCategoryItemProps) {
           onUpdatePrayerSettings={props.onUpdatePrayerSettings}
           isUpdatingPrayers={props.isUpdatingPrayers}
           getMissedPrayersCount={props.getMissedPrayersCount}
+          onAddTodaysPrayers={props.onAddTodaysPrayers}
           onMoveCategoryUp={props.onMoveCategoryUp}
           onMoveCategoryDown={props.onMoveCategoryDown}
           onMoveCategoryToTop={props.onMoveCategoryToTop}
@@ -127,6 +129,7 @@ interface SortableCategoryListProps {
   onUpdatePrayerSettings?: any;
   isUpdatingPrayers?: boolean;
   getMissedPrayersCount?: (prayerName: string) => number;
+  onAddTodaysPrayers?: () => Promise<void>;
 }
 
 export function SortableCategoryList({
@@ -145,7 +148,8 @@ export function SortableCategoryList({
   prayerSettings,
   onUpdatePrayerSettings,
   isUpdatingPrayers,
-  getMissedPrayersCount
+  getMissedPrayersCount,
+  onAddTodaysPrayers
 }: SortableCategoryListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -268,6 +272,7 @@ export function SortableCategoryList({
                 onUpdatePrayerSettings={onUpdatePrayerSettings}
                 isUpdatingPrayers={isUpdatingPrayers}
                 getMissedPrayersCount={getMissedPrayersCount}
+                onAddTodaysPrayers={onAddTodaysPrayers}
                 onMoveCategoryUp={moveCategoryUp}
                 onMoveCategoryDown={moveCategoryDown}
                 onMoveCategoryToTop={moveCategoryToTop}

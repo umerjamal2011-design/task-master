@@ -743,28 +743,28 @@ function App() {
         const prayerTimes = await getPrayerTimes(prayerSettings.location, today);
         
         if (prayerTimes) {
-          // Check if today's prayers already exist
-          const existingTodayPrayers = validTasks.filter(task => 
-            task.categoryId === PRAYER_CATEGORY_ID && task.scheduledDate === today
-          );
+          // Always add fresh prayers for the new day - remove any existing ones first
+          console.log(`Force adding fresh prayer tasks for new day: ${today}`);
           
-          if (existingTodayPrayers.length === 0) {
-            console.log(`Adding fresh prayer tasks for new day: ${today}`);
-            await addPrayerTasks(prayerTimes, today);
-            
-            // Update prayer settings with new timestamp
-            setPrayerSettings(prev => ({
-              enabled: prev?.enabled || false,
-              location: prev?.location,
-              method: prev?.method || 2,
-              lastUpdated: new Date().toISOString()
-            }));
-            
-            toast.success(`New prayer times added for ${today}`);
-          } else {
-            console.log(`Prayer times already exist for ${today}, updating if needed`);
-            await updateDailyPrayerTimes();
-          }
+          // Remove any existing prayers for today to avoid duplicates
+          setTasks(currentTasks => {
+            return (currentTasks || []).filter(task => 
+              !(task.categoryId === PRAYER_CATEGORY_ID && task.scheduledDate === today)
+            );
+          });
+          
+          // Add fresh prayer tasks for today
+          await addPrayerTasks(prayerTimes, today);
+          
+          // Update prayer settings with new timestamp
+          setPrayerSettings(prev => ({
+            enabled: prev?.enabled || false,
+            location: prev?.location,
+            method: prev?.method || 2,
+            lastUpdated: new Date().toISOString()
+          }));
+          
+          toast.success(`Fresh prayer times added for ${today}`);
         }
       } catch (error) {
         console.error('Failed to update prayer times during day change:', error);
@@ -844,11 +844,6 @@ function App() {
     return () => clearInterval(interval);
   }, [prayerSettings?.enabled]); // Remove handleDayChange from dependencies to avoid issues
 
-  // Update prayer times daily
-  useEffect(() => {
-    updateDailyPrayerTimes();
-  }, [prayerSettings?.enabled]); // Run when prayer settings change
-
   const categoryColors = [
     '#3B82F6', // blue
     '#10B981', // green
@@ -861,6 +856,53 @@ function App() {
     '#EC4899', // pink
     '#6B7280', // gray
   ];
+
+  // Function to manually add today's prayers (for user convenience)
+  const addTodaysPrayersManually = async () => {
+    if (!prayerSettings?.enabled || !prayerSettings?.location) {
+      toast.error('Prayer settings not configured. Please setup prayer times first.');
+      return;
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      console.log(`Manually adding prayer times for ${today}`);
+      
+      // Remove any existing prayers for today to avoid duplicates
+      setTasks(currentTasks => {
+        const withoutTodaysPrayers = (currentTasks || []).filter(task => 
+          !(task.categoryId === PRAYER_CATEGORY_ID && task.scheduledDate === today)
+        );
+        console.log(`Removed ${(currentTasks || []).length - withoutTodaysPrayers.length} existing prayers for ${today}`);
+        return withoutTodaysPrayers;
+      });
+      
+      // Get fresh prayer times
+      const prayerTimes = await getPrayerTimes(prayerSettings.location, today);
+      
+      if (prayerTimes) {
+        // Add fresh prayer tasks for today
+        await addPrayerTasks(prayerTimes, today);
+        
+        // Update prayer settings timestamp
+        setPrayerSettings(prev => ({
+          enabled: prev?.enabled || false,
+          location: prev?.location,
+          method: prev?.method || 2,
+          lastUpdated: new Date().toISOString()
+        }));
+        
+        console.log(`Successfully added fresh prayer times for ${today}`);
+        toast.success(`Fresh prayer times added for ${today}`);
+      } else {
+        toast.error('Failed to get prayer times from server');
+      }
+    } catch (error) {
+      console.error('Failed to manually add prayer times:', error);
+      toast.error('Failed to add prayer times: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
 
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -1117,7 +1159,7 @@ function App() {
       
       console.log(`Prayer check: ${todaysPrayers.length} prayers found for ${today}`);
       
-      // If no prayers for today, add them
+      // If no prayers for today, add them immediately
       if (todaysPrayers.length === 0 && prayerSettings?.location) {
         console.log(`No prayers found for ${today}, adding them now...`);
         
@@ -1135,22 +1177,28 @@ function App() {
             }));
             
             console.log(`Successfully added prayer tasks for ${today}`);
-            toast.success(`Prayer times added for ${today}`);
+            toast.success(`Today's prayer times added for ${today}`);
           }
         } catch (error) {
           console.error('Failed to add missing prayer tasks:', error);
+          toast.error('Failed to add prayer times for today');
         }
       } else if (todaysPrayers.length > 0) {
-        // Prayers exist, just update the timestamp if needed
-        await updateDailyPrayerTimes();
+        // Prayers exist, check if they need time updates
+        const lastUpdated = prayerSettings?.lastUpdated ? new Date(prayerSettings.lastUpdated).toISOString().split('T')[0] : null;
+        
+        if (lastUpdated !== today) {
+          console.log(`Prayer times may need updating for ${today} - last updated: ${lastUpdated}`);
+          await updateDailyPrayerTimes();
+        }
       }
     };
     
     // Check immediately on effect run
     checkAndUpdatePrayers();
     
-    // Check every 5 minutes for prayer updates
-    const interval = setInterval(checkAndUpdatePrayers, 5 * 60 * 1000);
+    // Check every 2 minutes for prayer updates (more frequent)
+    const interval = setInterval(checkAndUpdatePrayers, 2 * 60 * 1000);
     
     return () => clearInterval(interval);
   }, [prayerSettings?.enabled, prayerSettings?.location, validTasks.length]); // Include validTasks.length to trigger when tasks change
@@ -2193,6 +2241,7 @@ function App() {
                       }}
                       isUpdatingPrayers={isSettingUpPrayers}
                       getMissedPrayersCount={getMissedPrayersCount}
+                      onAddTodaysPrayers={addTodaysPrayersManually}
                     />
                   ) : (
                     <motion.div

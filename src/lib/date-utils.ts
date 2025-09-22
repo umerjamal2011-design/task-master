@@ -2,10 +2,10 @@ import { Task } from '@/types/index';
 
 // Get relative date labels based on current time
 export const getRelativeDateLabel = (date: string, currentTime: Date = new Date()): string => {
-  if (!date) return '';
+  const yesterday = new
   
-  const taskDate = new Date(date + 'T00:00:00'); // Ensure consistent parsing
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
+  
+  
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   const tomorrow = new Date(today);
@@ -30,102 +30,102 @@ export const getRelativeDateLabel = (date: string, currentTime: Date = new Date(
       return `${weeksDiff} week${weeksDiff > 1 ? 's' : ''} ago`;
     } else {
       return taskDate.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: taskDate.getFullYear() !== currentTime.getFullYear() ? 'numeric' : undefined
-      });
-    }
-  } else {
-    // Future dates
-    const daysDiff = Math.floor((taskDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff <= 7) {
-      return `In ${daysDiff} day${daysDiff > 1 ? 's' : ''}`;
-    } else if (daysDiff <= 30) {
-      const weeksDiff = Math.floor(daysDiff / 7);
-      return `In ${weeksDiff} week${weeksDiff > 1 ? 's' : ''}`;
-    } else {
-      return taskDate.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: taskDate.getFullYear() !== currentTime.getFullYear() ? 'numeric' : undefined
-      });
-    }
-  }
-};
-
-// Get time label with relative context
-export const getRelativeTimeLabel = (time: string, date: string, currentTime: Date = new Date()): string => {
-  if (!time || !date) return time || '';
-  
-  const taskDateTime = new Date(`${date}T${time}`);
-  const now = currentTime;
-  
-  // Format time in user's preferred format
-  const timeString = taskDateTime.toLocaleTimeString('en-US', {
     hour: 'numeric',
-    minute: '2-digit',
     hour12: true
-  });
   
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const taskDateOnly = new Date(taskDateTime.getFullYear(), taskDateTime.getMonth(), taskDateTime.getDate());
-  
-  if (taskDateOnly.getTime() === today.getTime()) {
-    // Today - show if it's passed or upcoming
-    if (taskDateTime < now) {
-      return `${timeString} (passed)`;
+  const t
+  if 
+    if (ta
     } else {
-      const minutesUntil = Math.floor((taskDateTime.getTime() - now.getTime()) / (1000 * 60));
       if (minutesUntil < 60) {
-        return `${timeString} (in ${minutesUntil}m)`;
-      } else if (minutesUntil < 120) {
-        return `${timeString} (in 1h)`;
+      } else if (minutes
       } else {
-        const hoursUntil = Math.floor(minutesUntil / 60);
-        return `${timeString} (in ${hoursUntil}h)`;
-      }
+        return `${timeString} (i
     }
-  }
   
-  return timeString;
 };
-
 // Check if a task is overdue
-export const isTaskOverdue = (task: Task, currentTime: Date = new Date()): boolean => {
-  if (!task.scheduledDate || task.completed) return false;
+  if (!task.scheduledDat
+  const taskDate = new 
   
-  const taskDate = new Date(task.scheduledDate + 'T00:00:00');
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
+  if (tas
+    r
   
-  // If task has a specific time
-  if (task.scheduledTime) {
-    const taskDateTime = new Date(`${task.scheduledDate}T${task.scheduledTime}`);
-    return taskDateTime < currentTime;
+  
+
+export const getTaskStatus = (task: Tas
+  
+  
+  
+  
+    const taskDateTime = n
+  
+    } else if (taskDateOnly.getTime() === t
+      return 'current';
+      return 'upcomi
   }
+  if (taskDateOn
+  } e
   
-  // If task only has a date, consider it overdue if the date has passed
-  return taskDate < today;
+  }
+
+ex
+    // Completed tasks go to the end
+    if (!a.completed && b.completed) return -1
+    // If both have scheduled
+      const dateComparison = a.schedul
+      
+      if (a.scheduledTime && b.scheduledTime) {
+      }
+      // Tasks with time come before tasks without ti
+      if (!a.scheduledTime && b.schedu
+    
+    if (a.sche
+    
+    return a.createdAt.localeCompare(b.createdAt);
 };
 
-// Get task status based on current time
-export const getTaskStatus = (task: Task, currentTime: Date = new Date()): 'upcoming' | 'current' | 'overdue' | 'completed' => {
-  if (task.completed) return 'completed';
-  
-  if (!task.scheduledDate) return 'upcoming';
-  
-  const today = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
-  const taskDate = new Date(task.scheduledDate + 'T00:00:00');
-  const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
-  
-  if (task.scheduledTime) {
-    const taskDateTime = new Date(`${task.scheduledDate}T${task.scheduledTime}`);
-    
-    if (taskDateTime < currentTime) {
-      return 'overdue';
-    } else if (taskDateOnly.getTime() === today.getTime()) {
-      // Today but not yet time
-      return 'current';
-    } else {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       return 'upcoming';
     }
   }

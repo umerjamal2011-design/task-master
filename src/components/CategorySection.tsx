@@ -29,6 +29,7 @@ interface CategorySectionProps {
   onAddSubtask: (parentId: string, title: string) => void;
   onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   canDeleteCategory: boolean;
+  currentTime?: Date; // Add current time prop
   // Prayer-specific props
   prayerSettings?: PrayerSettings;
   onUpdatePrayerSettings?: (settings: PrayerSettings) => Promise<void>;
@@ -56,6 +57,7 @@ export function CategorySection({
   onAddSubtask,
   onAddTaskAtSameLevel,
   canDeleteCategory,
+  currentTime = new Date(), // Default to current time
   prayerSettings,
   onUpdatePrayerSettings,
   isUpdatingPrayers = false,
@@ -659,6 +661,7 @@ export function CategorySection({
                     onDelete={onDeleteTask}
                     onAddSubtask={onAddSubtask}
                     onAddTaskAtSameLevel={onAddTaskAtSameLevel}
+                    currentTime={currentTime}
                   />
                 ))}
               </div>

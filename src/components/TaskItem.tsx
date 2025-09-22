@@ -12,6 +12,7 @@ import { RepeatIndicator } from '@/components/RepeatIndicator';
 import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot, Repeat } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isRepeatingTask } from '@/lib/repeat-utils';
+import { getRelativeDateLabel, getRelativeTimeLabel, isTaskOverdue, getTaskStatus } from '@/lib/date-utils';
 
 interface TaskItemProps {
   task: Task;
@@ -26,6 +27,7 @@ interface TaskItemProps {
   showTimeScheduling?: boolean;
   depth?: number;
   isDailyView?: boolean;
+  currentTime?: Date; // Add current time prop
 }
 
 export function TaskItem({ 
@@ -40,7 +42,8 @@ export function TaskItem({
   onAddTaskAtSameLevel,
   showTimeScheduling = true,
   depth = 0,
-  isDailyView = false
+  isDailyView = false,
+  currentTime = new Date() // Default to current time
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -166,40 +169,16 @@ export function TaskItem({
     }
   };
 
+  // Get task status for visual feedback
+  const taskStatus = getTaskStatus(task, currentTime);
+  const isOverdue = isTaskOverdue(task, currentTime);
+
   const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+    return getRelativeTimeLabel(time, task.scheduledDate || '', currentTime);
   };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    
-    const todayStr = today.toISOString().split('T')[0];
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
-    
-    if (dateStr === todayStr) {
-      return 'Today';
-    } else if (dateStr === yesterdayStr) {
-      return 'Yesterday';
-    } else if (dateStr === tomorrowStr) {
-      return 'Tomorrow';
-    } else {
-      // For dates further away, show month and day (and year if different)
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-      });
-    }
+    return getRelativeDateLabel(dateStr, currentTime);
   };
 
   const getPriorityColor = (priority?: string) => {
@@ -240,10 +219,22 @@ export function TaskItem({
         className={`transition-all duration-200 group ${
           task.completed 
             ? 'bg-muted/50 border-muted shadow-none opacity-75' 
-            : 'bg-card hover:shadow-sm border-border'
+            : isOverdue
+              ? 'bg-destructive/5 border-destructive/30 hover:shadow-sm'
+              : taskStatus === 'current'
+                ? 'bg-accent/5 border-accent/30 hover:shadow-sm'
+                : 'bg-card hover:shadow-sm border-border'
         } ${depth > 0 ? 'border-l-2' : 'border-l-3'}`}
         style={{
-          borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${task.completed ? '#94A3B8' : categoryColor}`
+          borderLeft: `${depth > 0 ? '2px' : '3px'} solid ${
+            task.completed 
+              ? '#94A3B8' 
+              : isOverdue 
+                ? '#EF4444' 
+                : taskStatus === 'current' 
+                  ? '#F59E0B' 
+                  : categoryColor
+          }`
         }}
       >
         <div className="px-2 py-0.5">
@@ -504,33 +495,72 @@ export function TaskItem({
                     {task.scheduledDate && (
                       <Badge 
                         variant="outline" 
-                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
+                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''} ${isOverdue && !task.completed ? 'animate-pulse' : ''}`}
                         style={{
-                          backgroundColor: task.completed ? '#94A3B820' : `${categoryColor}12`,
-                          borderColor: task.completed ? '#94A3B850' : `${categoryColor}40`,
-                          color: task.completed ? '#64748B' : categoryColor,
+                          backgroundColor: task.completed 
+                            ? '#94A3B820' 
+                            : isOverdue 
+                              ? '#EF444412'
+                              : taskStatus === 'current'
+                                ? '#F59E0B12'
+                                : `${categoryColor}12`,
+                          borderColor: task.completed 
+                            ? '#94A3B850' 
+                            : isOverdue 
+                              ? '#EF444440'
+                              : taskStatus === 'current'
+                                ? '#F59E0B40'
+                                : `${categoryColor}40`,
+                          color: task.completed 
+                            ? '#64748B' 
+                            : isOverdue 
+                              ? '#EF4444'
+                              : taskStatus === 'current'
+                                ? '#F59E0B'
+                                : categoryColor,
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'
                         }}
+                        title={isOverdue && !task.completed ? 'Overdue task' : undefined}
                       >
                         <Calendar size={6} />
                         {formatDate(task.scheduledDate)}
+                        {isOverdue && !task.completed && ' ⚠️'}
                       </Badge>
                     )}
                     
                     {task.scheduledTime && (
                       <Badge 
                         variant="outline" 
-                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
+                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''} ${isOverdue && !task.completed ? 'animate-pulse' : ''}`}
                         style={{
-                          backgroundColor: task.completed ? '#94A3B820' : `${categoryColor}12`,
-                          borderColor: task.completed ? '#94A3B850' : `${categoryColor}40`,
-                          color: task.completed ? '#64748B' : categoryColor,
+                          backgroundColor: task.completed 
+                            ? '#94A3B820' 
+                            : isOverdue 
+                              ? '#EF444412'
+                              : taskStatus === 'current'
+                                ? '#F59E0B12'
+                                : `${categoryColor}12`,
+                          borderColor: task.completed 
+                            ? '#94A3B850' 
+                            : isOverdue 
+                              ? '#EF444440'
+                              : taskStatus === 'current'
+                                ? '#F59E0B40'
+                                : `${categoryColor}40`,
+                          color: task.completed 
+                            ? '#64748B' 
+                            : isOverdue 
+                              ? '#EF4444'
+                              : taskStatus === 'current'
+                                ? '#F59E0B'
+                                : categoryColor,
                           fontSize: '8px',
                           height: '14px',
                           lineHeight: '12px'
                         }}
+                        title={isOverdue && !task.completed ? 'Time has passed' : undefined}
                       >
                         <Clock size={6} />
                         {formatTime(task.scheduledTime)}

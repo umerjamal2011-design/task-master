@@ -36,6 +36,7 @@ interface SortableCategoryItemProps {
   onAddSubtask: (parentId: string, title: string) => void;
   onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   canDeleteCategory: boolean;
+  currentTime?: Date; // Add current time prop
   prayerSettings?: any;
   onUpdatePrayerSettings?: any;
   isUpdatingPrayers?: boolean;
@@ -92,6 +93,7 @@ function SortableCategoryItem(props: SortableCategoryItemProps) {
           onAddSubtask={props.onAddSubtask}
           onAddTaskAtSameLevel={props.onAddTaskAtSameLevel}
           canDeleteCategory={props.canDeleteCategory}
+          currentTime={props.currentTime}
           prayerSettings={props.prayerSettings}
           onUpdatePrayerSettings={props.onUpdatePrayerSettings}
           isUpdatingPrayers={props.isUpdatingPrayers}
@@ -120,6 +122,7 @@ interface SortableCategoryListProps {
   onAddSubtask: (parentId: string, title: string) => void;
   onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
   onReorderCategories: (categories: Category[]) => void;
+  currentTime?: Date; // Add current time prop
   prayerSettings?: any;
   onUpdatePrayerSettings?: any;
   isUpdatingPrayers?: boolean;
@@ -138,6 +141,7 @@ export function SortableCategoryList({
   onAddSubtask,
   onAddTaskAtSameLevel,
   onReorderCategories,
+  currentTime = new Date(), // Default to current time
   prayerSettings,
   onUpdatePrayerSettings,
   isUpdatingPrayers,
@@ -259,6 +263,7 @@ export function SortableCategoryList({
                 onAddSubtask={onAddSubtask}
                 onAddTaskAtSameLevel={onAddTaskAtSameLevel}
                 canDeleteCategory={category.id !== DEFAULT_CATEGORY_ID}
+                currentTime={currentTime}
                 prayerSettings={prayerSettings}
                 onUpdatePrayerSettings={onUpdatePrayerSettings}
                 isUpdatingPrayers={isUpdatingPrayers}

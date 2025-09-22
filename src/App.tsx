@@ -1980,6 +1980,7 @@ function App() {
                       onAddSubtask={addSubtask}
                       onAddTaskAtSameLevel={addTaskAtSameLevel}
                       onReorderCategories={reorderCategories}
+                      currentTime={currentTime}
                       prayerSettings={prayerSettings}
                       onUpdatePrayerSettings={async (settings) => {
                         setPrayerSettings(settings);
@@ -2051,6 +2052,7 @@ function App() {
                   onDeleteTask={deleteTask}
                   onAddSubtask={addSubtask}
                   onAddTaskAtSameLevel={addTaskAtSameLevel}
+                  currentTime={currentTime}
                 />
               </TabsContent>
             </Tabs>

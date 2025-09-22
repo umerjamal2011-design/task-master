@@ -17,6 +17,7 @@ interface DailyViewProps {
   onDeleteTask: (taskId: string) => void;
   onAddSubtask: (parentId: string, title: string) => void;
   onAddTaskAtSameLevel: (referenceTaskId: string, title: string) => void;
+  currentTime?: Date; // Add current time prop
 }
 
 export function DailyView({
@@ -27,7 +28,8 @@ export function DailyView({
   onUpdateTask,
   onDeleteTask,
   onAddSubtask,
-  onAddTaskAtSameLevel
+  onAddTaskAtSameLevel,
+  currentTime = new Date() // Default to current time
 }: DailyViewProps) {
   // Get tasks for the selected date using dynamic repeat logic
   const dailyTasksAll = getTasksForDate(tasks, selectedDate);
@@ -251,6 +253,7 @@ export function DailyView({
                     showTimeScheduling={false}
                     depth={calculateTaskDepth(task, tasks)}
                     isDailyView={true}
+                    currentTime={currentTime}
                   />
                 </div>
               </motion.div>
@@ -292,6 +295,7 @@ export function DailyView({
                   showTimeScheduling={true}
                   depth={calculateTaskDepth(task, tasks)}
                   isDailyView={true}
+                  currentTime={currentTime}
                 />
               </motion.div>
             ))}

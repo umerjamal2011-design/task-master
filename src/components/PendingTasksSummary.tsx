@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion';
+import { Calendar, Clock } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { Task, Category } from '@/types/index';
+import { getDateLabel } from '@/lib/date-utils';
 
-import { ScrollArea } from '@/components/ui/scroll-area';
-  onSelectDate: (date: string) => void;
-}
-export const PendingTasksSummary:
-
-  selectedDate
+interface PendingTasksSummaryProps {
   tasks: Task[];
-
+  categories: Category[];
   onSelectDate: (date: string) => void;
-  const overdueTasks = 
+  selectedDate: string;
 }
 
 export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
@@ -34,7 +35,11 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
     !task.completed
   );
 
-    
+  if (overdueTasks.length === 0) {
+    return null;
+  }
+
+  // Group overdue tasks by date
   const overdueByDate = overdueTasks.reduce((acc, task) => {
     const date = task.scheduledDate!;
     if (!acc[date]) {
@@ -47,227 +52,166 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
   // Sort dates (most recent first)
   const sortedOverdueDates = Object.keys(overdueByDate).sort((a, b) => b.localeCompare(a));
 
-  const formatDateLabel = (dateStr: string) => {
-    return category?.name || 'Unkno
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (dateStr === today.toISOString().split('T')[0]) return 'Today';
-    if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yesterday';
-    
-    const daysDiff = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff <= 7) return `${daysDiff} days ago`;
+  const getCategoryById = (id: string) => categories.find(cat => cat.id === id);
 
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-              </CardC
-       
-    
-
-            variant="outline"
-            onClick={() => setShowPendingDialog(true)}
-          >
-    
-
-      {/* Detailed Pending Tasks Dialog */}
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-            <DialogTitle>Overdue Tasks<
-    
-
-                const tasksForDate = ove
-            
-                  <motion.div
-                    initial={false}
-                      backgroundColor: isSelectedDate 
-                        : 'transparen
-                    className={cn(
-                
-                        : "border-border hover:border-accent/30"
-                  >
-              
-                      
-             
-      
-   
-
-          
-                        </div>
-                      <div 
-                          {tasksForDate.length
-                        <Button
-                          size="sm"
-                            onSelectDate(date);
-          
-                  
-                  
-                    </div
-                    {/* Tasks Preview */}
-                      {tasksFo
-                          key={task.id}
-                        >
-                
-             
-                              </span>
-                                className="w-2 h-2 rounded-full fle
-                              />
-                            <div className="flex items-center gap-2 mt-1">
-                         
-                              {task.scheduledTime && (
-                                  <span classNa
-                            
-                                      {task.scheduledTime}
-                                  </div>
-                            
-                          
-                      ))
-                      {tasksForDate.length > 3 && (
-                          <Butto
-                          
-                      
-                            
-                   
-            
-           
-        
-              })}
-          </ScrollArea>
-      </Dialog>
-            variant="outline"
-
-            onClick={() => setShowPendingDialog(true)}
-
-          >
-
-
-
-
+  return (
+    <>
+      {/* Summary Card */}
+      <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-800">
+                <Calendar size={16} className="text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm text-orange-700 dark:text-orange-300">
+                  {overdueTasks.length} Overdue Tasks
+                </div>
+                <div className="text-xs text-orange-600 dark:text-orange-400">
+                  From {sortedOverdueDates.length} previous {sortedOverdueDates.length === 1 ? 'day' : 'days'}
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPendingDialog(true)}
+              className="text-xs border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-800"
+            >
+              View Details
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Detailed Pending Tasks Dialog */}
-
+      <Dialog open={showPendingDialog} onOpenChange={setShowPendingDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
-
-
-
-
-
-
-
-
-
-
-
+          <DialogHeader>
+            <DialogTitle>Overdue Tasks</DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-4">
+              {sortedOverdueDates.map((date) => {
+                const tasksForDate = overdueByDate[date];
+                const isSelectedDate = selectedPendingDate === date;
+                
+                return (
                   <motion.div
-
+                    key={date}
                     initial={false}
-
+                    animate={{
                       backgroundColor: isSelectedDate 
-
-
-
+                        ? 'var(--accent)' 
+                        : 'transparent'
+                    }}
                     className={cn(
-
-
-
+                      "p-4 rounded-lg border-2 transition-colors cursor-pointer",
+                      isSelectedDate 
+                        ? "border-accent bg-accent/10" 
                         : "border-border hover:border-accent/30"
-
+                    )}
+                    onClick={() => {
+                      setSelectedPendingDate(selectedPendingDate === date ? null : date);
+                    }}
                   >
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-800">
+                          <Calendar size={16} className="text-orange-600 dark:text-orange-400" />
                         </div>
-
-
-
-
-
+                        <div>
+                          <div className="font-semibold text-foreground">
+                            {getDateLabel(date)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {tasksForDate.length} {tasksForDate.length === 1 ? 'task' : 'tasks'} pending
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {tasksForDate.length}
+                        </Badge>
                         <Button
-
+                          variant="outline"
                           size="sm"
-
+                          onClick={(e) => {
+                            e.stopPropagation();
                             onSelectDate(date);
-
-
-
-
-
-
-
-
-
-                    {/* Tasks Preview */}
-
-
-
-                          key={task.id}
-
+                            setShowPendingDialog(false);
+                          }}
+                          className="text-xs"
                         >
-
-
-
-
-
-                              </span>
-
-
-
+                          View Day
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Tasks Preview */}
+                    {isSelectedDate && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-2 border-t border-border pt-3 mt-3"
+                      >
+                        {tasksForDate.slice(0, 5).map((task) => {
+                          const category = getCategoryById(task.categoryId);
+                          
+                          return (
+                            <div
+                              key={task.id}
+                              className="flex items-start gap-3 p-2 rounded bg-secondary/30"
+                            >
+                              <div 
+                                className="w-2 h-2 rounded-full flex-shrink-0 mt-2"
+                                style={{ backgroundColor: category?.color || '#6B7280' }}
                               />
-
-                            <div className="flex items-center gap-2 mt-1">
-
-
-
-                              {task.scheduledTime && (
-
-
-
-
-
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {task.title}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {category?.name || 'Unknown'}
+                                  </Badge>
+                                  {task.scheduledTime && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Clock size={12} />
                                       {task.scheduledTime}
-
-                                  </div>
-
-
-
-
-
-
-                      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {tasksForDate.length > 5 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectDate(date);
+                              setShowPendingDialog(false);
+                            }}
+                            className="w-full text-xs text-muted-foreground"
+                          >
+                            View all {tasksForDate.length} tasks for this day
+                          </Button>
+                        )}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                );
               })}
-
+            </div>
           </ScrollArea>
-
+        </DialogContent>
       </Dialog>
-
+    </>
   );
+};

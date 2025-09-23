@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Task, Category } from '@/types/index';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Check, X, CaretUp, CaretDown, CalendarBlank, ArrowsClockwise } from '@phosphor-icons/react';
 import { toast } from 'sonner';
@@ -39,34 +39,43 @@ export function PendingTasksSummary({
   const [bulkAllTargetDate, setBulkAllTargetDate] = useState('');
   const [bulkAllTargetTime, setBulkAllTargetTime] = useState('');
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // Get overdue tasks (scheduled for before today and not completed)
-  const overdueTasks = tasks.filter(task => 
-    task.scheduledDate && 
-    task.scheduledDate < today && 
-    !task.completed
+  const overdueTasks = useMemo(() => 
+    tasks.filter(task => 
+      task.scheduledDate && 
+      task.scheduledDate < today && 
+      !task.completed
+    ), [tasks, today]
   );
 
   // Group overdue tasks by date
-  const overdueByDate: Record<string, Task[]> = {};
-  overdueTasks.forEach(task => {
-    if (task.scheduledDate) {
-      if (!overdueByDate[task.scheduledDate]) {
-        overdueByDate[task.scheduledDate] = [];
+  const overdueByDate: Record<string, Task[]> = useMemo(() => {
+    const grouped: Record<string, Task[]> = {};
+    overdueTasks.forEach(task => {
+      if (task.scheduledDate) {
+        if (!grouped[task.scheduledDate]) {
+          grouped[task.scheduledDate] = [];
+        }
+        grouped[task.scheduledDate].push(task);
       }
-      overdueByDate[task.scheduledDate].push(task);
-    }
-  });
+    });
+    return grouped;
+  }, [overdueTasks]);
 
-  const sortedOverdueDates = Object.keys(overdueByDate).sort((a, b) => b.localeCompare(a));
+  const sortedOverdueDates = useMemo(() => 
+    Object.keys(overdueByDate).sort((a, b) => b.localeCompare(a)), 
+    [overdueByDate]
+  );
 
   // When dialog opens, expand all dates by default
   useEffect(() => {
     if (showPendingDialog) {
-      setExpandedDates(new Set(sortedOverdueDates));
+      const dates = Object.keys(overdueByDate).sort((a, b) => b.localeCompare(a));
+      setExpandedDates(new Set(dates));
     }
-  }, [showPendingDialog, sortedOverdueDates]);
+  }, [showPendingDialog]); // Remove sortedOverdueDates dependency to prevent infinite loop
 
   const getCategoryById = (categoryId: string) => {
     return categories.find(cat => cat.id === categoryId);

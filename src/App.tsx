@@ -4,6 +4,7 @@ import { Task, Category, PrayerTimes, LocationData, PrayerSettings } from '@/typ
 import { SortableCategoryList } from '@/components/SortableCategoryList';
 import { SortableCategoryNavigation } from '@/components/SortableCategoryNavigation';
 import { DailyView } from '@/components/DailyView';
+import { PendingTasksSummary } from '@/components/PendingTasksSummary';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -1838,16 +1839,81 @@ function App() {
               </div>
             )}
 
-            {/* Date Picker for Daily View */}
+            {/* Date Navigation for Daily View */}
             {currentView === 'daily' && (
-              <div className="mb-4">
-                <Label className="text-sm font-medium mb-2 block">Select Date</Label>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full text-foreground"
-                />
+              <div className="mb-4 space-y-4">
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Quick Navigation</Label>
+                  <div className="space-y-2">
+                    {/* Quick Date Buttons */}
+                    <div className="flex flex-col gap-1">
+                      {[
+                        { 
+                          label: 'Yesterday', 
+                          date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                          icon: '←'
+                        },
+                        { 
+                          label: 'Today', 
+                          date: new Date().toISOString().split('T')[0],
+                          icon: '●'
+                        },
+                        { 
+                          label: 'Tomorrow', 
+                          date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                          icon: '→'
+                        }
+                      ].map((item) => {
+                        const isSelected = selectedDate === item.date;
+                        const taskCount = validTasks.filter(task => 
+                          task.scheduledDate === item.date && !task.completed
+                        ).length;
+                        
+                        return (
+                          <Button
+                            key={item.date}
+                            variant={isSelected ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedDate(item.date)}
+                            className={`w-full justify-between h-10 ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary/50'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">{item.icon}</span>
+                              <span className="text-sm font-medium">{item.label}</span>
+                            </div>
+                            {taskCount > 0 && (
+                              <Badge variant={isSelected ? "secondary" : "outline"} className="text-xs">
+                                {taskCount}
+                              </Badge>
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pending Tasks Summary */}
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Overdue Tasks</Label>
+                  <PendingTasksSummary
+                    tasks={validTasks}
+                    categories={categories || []}
+                    onSelectDate={setSelectedDate}
+                    selectedDate={selectedDate}
+                  />
+                </div>
+
+                {/* Custom Date Picker */}
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Select Custom Date</Label>
+                  <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full text-foreground"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -2094,16 +2160,87 @@ function App() {
                     </div>
                   )}
 
-                  {/* Date Picker for Daily View in Mobile */}
+                  {/* Date Navigation for Daily View in Mobile */}
                   {currentView === 'daily' && (
-                    <div className="mb-4">
-                      <Label className="text-sm font-medium mb-2 block">Select Date</Label>
-                      <Input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full text-foreground"
-                      />
+                    <div className="mb-4 space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium mb-3 block">Quick Navigation</Label>
+                        <div className="space-y-2">
+                          {/* Quick Date Buttons */}
+                          <div className="flex flex-col gap-1">
+                            {[
+                              { 
+                                label: 'Yesterday', 
+                                date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                icon: '←'
+                              },
+                              { 
+                                label: 'Today', 
+                                date: new Date().toISOString().split('T')[0],
+                                icon: '●'
+                              },
+                              { 
+                                label: 'Tomorrow', 
+                                date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                icon: '→'
+                              }
+                            ].map((item) => {
+                              const isSelected = selectedDate === item.date;
+                              const taskCount = validTasks.filter(task => 
+                                task.scheduledDate === item.date && !task.completed
+                              ).length;
+                              
+                              return (
+                                <Button
+                                  key={item.date}
+                                  variant={isSelected ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedDate(item.date);
+                                    setIsMobileSidebarOpen(false);
+                                  }}
+                                  className={`w-full justify-between h-10 ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary/50'}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">{item.icon}</span>
+                                    <span className="text-sm font-medium">{item.label}</span>
+                                  </div>
+                                  {taskCount > 0 && (
+                                    <Badge variant={isSelected ? "secondary" : "outline"} className="text-xs">
+                                      {taskCount}
+                                    </Badge>
+                                  )}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pending Tasks Summary */}
+                      <div>
+                        <Label className="text-sm font-medium mb-3 block">Overdue Tasks</Label>
+                        <PendingTasksSummary
+                          tasks={validTasks}
+                          categories={categories || []}
+                          onSelectDate={(date) => {
+                            setSelectedDate(date);
+                            setIsMobileSidebarOpen(false);
+                          }}
+                          selectedDate={selectedDate}
+                        />
+                      </div>
+
+                      {/* Custom Date Picker */}
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Select Custom Date</Label>
+                        <Input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          className="w-full text-foreground"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2263,8 +2400,18 @@ function App() {
 
               <TabsContent value="daily">
                 <div className="mb-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-lg font-semibold text-foreground">Daily Schedule</h2>
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">Daily Schedule</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedDate).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -2286,6 +2433,50 @@ function App() {
                         <Calendar size={16} />
                         Update Daily
                       </Button>
+                    </div>
+                  </div>
+
+                  {/* Overdue Tasks Summary Bar */}
+                  <div className="mb-4">
+                    <div className="lg:hidden">
+                      {/* Mobile: Just show count */}
+                      {(() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        const overdueTasks = validTasks.filter(task => 
+                          task.scheduledDate && 
+                          task.scheduledDate < today && 
+                          !task.completed
+                        );
+                        
+                        if (overdueTasks.length > 0) {
+                          return (
+                            <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+                              <CardContent className="pt-3 pb-3">
+                                <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                                  <Calendar size={16} />
+                                  <span className="text-sm font-medium">
+                                    {overdueTasks.length} overdue tasks from previous days
+                                  </span>
+                                </div>
+                                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                  View in sidebar to manage overdue tasks
+                                </p>
+                              </CardContent>
+                            </Card>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+
+                    <div className="hidden lg:block">
+                      {/* Desktop: Show detailed summary */}
+                      <PendingTasksSummary
+                        tasks={validTasks}
+                        categories={categories || []}
+                        onSelectDate={setSelectedDate}
+                        selectedDate={selectedDate}
+                      />
                     </div>
                   </div>
                 </div>

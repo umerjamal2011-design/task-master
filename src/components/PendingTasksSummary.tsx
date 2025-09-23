@@ -1,37 +1,36 @@
 import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/sc
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Calendar, Clock } from '@phosphor-icons/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Task, Category } from '@/types/index';
 
-interface PendingTasksSummaryProps {
+interface PendingTasksSummaryProp
+  onSelectDate: (date: string) => void;
   tasks: Task[];
-  categories: Category[];
+
+  tasks: Task[];
+  categories,
   onSelectDate: (date: string) => void;
   selectedDate: string;
-}
-
-export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
+}FC<PendingTasksSummaryProps> = ({
   tasks,
-  categories,
+export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
+  // Get
+  selectedDate
   onSelectDate,
   selectedDate
-}) => {
+
   const [showPendingDialog, setShowPendingDialog] = useState(false);
   const [selectedPendingDate, setSelectedPendingDate] = useState<string | null>(null);
 
-  const today = new Date().toISOString().split('T')[0];
-  
   // Get all overdue tasks (scheduled for dates before today and not completed)
   const overdueTasks = tasks.filter(task => 
     task.scheduledDate && 
+  const overdueTasks = tasks.filter(task => 
+    task.scheduledDate && 
     task.scheduledDate < today && 
-    !task.completed
-  );
 
   if (overdueTasks.length === 0) {
     return null;

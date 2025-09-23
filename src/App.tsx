@@ -321,12 +321,6 @@ function App() {
         document.documentElement.classList.remove('dark');
       }
       
-      // Force component re-renders by updating key state
-      setTimeout(() => {
-        setSelectedDate(current => current); // Trigger daily view refresh
-        setRefreshKey(prev => prev + 1); // Force refresh
-      }, 100);
-      
       console.log('Data refresh completed successfully');
       toast.success('All data refreshed successfully');
     } catch (error) {
@@ -774,14 +768,6 @@ function App() {
       }
     }
     
-    // Force a state refresh to update any cached data
-    setTimeout(() => {
-      console.log('Forcing state refresh after day change...');
-      setTasks(current => [...(current || [])]);
-      setCategories(current => [...(current || [])]);
-      setRefreshKey(prev => prev + 1); // Force refresh
-    }, 500);
-    
     console.log(`Daily update completed for ${today}`);
     toast.success(`Daily update completed - Welcome to ${new Date().toLocaleDateString()}`);
   };
@@ -955,20 +941,22 @@ function App() {
     
     const validCategoryIds = new Set(categories.map(cat => cat.id));
     
-    // Check if cleanup is needed
-    const hasInvalidTasks = tasks.some(task => 
-      !task || 
-      !task.id || 
-      typeof task.completed !== 'boolean' ||
-      !validCategoryIds.has(task.categoryId) ||
-      (task.parentId && !tasks.some(t => t?.id === task.parentId))
+    // Check if cleanup is needed - use a more stable check to avoid loops
+    const hasInvalidCategories = tasks.some(task => 
+      task && task.id && !validCategoryIds.has(task.categoryId)
     );
     
-    if (hasInvalidTasks) {
-      console.log('Auto-cleanup: Found invalid tasks, cleaning up...');
-      cleanupOrphanedTasks(categories);
+    // Only cleanup tasks with invalid categories, not orphaned subtasks
+    // (orphaned subtasks will be handled by the validTasks memo)
+    if (hasInvalidCategories) {
+      console.log('Auto-cleanup: Found tasks with invalid categories, cleaning up...');
+      setTasks(currentTasks => 
+        (currentTasks || []).filter(task => 
+          task && task.id && validCategoryIds.has(task.categoryId)
+        )
+      );
     }
-  }, [categories, cleanupOrphanedTasks]); // Only trigger on category changes to avoid infinite loops
+  }, [categories]); // Only trigger on category changes to avoid infinite loops
 
   const scrollToCategory = (categoryId: string) => {
     const element = document.getElementById(`category-${categoryId}`);
@@ -979,57 +967,28 @@ function App() {
 
   // Get valid tasks with comprehensive filtering - exclude repeated instances for counting
   const validTasks = React.useMemo(() => {
-    if (!tasks || tasks.length === 0 || !categories || categories.length === 0) {
-      console.log('No tasks or categories, returning empty array');
+    if (!tasks || !categories) {
       return [];
     }
     
-    const validCategoryIds = new Set(categories.map(cat => cat.id));
-    console.log('Valid category IDs:', Array.from(validCategoryIds));
+    const validCategoryIds = new Set(categories.map(cat => cat?.id).filter(Boolean));
     
-    // First filter: basic validity and category existence
-    const basicValid = tasks.filter(task => {
-      if (!task) {
-        console.log('Filtering out null/undefined task');
-        return false;
-      }
-      if (!task.id) {
-        console.log('Filtering out task without ID:', task);
-        return false;
-      }
-      if (!task.title) {
-        console.log('Filtering out task without title:', task.id);
-        return false;
-      }
-      if (typeof task.completed !== 'boolean') {
-        console.log('Filtering out task with invalid completed field:', task.id, task.completed);
-        return false;
-      }
-      if (!task.categoryId) {
-        console.log('Filtering out task without categoryId:', task.id);
-        return false;
-      }
-      if (!validCategoryIds.has(task.categoryId)) {
-        console.log('Filtering out task with invalid categoryId:', task.id, task.categoryId);
-        return false;
-      }
-      return true;
+    // Filter tasks for basic validity and category existence
+    const filtered = tasks.filter(task => {
+      return task && 
+             task.id && 
+             task.title && 
+             typeof task.completed === 'boolean' &&
+             task.categoryId &&
+             validCategoryIds.has(task.categoryId);
     });
     
-    console.log(`Basic validation: ${tasks.length} -> ${basicValid.length}`);
+    // Only log when there's a significant change to avoid console spam
+    if (tasks.length !== filtered.length && tasks.length > 0) {
+      console.log(`Task validation: ${tasks.length} -> ${filtered.length} (filtered ${tasks.length - filtered.length})`);
+    }
     
-    // Second filter: ensure parent-child relationships are valid
-    const taskIds = new Set(basicValid.map(task => task.id));
-    const fullyValid = basicValid.filter(task => {
-      if (task.parentId && !taskIds.has(task.parentId)) {
-        console.log('Filtering out orphaned subtask:', task.id, 'parent:', task.parentId);
-        return false;
-      }
-      return true;
-    });
-    
-    console.log(`Final validation: ${basicValid.length} -> ${fullyValid.length}`);
-    return fullyValid;
+    return filtered;
   }, [tasks, categories]);
   
   // Count only non-repeated instances for display purposes
@@ -1144,65 +1103,50 @@ function App() {
         (window as any).showTasksData();
       }, 100);
     };
-  }, [tasks, categories, validTasks, totalTasks, completedTasks, pendingTasks, hasDataInconsistencies]);
+  }, [tasks, categories]); // Simplified dependencies to prevent loops
   
-  // Check for prayer time updates more frequently and ensure daily prayers are added
+  // Check for prayer time updates - simplified to prevent loops
   useEffect(() => {
-    if (!prayerSettings?.enabled) return;
+    if (!prayerSettings?.enabled || !prayerSettings?.location) return;
     
-    const checkAndUpdatePrayers = async () => {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Check if today's prayers exist
-      const todaysPrayers = validTasks.filter(task => 
-        task.categoryId === PRAYER_CATEGORY_ID && task.scheduledDate === today
-      );
-      
-      console.log(`Prayer check: ${todaysPrayers.length} prayers found for ${today}`);
-      
-      // If no prayers for today, add them immediately
-      if (todaysPrayers.length === 0 && prayerSettings?.location) {
-        console.log(`No prayers found for ${today}, adding them now...`);
+    // Only run once per day
+    const today = new Date().toISOString().split('T')[0];
+    const lastCheck = localStorage.getItem('prayerLastCheck');
+    
+    if (lastCheck === today) {
+      console.log(`Prayer check already done for ${today}, skipping`);
+      return;
+    }
+    
+    const checkPrayers = async () => {
+      try {
+        localStorage.setItem('prayerLastCheck', today);
         
-        try {
-          const prayerTimes = await getPrayerTimes(prayerSettings.location, today);
+        // Get current tasks from storage to avoid state dependency
+        const currentTasks = (await (window as any).spark.kv.get('tasks') as Task[]) || [];
+        const todaysPrayers = currentTasks.filter(task => 
+          task && task.categoryId === PRAYER_CATEGORY_ID && task.scheduledDate === today
+        );
+        
+        console.log(`Prayer check: ${todaysPrayers.length} prayers found for ${today}`);
+        
+        if (todaysPrayers.length === 0) {
+          console.log(`Adding prayers for ${today}`);
+          const prayerTimes = await getPrayerTimes(prayerSettings.location!, today);
           if (prayerTimes) {
             await addPrayerTasks(prayerTimes, today);
-            
-            // Update last updated timestamp
-            setPrayerSettings(prev => ({
-              enabled: prev?.enabled || false,
-              location: prev?.location,
-              method: prev?.method || 2,
-              lastUpdated: new Date().toISOString()
-            }));
-            
-            console.log(`Successfully added prayer tasks for ${today}`);
-            toast.success(`Today's prayer times added for ${today}`);
+            toast.success(`Prayer times added for ${today}`);
           }
-        } catch (error) {
-          console.error('Failed to add missing prayer tasks:', error);
-          toast.error('Failed to add prayer times for today');
         }
-      } else if (todaysPrayers.length > 0) {
-        // Prayers exist, check if they need time updates
-        const lastUpdated = prayerSettings?.lastUpdated ? new Date(prayerSettings.lastUpdated).toISOString().split('T')[0] : null;
-        
-        if (lastUpdated !== today) {
-          console.log(`Prayer times may need updating for ${today} - last updated: ${lastUpdated}`);
-          await updateDailyPrayerTimes();
-        }
+      } catch (error) {
+        console.error('Prayer check failed:', error);
+        // Remove the flag so it can try again later
+        localStorage.removeItem('prayerLastCheck');
       }
     };
     
-    // Check immediately on effect run
-    checkAndUpdatePrayers();
-    
-    // Check every 2 minutes for prayer updates (more frequent)
-    const interval = setInterval(checkAndUpdatePrayers, 2 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [prayerSettings?.enabled, prayerSettings?.location, validTasks.length]); // Include validTasks.length to trigger when tasks change
+    checkPrayers();
+  }, [prayerSettings?.enabled, prayerSettings?.location]); // Minimal stable dependencies
   
   // Function to fix data inconsistencies
   const fixDataInconsistencies = () => {

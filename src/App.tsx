@@ -31,6 +31,9 @@ function App() {
     method: 2 // Islamic Society of North America (ISNA)
   });
   
+  // Flag to prevent infinite update loops
+  const isUpdatingRef = React.useRef(false);
+  
   const [currentView, setCurrentView] = useState<'categories' | 'daily'>('categories');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -806,16 +809,31 @@ function App() {
     initializeApp();
   }, []); // Run only on mount
 
-  // Check for day changes and update accordingly - runs more frequently  
+  // Check for day changes and update accordingly - runs more frequently but with better loop prevention
   useEffect(() => {
+    let isHandlingDayChange = false; // Flag to prevent concurrent executions
+    
     const checkDayChange = async () => {
+      if (isHandlingDayChange) {
+        console.log('Day change handler already running, skipping...');
+        return;
+      }
+      
       const currentDate = new Date().toISOString().split('T')[0];
       const lastUpdateDate = localStorage.getItem('lastUpdateDate');
       
       if (lastUpdateDate && lastUpdateDate !== currentDate) {
         console.log(`Day changed from ${lastUpdateDate} to ${currentDate} - running handler`);
-        localStorage.setItem('lastUpdateDate', currentDate);
-        await handleDayChange();
+        isHandlingDayChange = true;
+        
+        try {
+          localStorage.setItem('lastUpdateDate', currentDate);
+          await handleDayChange();
+        } catch (error) {
+          console.error('Day change handler failed:', error);
+        } finally {
+          isHandlingDayChange = false;
+        }
       } else if (!lastUpdateDate) {
         // Set initial date if missing
         localStorage.setItem('lastUpdateDate', currentDate);
@@ -826,10 +844,10 @@ function App() {
     // Check immediately on effect run
     checkDayChange();
     
-    // Check every 2 minutes for day changes (more frequent monitoring)
-    const interval = setInterval(checkDayChange, 2 * 60 * 1000);
+    // Check every 5 minutes for day changes (less frequent to reduce load)
+    const interval = setInterval(checkDayChange, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [prayerSettings?.enabled]); // Remove handleDayChange from dependencies to avoid issues
+  }, []); // Remove dependencies to avoid triggering on every state change
 
   const categoryColors = [
     '#3B82F6', // blue
@@ -935,9 +953,46 @@ function App() {
     });
   }, []);
 
+  // Debounced task cleanup to prevent infinite loops
+  const debouncedTaskCleanup = React.useMemo(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (categoryIds: Set<string>) => {
+      if (isUpdatingRef.current) {
+        console.log('Skipping cleanup - already updating');
+        return;
+      }
+      
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (isUpdatingRef.current) {
+          console.log('Skipping delayed cleanup - already updating');
+          return;
+        }
+        
+        isUpdatingRef.current = true;
+        setTasks(currentTasks => {
+          const filtered = (currentTasks || []).filter(task => 
+            task && task.id && categoryIds.has(task.categoryId)
+          );
+          
+          // Reset flag after a delay to allow for react batching
+          setTimeout(() => {
+            isUpdatingRef.current = false;
+          }, 100);
+          
+          return filtered;
+        });
+      }, 50); // Small delay to batch updates
+    };
+  }, []);
+
   // Run cleanup when categories change (not on every task change to avoid loops)
   useEffect(() => {
     if (!tasks || tasks.length === 0 || !categories || categories.length === 0) return;
+    if (isUpdatingRef.current) {
+      console.log('Skipping category cleanup - already updating');
+      return;
+    }
     
     const validCategoryIds = new Set(categories.map(cat => cat.id));
     
@@ -950,13 +1005,10 @@ function App() {
     // (orphaned subtasks will be handled by the validTasks memo)
     if (hasInvalidCategories) {
       console.log('Auto-cleanup: Found tasks with invalid categories, cleaning up...');
-      setTasks(currentTasks => 
-        (currentTasks || []).filter(task => 
-          task && task.id && validCategoryIds.has(task.categoryId)
-        )
-      );
+      // Use debounced cleanup to prevent rapid-fire state updates
+      debouncedTaskCleanup(validCategoryIds);
     }
-  }, [categories]); // Only trigger on category changes to avoid infinite loops
+  }, [categories, debouncedTaskCleanup]); // Only trigger on category changes to avoid infinite loops
 
   const scrollToCategory = (categoryId: string) => {
     const element = document.getElementById(`category-${categoryId}`);
@@ -998,8 +1050,17 @@ function App() {
   const pendingTasks = totalTasks - completedTasks;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // Check for data inconsistencies
-  const hasDataInconsistencies = (tasks || []).length !== validTasks.length;
+  // Check for data inconsistencies - use a more stable computation
+  const hasDataInconsistencies = React.useMemo(() => {
+    if (!tasks || !categories) return false;
+    
+    const validCategoryIds = new Set(categories.map(cat => cat?.id).filter(Boolean));
+    const invalidTaskCount = tasks.filter(task => 
+      !task || !task.id || !task.categoryId || !validCategoryIds.has(task.categoryId) || typeof task.completed !== 'boolean'
+    ).length;
+    
+    return invalidTaskCount > 0;
+  }, [tasks, categories]);
 
   // Add a function to force clear all data (for debugging)
   const forceDataReset = () => {
@@ -1103,24 +1164,25 @@ function App() {
         (window as any).showTasksData();
       }, 100);
     };
-  }, [tasks, categories]); // Simplified dependencies to prevent loops
+  }, []); // Remove dependencies to prevent loops - these are just debug functions
   
   // Check for prayer time updates - simplified to prevent loops
   useEffect(() => {
     if (!prayerSettings?.enabled || !prayerSettings?.location) return;
     
-    // Only run once per day
+    // Only run once per day with a flag to prevent multiple runs
     const today = new Date().toISOString().split('T')[0];
     const lastCheck = localStorage.getItem('prayerLastCheck');
+    const checkKey = `prayer-check-${today}-${prayerSettings.location.latitude}-${prayerSettings.location.longitude}`;
     
-    if (lastCheck === today) {
+    if (lastCheck === checkKey) {
       console.log(`Prayer check already done for ${today}, skipping`);
       return;
     }
     
     const checkPrayers = async () => {
       try {
-        localStorage.setItem('prayerLastCheck', today);
+        localStorage.setItem('prayerLastCheck', checkKey);
         
         // Get current tasks from storage to avoid state dependency
         const currentTasks = (await (window as any).spark.kv.get('tasks') as Task[]) || [];
@@ -1145,30 +1207,52 @@ function App() {
       }
     };
     
-    checkPrayers();
-  }, [prayerSettings?.enabled, prayerSettings?.location]); // Minimal stable dependencies
+    // Use timeout to prevent immediate execution during render
+    const timeoutId = setTimeout(checkPrayers, 100);
+    return () => clearTimeout(timeoutId);
+  }, [prayerSettings?.enabled, prayerSettings?.location?.latitude, prayerSettings?.location?.longitude]); // More specific dependencies
   
   // Function to fix data inconsistencies
-  const fixDataInconsistencies = () => {
+  const fixDataInconsistencies = React.useCallback(() => {
     const originalCount = (tasks || []).length;
-    const validCount = validTasks.length;
-    const toRemove = originalCount - validCount;
     
-    console.log('Fixing data inconsistencies...', {
-      originalCount,
-      validCount,
-      removing: toRemove,
-      validTasks: validTasks
+    if (!tasks || !categories) {
+      console.log('Cannot fix inconsistencies: missing tasks or categories');
+      return;
+    }
+    
+    const validCategoryIds = new Set(categories.map(cat => cat?.id).filter(Boolean));
+    
+    // Filter tasks for basic validity and category existence
+    const filteredTasks = tasks.filter(task => {
+      return task && 
+             task.id && 
+             task.title && 
+             typeof task.completed === 'boolean' &&
+             task.categoryId &&
+             validCategoryIds.has(task.categoryId);
     });
     
-    // Force update with only valid tasks using functional setter
-    setTasks(() => {
-      console.log('Setting tasks to valid tasks only:', validTasks);
-      return [...validTasks]; // Create a new array to ensure state change detection
-    });
+    const toRemove = originalCount - filteredTasks.length;
     
-    console.log(`Removed ${toRemove} corrupted tasks immediately`);
-  };
+    if (toRemove > 0) {
+      console.log('Fixing data inconsistencies...', {
+        originalCount,
+        validCount: filteredTasks.length,
+        removing: toRemove
+      });
+      
+      // Force update with only valid tasks using functional setter
+      setTasks(() => {
+        console.log('Setting tasks to filtered tasks only');
+        return [...filteredTasks]; // Create a new array to ensure state change detection
+      });
+      
+      console.log(`Removed ${toRemove} corrupted tasks immediately`);
+    } else {
+      console.log('No data inconsistencies found');
+    }
+  }, [tasks, categories]);
   
   // Emergency data reset function (for severe corruption)
   const emergencyReset = async () => {

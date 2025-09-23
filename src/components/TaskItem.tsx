@@ -6,13 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { QuickDatePicker } from '@/components/QuickDatePicker';
 import { RepeatSettings } from '@/components/RepeatSettings';
 import { RepeatIndicator } from '@/components/RepeatIndicator';
-import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot, Repeat } from '@phosphor-icons/react';
+import { Pencil, Trash, Check, X, Plus, Clock, Calendar, CaretRight, CaretDown, Dot, Repeat, ArrowRight } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isRepeatingTask } from '@/lib/repeat-utils';
 import { getDateLabel, getTimeLabel, isTaskOverdue, getTaskStatus } from '@/lib/date-utils';
+import { toast } from 'sonner';
 
 interface TaskItemProps {
   task: Task;
@@ -49,6 +52,9 @@ export function TaskItem({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAddSubtask, setShowAddSubtask] = useState(false);
   const [showAddSameLevel, setShowAddSameLevel] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState(task.scheduledDate || new Date().toISOString().split('T')[0]);
+  const [rescheduleTime, setRescheduleTime] = useState(task.scheduledTime || '');
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSameLevelTitle, setNewSameLevelTitle] = useState('');
   const [editTitle, setEditTitle] = useState(task.title);
@@ -167,6 +173,33 @@ export function TaskItem({
       setShowAddSameLevel(false);
       setNewSameLevelTitle('');
     }
+  };
+
+  const handleReschedule = () => {
+    if (rescheduleDate) {
+      onUpdate(task.id, {
+        scheduledDate: rescheduleDate,
+        scheduledTime: rescheduleTime || undefined
+      });
+      
+      toast.success(`Task rescheduled to ${new Date(rescheduleDate).toLocaleDateString()}`);
+      setShowReschedule(false);
+    }
+  };
+
+  const getQuickRescheduleOptions = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
+    return [
+      { label: 'Today', value: today },
+      { label: 'Tomorrow', value: tomorrow.toISOString().split('T')[0] },
+      { label: 'Next Week', value: nextWeek.toISOString().split('T')[0] }
+    ];
   };
 
   // Get task status for visual feedback
@@ -638,6 +671,21 @@ export function TaskItem({
                 >
                   <Plus size={8} weight="bold" />
                 </Button>
+                {/* Reschedule button - only show for overdue tasks */}
+                {isOverdue && !task.completed && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowReschedule(true);
+                    }}
+                    className="h-4 w-4 p-0 text-orange-600 hover:text-orange-700"
+                    title="Reschedule overdue task"
+                  >
+                    <ArrowRight size={8} />
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -818,6 +866,85 @@ export function TaskItem({
         )}
       </AnimatePresence>
     </motion.div>
+    
+    {/* Reschedule Dialog */}
+    <Dialog open={showReschedule} onOpenChange={setShowReschedule}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Reschedule Task</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="p-3 bg-secondary/30 rounded-lg">
+            <h4 className="font-medium text-sm mb-1">{task.title}</h4>
+            <p className="text-xs text-muted-foreground">
+              Currently scheduled for {task.scheduledDate}
+              {task.scheduledTime && ` at ${task.scheduledTime}`}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm mb-2 block">Quick Options</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {getQuickRescheduleOptions().map((option) => (
+                  <Button
+                    key={option.value}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setRescheduleDate(option.value);
+                      if (option.label === 'Today') {
+                        setRescheduleTime('');
+                      }
+                    }}
+                    className={`text-xs ${rescheduleDate === option.value ? 'bg-primary text-primary-foreground' : ''}`}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm mb-1 block">Date</Label>
+                <Input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">Time (Optional)</Label>
+                <Input
+                  type="time"
+                  value={rescheduleTime}
+                  onChange={(e) => setRescheduleTime(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleReschedule}
+              disabled={!rescheduleDate}
+              className="flex-1"
+            >
+              <Check size={14} className="mr-1" />
+              Reschedule
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowReschedule(false)}
+            >
+              <X size={14} />
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 }

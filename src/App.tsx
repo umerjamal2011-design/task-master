@@ -1901,6 +1901,7 @@ function App() {
                     categories={categories || []}
                     onSelectDate={setSelectedDate}
                     selectedDate={selectedDate}
+                    onUpdateTask={updateTask}
                   />
                 </div>
 
@@ -2228,6 +2229,7 @@ function App() {
                             setIsMobileSidebarOpen(false);
                           }}
                           selectedDate={selectedDate}
+                          onUpdateTask={updateTask}
                         />
                       </div>
 
@@ -2476,6 +2478,7 @@ function App() {
                         categories={categories || []}
                         onSelectDate={setSelectedDate}
                         selectedDate={selectedDate}
+                        onUpdateTask={updateTask}
                       />
                     </div>
                   </div>

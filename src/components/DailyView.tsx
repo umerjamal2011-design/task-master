@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TaskItem } from '@/components/TaskItem';
-import { CheckCircle, Clock, Calendar, Sun } from '@phosphor-icons/react';
+import { CheckCircle, Clock, Calendar, Sun, CaretDown, CaretRight } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { getTasksForDate } from '@/lib/repeat-utils';
 import { getThreeDayRange, formatDateForSection } from '@/lib/date-utils';
@@ -50,6 +50,7 @@ function DaySection({
   currentTime,
   isCurrentDay = false
 }: DaySectionProps) {
+  const [isCollapsed, setIsCollapsed] = React.useState(!isCurrentDay); // Non-current days start collapsed
   // Separate timed and untimed tasks
   const timedTasks = tasks
     .filter(task => task.scheduledTime)
@@ -100,6 +101,17 @@ function DaySection({
         <CardHeader className="pb-3 px-3 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+              {/* Collapse/Expand Button for non-current days */}
+              {!isCurrentDay && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                >
+                  {isCollapsed ? <CaretRight size={14} /> : <CaretDown size={14} />}
+                </Button>
+              )}
               {isCurrentDay && <Sun size={18} className="text-primary" />}
               <h3 className={`font-semibold text-base sm:text-lg ${titleColor}`}>{title}</h3>
               <Badge variant="outline" className="text-xs">
@@ -112,6 +124,16 @@ function DaySection({
           <div className="text-center">
             <Calendar size={28} className="mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">No tasks scheduled</p>
+            {!isCurrentDay && isCollapsed && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(false)}
+                className="mt-2 text-xs"
+              >
+                Click to expand
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -123,13 +145,24 @@ function DaySection({
       <CardHeader className="pb-3 px-3 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2">
+            {/* Collapse/Expand Button for non-current days */}
+            {!isCurrentDay && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 flex-shrink-0"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+              >
+                {isCollapsed ? <CaretRight size={14} /> : <CaretDown size={14} />}
+              </Button>
+            )}
             {isCurrentDay && <Sun size={18} className="text-primary flex-shrink-0" />}
             <h3 className={`font-semibold text-base sm:text-lg ${titleColor} truncate`}>{title}</h3>
             <Badge variant="outline" className="text-xs flex-shrink-0">
               {totalCount}
             </Badge>
           </div>
-          {totalCount > 0 && (
+          {totalCount > 0 && !isCollapsed && (
             <div className="flex items-center gap-2 ml-6 sm:ml-0">
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {completedCount}/{totalCount}
@@ -149,51 +182,103 @@ function DaySection({
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 px-3 sm:px-6">
-        {/* Timed Tasks */}
-        {timedTasks.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock size={14} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
-              <h4 className="text-sm font-medium text-muted-foreground">Scheduled</h4>
-              <Badge variant="secondary" className="text-xs">
-                {timedTasks.length}
-              </Badge>
-            </div>
-            <div className="space-y-1">
-              {timedTasks.map((task, index) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  className={`flex items-start gap-2 sm:gap-3 p-2 rounded-lg border transition-all duration-200 ${
-                    task.completed 
-                      ? 'bg-muted/50 border-muted/60 opacity-75' 
-                      : 'bg-background/50 border-border/50'
-                  }`}
-                >
-                  {/* Mobile optimized time display */}
-                  <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] pt-0.5">
-                    <div className={`text-xs sm:text-sm font-bold px-1.5 sm:px-2 py-1 rounded-md transition-all duration-200 text-center ${
-                      task.completed
-                        ? 'text-muted-foreground bg-muted/30 line-through'
-                        : isCurrentDay
-                          ? 'text-primary bg-primary/10'
-                          : 'text-accent bg-accent/10'
-                    }`}>
-                      {task.completed && <span className="mr-1 no-underline">✓</span>}
-                      {formatTime(task.scheduledTime!)}
-                    </div>
-                    <div className={`w-0.5 h-3 sm:h-4 mt-1 rounded-full transition-all duration-200 ${
+      
+      {/* Collapsible Content */}
+      <motion.div
+        initial={false}
+        animate={{
+          height: isCollapsed ? 0 : "auto",
+          opacity: isCollapsed ? 0 : 1
+        }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        style={{ overflow: "hidden" }}
+      >
+        <CardContent className="space-y-3 px-3 sm:px-6">
+          {/* Timed Tasks */}
+          {timedTasks.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock size={14} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
+                <h4 className="text-sm font-medium text-muted-foreground">Scheduled</h4>
+                <Badge variant="secondary" className="text-xs">
+                  {timedTasks.length}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                {timedTasks.map((task, index) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    className={`flex items-start gap-2 sm:gap-3 p-2 rounded-lg border transition-all duration-200 ${
                       task.completed 
-                        ? 'bg-muted/60' 
-                        : isCurrentDay 
-                          ? 'bg-primary/60' 
-                          : 'bg-accent/60'
-                    }`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
+                        ? 'bg-muted/50 border-muted/60 opacity-75' 
+                        : 'bg-background/50 border-border/50'
+                    }`}
+                  >
+                    {/* Mobile optimized time display */}
+                    <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] pt-0.5">
+                      <div className={`text-xs sm:text-sm font-bold px-1.5 sm:px-2 py-1 rounded-md transition-all duration-200 text-center ${
+                        task.completed
+                          ? 'text-muted-foreground bg-muted/30 line-through'
+                          : isCurrentDay
+                            ? 'text-primary bg-primary/10'
+                            : 'text-accent bg-accent/10'
+                      }`}>
+                        {task.completed && <span className="mr-1 no-underline">✓</span>}
+                        {formatTime(task.scheduledTime!)}
+                      </div>
+                      <div className={`w-0.5 h-3 sm:h-4 mt-1 rounded-full transition-all duration-200 ${
+                        task.completed 
+                          ? 'bg-muted/60' 
+                          : isCurrentDay 
+                            ? 'bg-primary/60' 
+                            : 'bg-accent/60'
+                      }`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <TaskItem
+                        task={task}
+                        allTasks={allTasks}
+                        categoryName={getCategoryName(task.categoryId)}
+                        categoryColor={getCategoryColor(task.categoryId)}
+                        onToggleComplete={onToggleTaskComplete}
+                        onUpdate={onUpdateTask}
+                        onDelete={onDeleteTask}
+                        onAddSubtask={onAddSubtask}
+                        onAddTaskAtSameLevel={onAddTaskAtSameLevel}
+                        showTimeScheduling={false}
+                        depth={calculateTaskDepth(task, allTasks)}
+                        isDailyView={true}
+                        currentTime={currentTime}
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Untimed Tasks */}
+          {untimedTasks.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar size={14} className="text-muted-foreground" />
+                <h4 className="text-sm font-medium text-muted-foreground">Anytime</h4>
+                <Badge variant="outline" className="text-xs">
+                  {untimedTasks.length}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                {untimedTasks.map((task, index) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (timedTasks.length + index) * 0.03 }}
+                    className="p-1"
+                  >
                     <TaskItem
                       task={task}
                       allTasks={allTasks}
@@ -204,58 +289,18 @@ function DaySection({
                       onDelete={onDeleteTask}
                       onAddSubtask={onAddSubtask}
                       onAddTaskAtSameLevel={onAddTaskAtSameLevel}
-                      showTimeScheduling={false}
+                      showTimeScheduling={true}
                       depth={calculateTaskDepth(task, allTasks)}
                       isDailyView={true}
                       currentTime={currentTime}
                     />
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Untimed Tasks */}
-        {untimedTasks.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar size={14} className="text-muted-foreground" />
-              <h4 className="text-sm font-medium text-muted-foreground">Anytime</h4>
-              <Badge variant="outline" className="text-xs">
-                {untimedTasks.length}
-              </Badge>
-            </div>
-            <div className="space-y-1">
-              {untimedTasks.map((task, index) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (timedTasks.length + index) * 0.03 }}
-                  className="p-1"
-                >
-                  <TaskItem
-                    task={task}
-                    allTasks={allTasks}
-                    categoryName={getCategoryName(task.categoryId)}
-                    categoryColor={getCategoryColor(task.categoryId)}
-                    onToggleComplete={onToggleTaskComplete}
-                    onUpdate={onUpdateTask}
-                    onDelete={onDeleteTask}
-                    onAddSubtask={onAddSubtask}
-                    onAddTaskAtSameLevel={onAddTaskAtSameLevel}
-                    showTimeScheduling={true}
-                    depth={calculateTaskDepth(task, allTasks)}
-                    isDailyView={true}
-                    currentTime={currentTime}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
+          )}
+        </CardContent>
+      </motion.div>
     </Card>
   );
 }

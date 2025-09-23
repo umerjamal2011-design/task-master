@@ -382,14 +382,25 @@ export function TaskItem({
                       </div>
                       
                       {editScheduledDate && editScheduledDate !== 'no-date' && (
-                        <div>
+                        <div className="flex gap-1">
                           <Input
                             type="time"
                             value={editScheduledTime}
                             onChange={(e) => setEditScheduledTime(e.target.value)}
-                            className="text-xs h-6"
+                            className="text-xs h-6 flex-1"
                             placeholder="Time"
                           />
+                          {editScheduledTime && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditScheduledTime('')}
+                              className="h-6 w-6 p-0"
+                              title="Clear time"
+                            >
+                              <X size={10} />
+                            </Button>
+                          )}
                         </div>
                       )}
                       
@@ -917,11 +928,25 @@ export function TaskItem({
               </div>
               <div>
                 <Label className="text-sm mb-1 block">Time (Optional)</Label>
-                <Input
-                  type="time"
-                  value={rescheduleTime}
-                  onChange={(e) => setRescheduleTime(e.target.value)}
-                />
+                <div className="flex gap-1">
+                  <Input
+                    type="time"
+                    value={rescheduleTime}
+                    onChange={(e) => setRescheduleTime(e.target.value)}
+                    className="flex-1"
+                  />
+                  {rescheduleTime && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRescheduleTime('')}
+                      className="px-2"
+                      title="Clear time"
+                    >
+                      <X size={12} />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

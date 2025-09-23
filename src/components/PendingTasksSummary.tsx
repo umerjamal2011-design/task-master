@@ -1,29 +1,28 @@
 import React, { useState } from 'react';
+import { Task, Category } from '@/types/index';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock } from '@phosphor-ico
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar, Clock } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
-  categories: Category[];
 
-}
+interface PendingTasksSummaryProps {
   tasks: Task[];
-  tasks,
+  categories: Category[];
   onSelectDate: (date: string) => void;
-  selectedDate
+  selectedDate: string;
 }
 
 export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
   tasks,
   categories,
-  const overdue
+  onSelectDate,
   selectedDate
-    !ta
+}) => {
   const [showPendingDialog, setShowPendingDialog] = useState(false);
   const [selectedPendingDate, setSelectedPendingDate] = useState<string | null>(null);
-
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -32,47 +31,44 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
     task.scheduledDate && 
     task.scheduledDate < today && 
     !task.completed
-    
+  );
 
-      day: 'numeric'
+  // Group overdue tasks by date
+  const overdueByDate = overdueTasks.reduce((acc, task) => {
+    if (task.scheduledDate) {
+      if (!acc[task.scheduledDate]) {
+        acc[task.scheduledDate] = [];
+      }
+      acc[task.scheduledDate].push(task);
+    }
+    return acc;
+  }, {} as Record<string, Task[]>);
+
+  const sortedOverdueDates = Object.keys(overdueByDate).sort((a, b) => b.localeCompare(a));
+
+  const getCategoryById = (categoryId: string) => {
+    return categories.find(cat => cat.id === categoryId);
   };
-  r
 
-          <div className="flex i
-              <Calendar size={16} className="text-orang
-            <div>
-                {overdueTasks
-              <div className="text-sm text-oran
-              </div>
-       
-            <DialogTrigger asChild>
-     
-     
+  const getDateLabel = (date: string) => {
+    const taskDate = new Date(date);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
 
-              </DialogHeader>
+    if (date === yesterday.toISOString().split('T')[0]) {
+      return 'Yesterday';
+    }
 
-                    const tasksForDate = overdueByDate[date];
-                    
-    
-
-                        onClick={() => {
-                        }}
-                        <div 
-                            <div class
-                            </div>
-
-                              </div>
-    
-                      
-                         
-     
-    
     return taskDate.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric'
     });
   };
+
+  if (overdueTasks.length === 0) {
+    return null;
+  }
 
   return (
     <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
@@ -152,7 +148,7 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                         {/* Tasks Preview */}
                         <AnimatePresence>
                           {isSelectedDate && (
-
+                            <motion.div
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
@@ -162,7 +158,7 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                 const category = getCategoryById(task.categoryId);
 
                                 return (
-
+                                  <div
                                     key={task.id}
                                     className="flex items-start gap-3 p-2 rounded bg-secondary/30"
                                   >
@@ -173,7 +169,7 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                     <div className="flex-1 min-w-0">
                                       <div className="font-medium text-sm truncate">
                                         {task.title}
-
+                                      </div>
                                       <div className="flex items-center gap-2 mt-1">
                                         <Badge variant="outline" className="text-xs">
                                           {category?.name || 'Unknown'}
@@ -188,7 +184,7 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                     </div>
                                   </div>
                                 );
-
+                              })}
                               {tasksForDate.length > 5 && (
                                 <Button
                                   variant="ghost"
@@ -204,17 +200,17 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                 </Button>
                               )}
                             </motion.div>
-
+                          )}
                         </AnimatePresence>
-
+                      </motion.div>
                     );
-
+                  })}
                 </div>
-
+              </ScrollArea>
             </DialogContent>
-
+          </Dialog>
         </div>
-
+      </CardContent>
     </Card>
-
+  );
 };

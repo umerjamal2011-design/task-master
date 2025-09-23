@@ -2281,7 +2281,7 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 lg:overflow-auto">
-          <div className="container mx-auto px-4 lg:px-6 py-3 lg:py-4 max-w-4xl pb-24 lg:pb-8">
+          <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 max-w-4xl pb-24 lg:pb-8">
 
             {/* Add Category Form */}
             {currentView === 'categories' && (
@@ -2481,16 +2481,28 @@ function App() {
                         if (overdueTasks.length > 0) {
                           return (
                             <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
-                              <CardContent className="pt-3 pb-3">
-                                <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                                  <Calendar size={16} />
-                                  <span className="text-sm font-medium">
-                                    {overdueTasks.length} overdue tasks from previous days
-                                  </span>
+                              <CardContent className="pt-2 pb-2 px-3">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <Calendar size={14} className="text-orange-700 dark:text-orange-300 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                      <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                                        {overdueTasks.length} overdue tasks
+                                      </span>
+                                      <div className="text-xs text-orange-600 dark:text-orange-400">
+                                        View in sidebar to manage
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsMobileSidebarOpen(true)}
+                                    className="text-xs h-7 px-2 border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-800 flex-shrink-0"
+                                  >
+                                    Manage
+                                  </Button>
                                 </div>
-                                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                                  View in sidebar to manage overdue tasks
-                                </p>
                               </CardContent>
                             </Card>
                           );

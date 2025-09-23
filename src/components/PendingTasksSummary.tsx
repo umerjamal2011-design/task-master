@@ -201,37 +201,41 @@ export function PendingTasksSummary({
   return (
     <>
       <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
-        <CardContent className="pt-4 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-800">
-                <Calendar size={16} className="text-orange-700 dark:text-orange-300" />
+        <CardContent className="pt-3 sm:pt-4 pb-3 sm:pb-4 px-3 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-full bg-orange-100 dark:bg-orange-800 flex-shrink-0">
+                <Calendar size={14} sm-size={16} className="text-orange-700 dark:text-orange-300" />
               </div>
-              <div>
-                <div className="font-semibold text-orange-700 dark:text-orange-300">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-sm sm:text-base text-orange-700 dark:text-orange-300">
                   {overdueTasks.length} Overdue Tasks
                 </div>
-                <div className="text-sm text-orange-600 dark:text-orange-400">
+                <div className="text-xs sm:text-sm text-orange-600 dark:text-orange-400">
                   From {sortedOverdueDates.length} different days
                 </div>
               </div>
             </div>
             <Dialog open={showPendingDialog} onOpenChange={setShowPendingDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-800">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-800 text-xs sm:text-sm w-full sm:w-auto"
+                >
                   View All
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh]">
+              <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] mx-2 sm:mx-auto">
                 <DialogHeader>
-                  <div className="flex items-center justify-between">
-                    <DialogTitle>All Overdue Tasks</DialogTitle>
-                    <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <DialogTitle className="text-lg sm:text-xl">All Overdue Tasks</DialogTitle>
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setExpandedDates(new Set(sortedOverdueDates))}
-                        className="text-xs"
+                        className="text-xs flex-1 sm:flex-none"
                       >
                         Expand All
                       </Button>
@@ -239,7 +243,7 @@ export function PendingTasksSummary({
                         variant="outline"
                         size="sm"
                         onClick={() => setExpandedDates(new Set())}
-                        className="text-xs"
+                        className="text-xs flex-1 sm:flex-none"
                       >
                         Collapse All
                       </Button>
@@ -247,7 +251,7 @@ export function PendingTasksSummary({
                         variant="default"
                         size="sm"
                         onClick={() => setShowBulkRescheduleAll(true)}
-                        className="text-xs"
+                        className="text-xs flex-1 sm:flex-none"
                       >
                         <ArrowsClockwise size={14} className="mr-1" />
                         Reschedule All
@@ -255,7 +259,7 @@ export function PendingTasksSummary({
                     </div>
                   </div>
                 </DialogHeader>
-                <ScrollArea className="h-[75vh] pr-4">
+                <ScrollArea className="h-[70vh] sm:h-[75vh] pr-2 sm:pr-4">
                   <div className="space-y-4">
                     {sortedOverdueDates.map((date) => {
                       const tasksForDate = overdueByDate[date];

@@ -97,20 +97,20 @@ function DaySection({
   if (totalCount === 0) {
     return (
       <Card className={`${cardVariant} transition-all duration-200`}>
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-3 px-3 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {isCurrentDay && <Sun size={20} className="text-primary" />}
-              <h3 className={`font-semibold text-lg ${titleColor}`}>{title}</h3>
+              {isCurrentDay && <Sun size={18} className="text-primary" />}
+              <h3 className={`font-semibold text-base sm:text-lg ${titleColor}`}>{title}</h3>
               <Badge variant="outline" className="text-xs">
                 {totalCount}
               </Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="py-8">
+        <CardContent className="py-6 px-3 sm:px-6">
           <div className="text-center">
-            <Calendar size={32} className="mx-auto mb-2 text-muted-foreground/50" />
+            <Calendar size={28} className="mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">No tasks scheduled</p>
           </div>
         </CardContent>
@@ -120,21 +120,21 @@ function DaySection({
 
   return (
     <Card className={`${cardVariant} transition-all duration-200`}>
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-3 px-3 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2">
-            {isCurrentDay && <Sun size={20} className="text-primary" />}
-            <h3 className={`font-semibold text-lg ${titleColor}`}>{title}</h3>
-            <Badge variant="outline" className="text-xs">
+            {isCurrentDay && <Sun size={18} className="text-primary flex-shrink-0" />}
+            <h3 className={`font-semibold text-base sm:text-lg ${titleColor} truncate`}>{title}</h3>
+            <Badge variant="outline" className="text-xs flex-shrink-0">
               {totalCount}
             </Badge>
           </div>
           {totalCount > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 ml-6 sm:ml-0">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {completedCount}/{totalCount}
               </span>
-              <div className="w-16 h-2 bg-secondary rounded-full overflow-hidden">
+              <div className="w-12 sm:w-16 h-2 bg-secondary rounded-full overflow-hidden">
                 <motion.div
                   className={`h-full rounded-full ${isCurrentDay ? 'bg-primary' : 'bg-accent'}`}
                   initial={{ width: 0 }}
@@ -142,19 +142,19 @@ function DaySection({
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
                 {totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}%
               </span>
             </div>
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 px-3 sm:px-6">
         {/* Timed Tasks */}
         {timedTasks.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock size={16} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
+            <div className="flex items-center gap-2 mb-2">
+              <Clock size={14} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
               <h4 className="text-sm font-medium text-muted-foreground">Scheduled</h4>
               <Badge variant="secondary" className="text-xs">
                 {timedTasks.length}
@@ -164,17 +164,18 @@ function DaySection({
               {timedTasks.map((task, index) => (
                 <motion.div
                   key={task.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`flex items-start gap-3 p-2 rounded-lg border transition-all duration-200 ${
+                  transition={{ delay: index * 0.03 }}
+                  className={`flex items-start gap-2 sm:gap-3 p-2 rounded-lg border transition-all duration-200 ${
                     task.completed 
                       ? 'bg-muted/50 border-muted/60 opacity-75' 
                       : 'bg-background/50 border-border/50'
                   }`}
                 >
-                  <div className="flex flex-col items-center min-w-[70px] pt-0.5">
-                    <div className={`text-sm font-bold px-2 py-1 rounded-md transition-all duration-200 ${
+                  {/* Mobile optimized time display */}
+                  <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] pt-0.5">
+                    <div className={`text-xs sm:text-sm font-bold px-1.5 sm:px-2 py-1 rounded-md transition-all duration-200 text-center ${
                       task.completed
                         ? 'text-muted-foreground bg-muted/30 line-through'
                         : isCurrentDay
@@ -184,7 +185,7 @@ function DaySection({
                       {task.completed && <span className="mr-1 no-underline">✓</span>}
                       {formatTime(task.scheduledTime!)}
                     </div>
-                    <div className={`w-0.5 h-4 mt-1 rounded-full transition-all duration-200 ${
+                    <div className={`w-0.5 h-3 sm:h-4 mt-1 rounded-full transition-all duration-200 ${
                       task.completed 
                         ? 'bg-muted/60' 
                         : isCurrentDay 
@@ -192,7 +193,7 @@ function DaySection({
                           : 'bg-accent/60'
                     }`} />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <TaskItem
                       task={task}
                       allTasks={allTasks}
@@ -218,8 +219,8 @@ function DaySection({
         {/* Untimed Tasks */}
         {untimedTasks.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar size={16} className="text-muted-foreground" />
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar size={14} className="text-muted-foreground" />
               <h4 className="text-sm font-medium text-muted-foreground">Anytime</h4>
               <Badge variant="outline" className="text-xs">
                 {untimedTasks.length}
@@ -229,9 +230,9 @@ function DaySection({
               {untimedTasks.map((task, index) => (
                 <motion.div
                   key={task.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (timedTasks.length + index) * 0.05 }}
+                  transition={{ delay: (timedTasks.length + index) * 0.03 }}
                   className="p-1"
                 >
                   <TaskItem
@@ -291,19 +292,20 @@ export function DailyView({
   }, [selectedDate, yesterday, today, tomorrow, yesterdayTasks, todayTasks, tomorrowTasks]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Daily Schedule</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Daily Schedule</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Three-day view centered on {formatDateForSection(selectedDate, currentTime)}
+            <span className="hidden sm:inline">Three-day view centered on </span>
+            {formatDateForSection(selectedDate, currentTime)}
           </p>
         </div>
       </div>
 
-      {/* Three Day Sections */}
-      <div className="space-y-6">
+      {/* Three Day Sections - Mobile optimized spacing */}
+      <div className="space-y-4 sm:space-y-6">
         {/* Yesterday Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -371,7 +373,7 @@ export function DailyView({
         </motion.div>
       </div>
 
-      {/* Overall Summary */}
+      {/* Overall Summary - Mobile optimized */}
       {(yesterdayTasks.length > 0 || todayTasks.length > 0 || tomorrowTasks.length > 0) && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -379,24 +381,24 @@ export function DailyView({
           transition={{ delay: 0.4 }}
         >
           <Card className="bg-secondary/30 border-secondary/40">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h4 className="font-medium text-foreground">Three-Day Summary</h4>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
                   <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">Yesterday:</span>
+                    <span className="text-muted-foreground text-xs sm:text-sm">Yesterday:</span>
                     <Badge variant="outline" className="text-xs">
                       {yesterdayTasks.filter(t => t.completed).length}/{yesterdayTasks.length}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">Today:</span>
+                    <span className="text-muted-foreground text-xs sm:text-sm">Today:</span>
                     <Badge variant={today === currentDateStr ? "default" : "outline"} className="text-xs">
                       {todayTasks.filter(t => t.completed).length}/{todayTasks.length}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">Tomorrow:</span>
+                    <span className="text-muted-foreground text-xs sm:text-sm">Tomorrow:</span>
                     <Badge variant="outline" className="text-xs">
                       {tomorrowTasks.filter(t => t.completed).length}/{tomorrowTasks.length}
                     </Badge>

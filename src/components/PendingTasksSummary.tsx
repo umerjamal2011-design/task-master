@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, Category } from '@/types/index';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Check, X } from '@phosphor-icons/react';
+import { Calendar, Clock, Check, X, CaretUp, CaretDown, CalendarBlank, ArrowsClockwise } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 interface PendingTasksSummaryProps {
@@ -27,10 +28,16 @@ export function PendingTasksSummary({
   onUpdateTask
 }: PendingTasksSummaryProps) {
   const [showPendingDialog, setShowPendingDialog] = useState(false);
-  const [selectedPendingDate, setSelectedPendingDate] = useState<string | null>(null);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [bulkRescheduleDate, setBulkRescheduleDate] = useState<string | null>(null);
   const [bulkRescheduleTargetDate, setBulkRescheduleTargetDate] = useState('');
   const [bulkRescheduleTime, setBulkRescheduleTime] = useState('');
+  const [individualReschedule, setIndividualReschedule] = useState<{taskId: string, currentDate: string} | null>(null);
+  const [individualTargetDate, setIndividualTargetDate] = useState('');
+  const [individualTargetTime, setIndividualTargetTime] = useState('');
+  const [showBulkRescheduleAll, setShowBulkRescheduleAll] = useState(false);
+  const [bulkAllTargetDate, setBulkAllTargetDate] = useState('');
+  const [bulkAllTargetTime, setBulkAllTargetTime] = useState('');
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -53,6 +60,13 @@ export function PendingTasksSummary({
   });
 
   const sortedOverdueDates = Object.keys(overdueByDate).sort((a, b) => b.localeCompare(a));
+
+  // When dialog opens, expand all dates by default
+  useEffect(() => {
+    if (showPendingDialog) {
+      setExpandedDates(new Set(sortedOverdueDates));
+    }
+  }, [showPendingDialog, sortedOverdueDates]);
 
   const getCategoryById = (categoryId: string) => {
     return categories.find(cat => cat.id === categoryId);
@@ -77,6 +91,18 @@ export function PendingTasksSummary({
       weekday: 'short',
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  const toggleDateExpansion = (date: string) => {
+    setExpandedDates(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(date)) {
+        newSet.delete(date);
+      } else {
+        newSet.add(date);
+      }
+      return newSet;
     });
   };
 
@@ -108,7 +134,55 @@ export function PendingTasksSummary({
     setBulkRescheduleDate(null);
     setBulkRescheduleTargetDate('');
     setBulkRescheduleTime('');
+  };
+
+  const handleBulkRescheduleAllSubmit = () => {
+    if (!bulkAllTargetDate) return;
+
+    let totalRescheduled = 0;
+    
+    Object.values(overdueByDate).forEach(tasksForDate => {
+      tasksForDate.forEach(task => {
+        const updates: Partial<Task> = {
+          scheduledDate: bulkAllTargetDate
+        };
+        
+        if (bulkAllTargetTime) {
+          updates.scheduledTime = bulkAllTargetTime;
+        }
+        
+        onUpdateTask(task.id, updates);
+        totalRescheduled++;
+      });
+    });
+
+    toast.success(`All ${totalRescheduled} overdue tasks rescheduled to ${getDateLabel(bulkAllTargetDate)}`);
+    
+    setShowBulkRescheduleAll(false);
+    setBulkAllTargetDate('');
+    setBulkAllTargetTime('');
     setShowPendingDialog(false);
+  };
+
+  const handleIndividualRescheduleSubmit = () => {
+    if (!individualReschedule || !individualTargetDate) return;
+
+    const updates: Partial<Task> = {
+      scheduledDate: individualTargetDate
+    };
+    
+    if (individualTargetTime) {
+      updates.scheduledTime = individualTargetTime;
+    }
+    
+    onUpdateTask(individualReschedule.taskId, updates);
+
+    const task = tasks.find(t => t.id === individualReschedule.taskId);
+    toast.success(`"${task?.title}" rescheduled to ${getDateLabel(individualTargetDate)}`);
+    
+    setIndividualReschedule(null);
+    setIndividualTargetDate('');
+    setIndividualTargetTime('');
   };
 
   if (overdueTasks.length === 0) {
@@ -139,33 +213,63 @@ export function PendingTasksSummary({
                   View All
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh]">
+              <DialogContent className="max-w-4xl max-h-[90vh]">
                 <DialogHeader>
-                  <DialogTitle>Overdue Tasks</DialogTitle>
+                  <div className="flex items-center justify-between">
+                    <DialogTitle>All Overdue Tasks</DialogTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExpandedDates(new Set(sortedOverdueDates))}
+                        className="text-xs"
+                      >
+                        Expand All
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExpandedDates(new Set())}
+                        className="text-xs"
+                      >
+                        Collapse All
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setShowBulkRescheduleAll(true)}
+                        className="text-xs"
+                      >
+                        <ArrowsClockwise size={14} className="mr-1" />
+                        Reschedule All
+                      </Button>
+                    </div>
+                  </div>
                 </DialogHeader>
-                <ScrollArea className="h-[60vh]">
+                <ScrollArea className="h-[75vh] pr-4">
                   <div className="space-y-4">
                     {sortedOverdueDates.map((date) => {
                       const tasksForDate = overdueByDate[date];
-                      const isSelectedDate = selectedPendingDate === date;
+                      const isExpanded = expandedDates.has(date);
                       
                       return (
                         <motion.div
                           key={date}
                           layout
-                          className="border border-border rounded-lg p-4 cursor-pointer hover:bg-secondary/50 transition-colors"
-                          onClick={() => {
-                            setSelectedPendingDate(isSelectedDate ? null : date);
-                          }}
+                          className="border border-border rounded-lg overflow-hidden"
                         >
-                          <div className="flex items-center justify-between">
+                          {/* Date Header */}
+                          <div 
+                            className="flex items-center justify-between p-4 bg-secondary/20 cursor-pointer hover:bg-secondary/40 transition-colors"
+                            onClick={() => toggleDateExpansion(date)}
+                          >
                             <div className="flex items-center gap-3">
                               <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-800">
                                 <Calendar size={14} className="text-orange-700 dark:text-orange-300" />
                               </div>
                               <div>
                                 <div className="font-medium text-foreground">
-                                  {getDateLabel(date)}
+                                  {getDateLabel(date)} ({new Date(date).toLocaleDateString()})
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                   {tasksForDate.length} {tasksForDate.length === 1 ? 'task' : 'tasks'} pending
@@ -185,7 +289,8 @@ export function PendingTasksSummary({
                                 }}
                                 className="text-xs"
                               >
-                                Reschedule
+                                <ArrowsClockwise size={12} className="mr-1" />
+                                Reschedule Day
                               </Button>
                               <Button
                                 variant="outline"
@@ -199,64 +304,76 @@ export function PendingTasksSummary({
                               >
                                 View Day
                               </Button>
+                              {isExpanded ? <CaretUp size={16} /> : <CaretDown size={16} />}
                             </div>
                           </div>
                           
-                          {/* Tasks Preview */}
+                          {/* Tasks List */}
                           <AnimatePresence>
-                            {isSelectedDate && (
+                            {isExpanded && (
                               <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="space-y-2 border-t border-border pt-3 mt-3"
+                                className="border-t border-border"
                               >
-                                {tasksForDate.slice(0, 5).map((task) => {
-                                  const category = getCategoryById(task.categoryId);
-                                  
-                                  return (
-                                    <div
-                                      key={task.id}
-                                      className="flex items-start gap-3 p-2 rounded bg-secondary/30"
-                                    >
+                                <div className="p-4 space-y-3">
+                                  {tasksForDate.map((task) => {
+                                    const category = getCategoryById(task.categoryId);
+                                    
+                                    return (
                                       <div
-                                        className="w-2 h-2 rounded-full flex-shrink-0 mt-2"
-                                        style={{ backgroundColor: category?.color || '#6B7280' }}
-                                      />
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm truncate">
-                                          {task.title}
-                                        </div>
-                                        <div className="flex items-center gap-2 mt-1">
-                                          <Badge variant="outline" className="text-xs">
-                                            {category?.name || 'Unknown'}
-                                          </Badge>
-                                          {task.scheduledTime && (
-                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                              <Clock size={12} />
-                                              {task.scheduledTime}
+                                        key={task.id}
+                                        className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors"
+                                      >
+                                        <div
+                                          className="w-3 h-3 rounded-full flex-shrink-0"
+                                          style={{ backgroundColor: category?.color || '#6B7280' }}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-sm mb-1 line-clamp-2">
+                                            {task.title}
+                                          </div>
+                                          {task.description && (
+                                            <div className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                                              {task.description}
                                             </div>
                                           )}
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {category?.name || 'Unknown'}
+                                            </Badge>
+                                            {task.scheduledTime && (
+                                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                <Clock size={12} />
+                                                {task.scheduledTime}
+                                              </div>
+                                            )}
+                                            {task.priority && task.priority !== 'medium' && (
+                                              <Badge 
+                                                variant={task.priority === 'high' ? 'destructive' : 'secondary'}
+                                                className="text-xs"
+                                              >
+                                                {task.priority}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setIndividualReschedule({ taskId: task.id, currentDate: date })}
+                                            className="text-xs h-7 px-2"
+                                          >
+                                            <CalendarBlank size={12} className="mr-1" />
+                                            Reschedule
+                                          </Button>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
-                                
-                                {tasksForDate.length > 5 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onSelectDate(date);
-                                      setShowPendingDialog(false);
-                                    }}
-                                    className="w-full text-xs text-muted-foreground"
-                                  >
-                                    View all {tasksForDate.length} tasks for this day
-                                  </Button>
-                                )}
+                                    );
+                                  })}
+                                </div>
                               </motion.div>
                             )}
                           </AnimatePresence>
@@ -271,7 +388,178 @@ export function PendingTasksSummary({
         </CardContent>
       </Card>
 
-      {/* Bulk Reschedule Dialog */}
+      {/* Bulk Reschedule All Tasks Dialog */}
+      <Dialog open={showBulkRescheduleAll} onOpenChange={setShowBulkRescheduleAll}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reschedule All Overdue Tasks</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <h4 className="font-medium text-sm mb-1 text-orange-700 dark:text-orange-300">
+                All Overdue Tasks
+              </h4>
+              <p className="text-xs text-orange-600 dark:text-orange-400">
+                {overdueTasks.length} tasks from {sortedOverdueDates.length} days will be rescheduled
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm mb-2 block">Quick Options</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {getQuickRescheduleOptions().map((option) => (
+                    <Button
+                      key={option.value}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setBulkAllTargetDate(option.value);
+                        if (option.label === 'Today') {
+                          setBulkAllTargetTime('');
+                        }
+                      }}
+                      className={`text-xs ${bulkAllTargetDate === option.value ? 'bg-primary text-primary-foreground' : ''}`}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm mb-1 block">New Date</Label>
+                  <Input
+                    type="date"
+                    value={bulkAllTargetDate}
+                    onChange={(e) => setBulkAllTargetDate(e.target.value)}
+                    min={today}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm mb-1 block">Time (Optional)</Label>
+                  <Input
+                    type="time"
+                    value={bulkAllTargetTime}
+                    onChange={(e) => setBulkAllTargetTime(e.target.value)}
+                    placeholder="Keep original"
+                  />
+                </div>
+              </div>
+              
+              <div className="text-xs text-muted-foreground">
+                {bulkAllTargetTime 
+                  ? 'All tasks will be set to the specified time'
+                  : 'Tasks will keep their original times'
+                }
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleBulkRescheduleAllSubmit}
+                disabled={!bulkAllTargetDate}
+                className="flex-1"
+              >
+                <Check size={14} className="mr-1" />
+                Reschedule All {overdueTasks.length} Tasks
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowBulkRescheduleAll(false)}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Individual Task Reschedule Dialog */}
+      <Dialog open={!!individualReschedule} onOpenChange={() => setIndividualReschedule(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reschedule Task</DialogTitle>
+          </DialogHeader>
+          {individualReschedule && (
+            <div className="space-y-4">
+              <div className="p-3 bg-secondary/30 rounded-lg">
+                <h4 className="font-medium text-sm mb-1">
+                  {tasks.find(t => t.id === individualReschedule.taskId)?.title}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Currently scheduled for {getDateLabel(individualReschedule.currentDate)}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-sm mb-2 block">Quick Options</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {getQuickRescheduleOptions().map((option) => (
+                      <Button
+                        key={option.value}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIndividualTargetDate(option.value);
+                          if (option.label === 'Today') {
+                            setIndividualTargetTime('');
+                          }
+                        }}
+                        className={`text-xs ${individualTargetDate === option.value ? 'bg-primary text-primary-foreground' : ''}`}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-sm mb-1 block">New Date</Label>
+                    <Input
+                      type="date"
+                      value={individualTargetDate}
+                      onChange={(e) => setIndividualTargetDate(e.target.value)}
+                      min={today}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm mb-1 block">Time (Optional)</Label>
+                    <Input
+                      type="time"
+                      value={individualTargetTime}
+                      onChange={(e) => setIndividualTargetTime(e.target.value)}
+                      placeholder="Keep original"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleIndividualRescheduleSubmit}
+                  disabled={!individualTargetDate}
+                  className="flex-1"
+                >
+                  <Check size={14} className="mr-1" />
+                  Reschedule Task
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIndividualReschedule(null)}
+                >
+                  <X size={14} />
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Reschedule Day Dialog */}
       <Dialog open={!!bulkRescheduleDate} onOpenChange={() => setBulkRescheduleDate(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>

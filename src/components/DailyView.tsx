@@ -182,17 +182,6 @@ function DaySection({
           )}
         </div>
       </CardHeader>
-      
-      {/* Collapsible Content */}
-      <motion.div
-        initial={false}
-        animate={{
-          height: isCollapsed ? 0 : "auto",
-          opacity: isCollapsed ? 0 : 1
-        }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        style={{ overflow: "hidden" }}
-      >
         <CardContent className="space-y-3 px-3 sm:px-6">
           {/* Timed Tasks */}
           {timedTasks.length > 0 && (
@@ -200,22 +189,22 @@ function DaySection({
               <div className="flex items-center gap-2 mb-2">
                 <Clock size={14} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
                 <h4 className="text-sm font-medium text-muted-foreground">Scheduled</h4>
-                <Badge variant="secondary" className="text-xs">
+        }}
                   {timedTasks.length}
-                </Badge>
-              </div>
+        style={{ overflow: "hidden" }}
+      >
               <div className="space-y-1">
                 {timedTasks.map((task, index) => (
                   <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0, x: -10 }}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 mb-2">
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.03 }}
                     className={`flex items-start gap-2 sm:gap-3 p-2 rounded-lg border transition-all duration-200 ${
                       task.completed 
                         ? 'bg-muted/50 border-muted/60 opacity-75' 
                         : 'bg-background/50 border-border/50'
-                    }`}
+              <div className="space-y-1">
                   >
                     {/* Mobile optimized time display */}
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] pt-0.5">
@@ -236,7 +225,7 @@ function DaySection({
                             ? 'bg-primary/60' 
                             : 'bg-accent/60'
                       }`} />
-                    </div>
+                      }`}>
                     <div className="flex-1 min-w-0">
                       <TaskItem
                         task={task}
@@ -268,18 +257,18 @@ function DaySection({
                 <h4 className="text-sm font-medium text-muted-foreground">Anytime</h4>
                 <Badge variant="outline" className="text-xs">
                   {untimedTasks.length}
-                </Badge>
-              </div>
-              <div className="space-y-1">
-                {untimedTasks.map((task, index) => (
-                  <motion.div
+            </div>
+          )}
+"space-y-1">
+          {/* Untimed Tasks */}
+          {untimedTasks.length > 0 && (
                     key={task.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: (timedTasks.length + index) * 0.03 }}
                     className="p-1"
                   >
-                    <TaskItem
+                </Badge>
                       task={task}
                       allTasks={allTasks}
                       categoryName={getCategoryName(task.categoryId)}
@@ -305,6 +294,17 @@ function DaySection({
   );
 }
 
+                  </motion.div>
+                ))}
+  categories,
+            </div>
+          )}
+        </CardContent>
+      </motion.div>
+    </Card>
+  );
+}
+
 export function DailyView({
   tasks,
   categories,
@@ -320,21 +320,10 @@ export function DailyView({
   const { yesterday, today, tomorrow } = getThreeDayRange(selectedDate);
   const currentDateStr = new Date().toISOString().split('T')[0];
 
-  // Get tasks for each day
+    console.log('Yesterday tasks:', yesterdayTasks.length);
   const yesterdayTasks = getTasksForDate(tasks, yesterday);
   const todayTasks = getTasksForDate(tasks, today);
   const tomorrowTasks = getTasksForDate(tasks, tomorrow);
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log('=== Three-Day Daily View Debug ===');
-    console.log('Selected date:', selectedDate);
-    console.log('Date range:', { yesterday, today, tomorrow });
-    console.log('Current date:', currentDateStr);
-    console.log('Yesterday tasks:', yesterdayTasks.length);
-    console.log('Today tasks:', todayTasks.length);
-    console.log('Tomorrow tasks:', tomorrowTasks.length);
-  }, [selectedDate, yesterday, today, tomorrow, yesterdayTasks, todayTasks, tomorrowTasks]);
 
   return (
     <div className="space-y-4 sm:space-y-6">

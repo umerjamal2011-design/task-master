@@ -51,6 +51,7 @@ function DaySection({
   isCurrentDay = false
 }: DaySectionProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(!isCurrentDay); // Non-current days start collapsed
+  
   // Separate timed and untimed tasks
   const timedTasks = tasks
     .filter(task => task.scheduledTime)
@@ -120,22 +121,14 @@ function DaySection({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="py-6 px-3 sm:px-6">
-          <div className="text-center">
-            <Calendar size={28} className="mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No tasks scheduled</p>
-            {!isCurrentDay && isCollapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(false)}
-                className="mt-2 text-xs"
-              >
-                Click to expand
-              </Button>
-            )}
-          </div>
-        </CardContent>
+        {!isCollapsed && (
+          <CardContent className="px-3 sm:px-6 pb-4">
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckCircle size={32} className="mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No tasks scheduled for this day</p>
+            </div>
+          </CardContent>
+        )}
       </Card>
     );
   }
@@ -143,30 +136,27 @@ function DaySection({
   return (
     <Card className={`${cardVariant} transition-all duration-200`}>
       <CardHeader className="pb-3 px-3 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* Collapse/Expand Button for non-current days */}
             {!isCurrentDay && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 flex-shrink-0"
+                className="h-6 w-6 p-0"
                 onClick={() => setIsCollapsed(!isCollapsed)}
               >
                 {isCollapsed ? <CaretRight size={14} /> : <CaretDown size={14} />}
               </Button>
             )}
-            {isCurrentDay && <Sun size={18} className="text-primary flex-shrink-0" />}
-            <h3 className={`font-semibold text-base sm:text-lg ${titleColor} truncate`}>{title}</h3>
-            <Badge variant="outline" className="text-xs flex-shrink-0">
+            {isCurrentDay && <Sun size={18} className="text-primary" />}
+            <h3 className={`font-semibold text-base sm:text-lg ${titleColor}`}>{title}</h3>
+            <Badge variant="outline" className="text-xs">
               {totalCount}
             </Badge>
           </div>
-          {totalCount > 0 && !isCollapsed && (
-            <div className="flex items-center gap-2 ml-6 sm:ml-0">
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                {completedCount}/{totalCount}
-              </span>
+          {totalCount > 0 && (
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="w-12 sm:w-16 h-2 bg-secondary rounded-full overflow-hidden">
                 <motion.div
                   className={`h-full rounded-full ${isCurrentDay ? 'bg-primary' : 'bg-accent'}`}
@@ -182,6 +172,8 @@ function DaySection({
           )}
         </div>
       </CardHeader>
+      
+      {!isCollapsed && (
         <CardContent className="space-y-3 px-3 sm:px-6">
           {/* Timed Tasks */}
           {timedTasks.length > 0 && (
@@ -189,22 +181,22 @@ function DaySection({
               <div className="flex items-center gap-2 mb-2">
                 <Clock size={14} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
                 <h4 className="text-sm font-medium text-muted-foreground">Scheduled</h4>
-        }}
+                <Badge variant="outline" className="text-xs">
                   {timedTasks.length}
-        style={{ overflow: "hidden" }}
-      >
+                </Badge>
+              </div>
               <div className="space-y-1">
                 {timedTasks.map((task, index) => (
                   <motion.div
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 mb-2">
+                    key={task.id}
+                    initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.03 }}
                     className={`flex items-start gap-2 sm:gap-3 p-2 rounded-lg border transition-all duration-200 ${
                       task.completed 
                         ? 'bg-muted/50 border-muted/60 opacity-75' 
                         : 'bg-background/50 border-border/50'
-              <div className="space-y-1">
+                    }`}
                   >
                     {/* Mobile optimized time display */}
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] pt-0.5">
@@ -225,7 +217,7 @@ function DaySection({
                             ? 'bg-primary/60' 
                             : 'bg-accent/60'
                       }`} />
-                      }`}>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <TaskItem
                         task={task}
@@ -257,18 +249,18 @@ function DaySection({
                 <h4 className="text-sm font-medium text-muted-foreground">Anytime</h4>
                 <Badge variant="outline" className="text-xs">
                   {untimedTasks.length}
-            </div>
-          )}
-"space-y-1">
-          {/* Untimed Tasks */}
-          {untimedTasks.length > 0 && (
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                {untimedTasks.map((task, index) => (
+                  <motion.div
                     key={task.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: (timedTasks.length + index) * 0.03 }}
                     className="p-1"
                   >
-                </Badge>
+                    <TaskItem
                       task={task}
                       allTasks={allTasks}
                       categoryName={getCategoryName(task.categoryId)}
@@ -289,18 +281,7 @@ function DaySection({
             </div>
           )}
         </CardContent>
-      </motion.div>
-    </Card>
-  );
-}
-
-                  </motion.div>
-                ))}
-  categories,
-            </div>
-          )}
-        </CardContent>
-      </motion.div>
+      )}
     </Card>
   );
 }
@@ -316,133 +297,56 @@ export function DailyView({
   onAddTaskAtSameLevel,
   currentTime = new Date()
 }: DailyViewProps) {
-  // Get the three day range based on selected date
+  // Get the three-day range (yesterday, today, tomorrow)
   const { yesterday, today, tomorrow } = getThreeDayRange(selectedDate);
-  const currentDateStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
 
-    console.log('Yesterday tasks:', yesterdayTasks.length);
+  // Get tasks for each day, including repeated instances
   const yesterdayTasks = getTasksForDate(tasks, yesterday);
   const todayTasks = getTasksForDate(tasks, today);
   const tomorrowTasks = getTasksForDate(tasks, tomorrow);
 
+  // Create the day sections
+  const sections = [
+    {
+      dateStr: yesterday,
+      title: formatDateForSection(yesterday, currentTime),
+      tasks: yesterdayTasks,
+      isCurrentDay: yesterday === todayStr
+    },
+    {
+      dateStr: today,
+      title: formatDateForSection(today, currentTime),
+      tasks: todayTasks,
+      isCurrentDay: today === todayStr
+    },
+    {
+      dateStr: tomorrow,
+      title: formatDateForSection(tomorrow, currentTime),
+      tasks: tomorrowTasks,
+      isCurrentDay: tomorrow === todayStr
+    }
+  ];
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header - Mobile optimized */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Daily Schedule</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            <span className="hidden sm:inline">Three-day view centered on </span>
-            {formatDateForSection(selectedDate, currentTime)}
-          </p>
-        </div>
-      </div>
-
-      {/* Three Day Sections - Mobile optimized spacing */}
-      <div className="space-y-4 sm:space-y-6">
-        {/* Yesterday Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <DaySection
-            dateStr={yesterday}
-            title={formatDateForSection(yesterday, currentTime)}
-            tasks={yesterdayTasks}
-            allTasks={tasks}
-            categories={categories}
-            onToggleTaskComplete={onToggleTaskComplete}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={onDeleteTask}
-            onAddSubtask={onAddSubtask}
-            onAddTaskAtSameLevel={onAddTaskAtSameLevel}
-            currentTime={currentTime}
-            isCurrentDay={false}
-          />
-        </motion.div>
-
-        {/* Today Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <DaySection
-            dateStr={today}
-            title={formatDateForSection(today, currentTime)}
-            tasks={todayTasks}
-            allTasks={tasks}
-            categories={categories}
-            onToggleTaskComplete={onToggleTaskComplete}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={onDeleteTask}
-            onAddSubtask={onAddSubtask}
-            onAddTaskAtSameLevel={onAddTaskAtSameLevel}
-            currentTime={currentTime}
-            isCurrentDay={today === currentDateStr}
-          />
-        </motion.div>
-
-        {/* Tomorrow Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <DaySection
-            dateStr={tomorrow}
-            title={formatDateForSection(tomorrow, currentTime)}
-            tasks={tomorrowTasks}
-            allTasks={tasks}
-            categories={categories}
-            onToggleTaskComplete={onToggleTaskComplete}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={onDeleteTask}
-            onAddSubtask={onAddSubtask}
-            onAddTaskAtSameLevel={onAddTaskAtSameLevel}
-            currentTime={currentTime}
-            isCurrentDay={false}
-          />
-        </motion.div>
-      </div>
-
-      {/* Overall Summary - Mobile optimized */}
-      {(yesterdayTasks.length > 0 || todayTasks.length > 0 || tomorrowTasks.length > 0) && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="bg-secondary/30 border-secondary/40">
-            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h4 className="font-medium text-foreground">Three-Day Summary</h4>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground text-xs sm:text-sm">Yesterday:</span>
-                    <Badge variant="outline" className="text-xs">
-                      {yesterdayTasks.filter(t => t.completed).length}/{yesterdayTasks.length}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground text-xs sm:text-sm">Today:</span>
-                    <Badge variant={today === currentDateStr ? "default" : "outline"} className="text-xs">
-                      {todayTasks.filter(t => t.completed).length}/{todayTasks.length}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground text-xs sm:text-sm">Tomorrow:</span>
-                    <Badge variant="outline" className="text-xs">
-                      {tomorrowTasks.filter(t => t.completed).length}/{tomorrowTasks.length}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+      {sections.map((section) => (
+        <DaySection
+          key={section.dateStr}
+          dateStr={section.dateStr}
+          title={section.title}
+          tasks={section.tasks}
+          allTasks={tasks}
+          categories={categories}
+          onToggleTaskComplete={onToggleTaskComplete}
+          onUpdateTask={onUpdateTask}
+          onDeleteTask={onDeleteTask}
+          onAddSubtask={onAddSubtask}
+          onAddTaskAtSameLevel={onAddTaskAtSameLevel}
+          currentTime={currentTime}
+          isCurrentDay={section.isCurrentDay}
+        />
+      ))}
     </div>
   );
 }

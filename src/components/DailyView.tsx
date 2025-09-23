@@ -150,8 +150,8 @@ function DaySection({
               </Button>
             )}
             {isCurrentDay && <Sun size={18} className="text-primary" />}
-            <h3 className={`font-semibold text-base sm:text-lg ${titleColor}`}>{title}</h3>
-            <Badge variant="outline" className="text-xs">
+            <h3 className={`font-semibold text-lg sm:text-xl ${titleColor}`}>{title}</h3>
+            <Badge variant="outline" className="text-sm px-2 py-1">
               {totalCount}
             </Badge>
           </div>
@@ -179,9 +179,9 @@ function DaySection({
           {timedTasks.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
-                <Clock size={14} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
-                <h4 className="text-sm font-medium text-muted-foreground">Scheduled</h4>
-                <Badge variant="outline" className="text-xs">
+                <Clock size={16} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
+                <h4 className="text-base font-medium text-muted-foreground">Scheduled</h4>
+                <Badge variant="outline" className="text-sm px-2 py-1">
                   {timedTasks.length}
                 </Badge>
               </div>
@@ -199,8 +199,8 @@ function DaySection({
                     }`}
                   >
                     {/* Mobile optimized time display */}
-                    <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] pt-0.5">
-                      <div className={`text-xs sm:text-sm font-bold px-1.5 sm:px-2 py-1 rounded-md transition-all duration-200 text-center ${
+                    <div className="flex flex-col items-center min-w-[70px] sm:min-w-[80px] pt-0.5">
+                      <div className={`text-sm sm:text-base font-bold px-2 sm:px-3 py-1.5 rounded-md transition-all duration-200 text-center ${
                         task.completed
                           ? 'text-muted-foreground bg-muted/30 line-through'
                           : isCurrentDay
@@ -210,7 +210,7 @@ function DaySection({
                         {task.completed && <span className="mr-1 no-underline">✓</span>}
                         {formatTime(task.scheduledTime!)}
                       </div>
-                      <div className={`w-0.5 h-3 sm:h-4 mt-1 rounded-full transition-all duration-200 ${
+                      <div className={`w-0.5 h-4 sm:h-5 mt-1 rounded-full transition-all duration-200 ${
                         task.completed 
                           ? 'bg-muted/60' 
                           : isCurrentDay 
@@ -245,9 +245,9 @@ function DaySection({
           {untimedTasks.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
-                <Calendar size={14} className="text-muted-foreground" />
-                <h4 className="text-sm font-medium text-muted-foreground">Anytime</h4>
-                <Badge variant="outline" className="text-xs">
+                <Calendar size={16} className="text-muted-foreground" />
+                <h4 className="text-base font-medium text-muted-foreground">Anytime</h4>
+                <Badge variant="outline" className="text-sm px-2 py-1">
                   {untimedTasks.length}
                 </Badge>
               </div>

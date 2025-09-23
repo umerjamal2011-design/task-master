@@ -228,11 +228,11 @@ export function TaskItem({
     <div className="flex items-start">
       {/* Subtask indicator dots with proper alignment */}
       {depth > 0 && (
-        <div className="flex items-center gap-0.5 pt-1 flex-shrink-0 mr-1">
+        <div className="flex items-center gap-1 pt-1.5 flex-shrink-0 mr-1.5">
           {Array.from({ length: depth }, (_, index) => (
             <div
               key={index}
-              className="w-2 h-2 rounded-full border border-current"
+              className="w-2.5 h-2.5 rounded-full border border-current"
               style={{ 
                 backgroundColor: `${categoryColor}50`,
                 borderColor: `${categoryColor}90`
@@ -271,7 +271,7 @@ export function TaskItem({
           }`
         }}
       >
-        <div className="px-2 py-0.5">
+        <div className="px-3 py-2">
           <div className="flex items-center gap-1">
             {/* Expand/Collapse Button with Subtask Counter */}
             {hasSubtasks && (
@@ -279,21 +279,21 @@ export function TaskItem({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-3 w-3 p-0"
+                  className="h-4 w-4 p-0"
                   onClick={() => setIsExpanded(!isExpanded)}
                 >
-                  {isExpanded ? <CaretDown size={8} /> : <CaretRight size={8} />}
+                  {isExpanded ? <CaretDown size={12} /> : <CaretRight size={12} />}
                 </Button>
                 <Badge
                   variant="secondary"
-                  className="px-1 py-0 text-xs min-w-0"
+                  className="px-1.5 py-0.5 text-sm min-w-0"
                   style={{
                     backgroundColor: `${categoryColor}20`,
                     color: categoryColor,
                     borderColor: `${categoryColor}40`,
-                    fontSize: '8px',
-                    height: '12px',
-                    lineHeight: '10px'
+                    fontSize: '11px',
+                    height: '16px',
+                    lineHeight: '14px'
                   }}
                   title={`${totalSubtasks} total subtask${totalSubtasks !== 1 ? 's' : ''} (${subtasks.length} direct)`}
                 >
@@ -303,7 +303,7 @@ export function TaskItem({
             )}
 
             <div 
-              className={`flex items-center justify-center w-3 h-3 rounded border flex-shrink-0 transition-all cursor-pointer hover:scale-105 ${
+              className={`flex items-center justify-center w-4 h-4 rounded border flex-shrink-0 transition-all cursor-pointer hover:scale-105 ${
                 task.completed ? 'ring-2 ring-opacity-30' : ''
               }`}
               style={{ 
@@ -315,7 +315,7 @@ export function TaskItem({
             >
               {task.completed && (
                 <motion.svg 
-                  className="w-2 h-2 text-white" 
+                  className="w-2.5 h-2.5 text-white" 
                   fill="currentColor" 
                   viewBox="0 0 20 20"
                   initial={{ scale: 0, rotate: -90 }}
@@ -486,8 +486,8 @@ export function TaskItem({
                         ? 'line-through text-muted-foreground opacity-60' 
                         : 'text-foreground'
                     }`} style={{
-                      fontSize: '11px',
-                      lineHeight: '14px',
+                      fontSize: '14px',
+                      lineHeight: '18px',
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: 'vertical',
@@ -504,8 +504,8 @@ export function TaskItem({
                           ? 'line-through text-muted-foreground opacity-50' 
                           : 'text-muted-foreground'
                       }`} style={{
-                        fontSize: '10px',
-                        lineHeight: '12px',
+                        fontSize: '12px',
+                        lineHeight: '16px',
                         display: '-webkit-box',
                         WebkitLineClamp: 1,
                         WebkitBoxOrient: 'vertical',
@@ -528,9 +528,10 @@ export function TaskItem({
                           backgroundColor: task.completed ? '#94A3B850' : getPriorityColor(task.priority).bg,
                           color: task.completed ? '#64748B' : getPriorityColor(task.priority).color,
                           borderColor: task.completed ? '#94A3B870' : getPriorityColor(task.priority).border,
-                          fontSize: '8px',
-                          height: '14px',
-                          lineHeight: '12px'
+                          fontSize: '11px',
+                          height: '18px',
+                          lineHeight: '16px',
+                          padding: '1px 6px'
                         }}
                       >
                         {task.priority}
@@ -540,7 +541,7 @@ export function TaskItem({
                     {task.scheduledDate && (
                       <Badge 
                         variant="outline" 
-                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''} ${isOverdue && !task.completed ? 'animate-pulse' : ''}`}
+                        className={`flex items-center gap-1 px-2 py-0.5 transition-all duration-200 ${task.completed ? 'opacity-50' : ''} ${isOverdue && !task.completed ? 'animate-pulse' : ''}`}
                         style={{
                           backgroundColor: task.completed 
                             ? '#94A3B820' 
@@ -563,13 +564,14 @@ export function TaskItem({
                               : taskStatus === 'current'
                                 ? '#F59E0B'
                                 : categoryColor,
-                          fontSize: '8px',
-                          height: '14px',
-                          lineHeight: '12px'
+                          fontSize: '11px',
+                          height: '20px',
+                          lineHeight: '18px',
+                          padding: '1px 6px'
                         }}
                         title={isOverdue && !task.completed ? 'Overdue task' : undefined}
                       >
-                        <Calendar size={6} />
+                        <Calendar size={12} />
                         {formatDate(task.scheduledDate)}
                         {isOverdue && !task.completed && ' ⚠️'}
                       </Badge>
@@ -578,7 +580,7 @@ export function TaskItem({
                     {task.scheduledTime && (
                       <Badge 
                         variant="outline" 
-                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''} ${isOverdue && !task.completed ? 'animate-pulse' : ''}`}
+                        className={`flex items-center gap-1 px-2 py-0.5 transition-all duration-200 ${task.completed ? 'opacity-50' : ''} ${isOverdue && !task.completed ? 'animate-pulse' : ''}`}
                         style={{
                           backgroundColor: task.completed 
                             ? '#94A3B820' 
@@ -601,13 +603,14 @@ export function TaskItem({
                               : taskStatus === 'current'
                                 ? '#F59E0B'
                                 : categoryColor,
-                          fontSize: '8px',
-                          height: '14px',
-                          lineHeight: '12px'
+                          fontSize: '11px',
+                          height: '20px',
+                          lineHeight: '18px',
+                          padding: '1px 6px'
                         }}
                         title={isOverdue && !task.completed ? 'Time has passed' : undefined}
                       >
-                        <Clock size={6} />
+                        <Clock size={12} />
                         {formatTime(task.scheduledTime)}
                       </Badge>
                     )}
@@ -616,18 +619,19 @@ export function TaskItem({
                     {task.isRepeatedInstance && (
                       <Badge 
                         variant="outline" 
-                        className={`flex items-center gap-0.5 px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
+                        className={`flex items-center gap-1 px-2 py-0.5 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
                         style={{
                           backgroundColor: task.completed ? '#94A3B820' : '#E0F2FE',
                           borderColor: task.completed ? '#94A3B850' : '#0EA5E9',
                           color: task.completed ? '#64748B' : '#0284C7',
-                          fontSize: '8px',
-                          height: '14px',
-                          lineHeight: '12px'
+                          fontSize: '11px',
+                          height: '20px',
+                          lineHeight: '18px',
+                          padding: '1px 6px'
                         }}
                         title="This is a repeated instance of a recurring task"
                       >
-                        <Repeat size={6} />
+                        <Repeat size={12} />
                         Instance
                       </Badge>
                     )}
@@ -638,14 +642,15 @@ export function TaskItem({
                     {depth === 0 && (
                       <Badge 
                         variant="secondary" 
-                        className={`px-1 py-0 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
+                        className={`px-2 py-0.5 transition-all duration-200 ${task.completed ? 'opacity-50' : ''}`}
                         style={{
                           backgroundColor: task.completed ? '#94A3B830' : `${categoryColor}20`,
                           color: task.completed ? '#64748B' : categoryColor,
                           borderColor: task.completed ? '#94A3B850' : `${categoryColor}40`,
-                          fontSize: '8px',
-                          height: '14px',
-                          lineHeight: '12px'
+                          fontSize: '11px',
+                          height: '20px',
+                          lineHeight: '18px',
+                          padding: '1px 6px'
                         }}
                       >
                         {categoryName}
@@ -657,7 +662,7 @@ export function TaskItem({
             </div>
             
             {!isEditing && (
-              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity ml-1 flex-shrink-0">
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity ml-2 flex-shrink-0">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -665,10 +670,10 @@ export function TaskItem({
                     e.stopPropagation();
                     setShowAddSubtask(true);
                   }}
-                  className="h-4 w-4 p-0"
+                  className="h-6 w-6 p-0"
                   title="Add subtask"
                 >
-                  <Plus size={8} />
+                  <Plus size={12} />
                 </Button>
                 <Button
                   size="sm"
@@ -677,10 +682,10 @@ export function TaskItem({
                     e.stopPropagation();
                     setShowAddSameLevel(true);
                   }}
-                  className="h-4 w-4 p-0"
+                  className="h-6 w-6 p-0"
                   title="Add task at same level"
                 >
-                  <Plus size={8} weight="bold" />
+                  <Plus size={12} weight="bold" />
                 </Button>
                 {/* Reschedule button - only show for overdue tasks */}
                 {isOverdue && !task.completed && (
@@ -691,10 +696,10 @@ export function TaskItem({
                       e.stopPropagation();
                       setShowReschedule(true);
                     }}
-                    className="h-4 w-4 p-0 text-orange-600 hover:text-orange-700"
+                    className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
                     title="Reschedule overdue task"
                   >
-                    <ArrowRight size={8} />
+                    <ArrowRight size={12} />
                   </Button>
                 )}
                 <Button
@@ -704,10 +709,10 @@ export function TaskItem({
                     e.stopPropagation();
                     setIsEditing(true);
                   }}
-                  className="h-4 w-4 p-0"
+                  className="h-6 w-6 p-0"
                   title="Edit task"
                 >
-                  <Pencil size={8} />
+                  <Pencil size={12} />
                 </Button>
                 <Button
                   size="sm"
@@ -716,10 +721,10 @@ export function TaskItem({
                     e.stopPropagation();
                     onDelete(task.id);
                   }}
-                  className="h-4 w-4 p-0 text-destructive hover:text-destructive"
+                  className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                   title="Delete task"
                 >
-                  <Trash size={8} />
+                  <Trash size={12} />
                 </Button>
               </div>
             )}

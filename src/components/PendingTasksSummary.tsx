@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scro
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Clock } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils';
+interface PendingTasksSummaryProp
 import { Task, Category } from '@/types/index';
-import { getDateLabel } from '@/lib/date-utils';
+  onSelectDate: (date: string) => void;
 
-interface PendingTasksSummaryProps {
+
   tasks: Task[];
-  categories: Category[];
+  categories,
   onSelectDate: (date: string) => void;
   selectedDate: string;
 }
 
 export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
-  tasks,
+  // Get
   categories,
   onSelectDate,
   selectedDate
-}) => {
+
   const [showPendingDialog, setShowPendingDialog] = useState(false);
   const [selectedPendingDate, setSelectedPendingDate] = useState<string | null>(null);
 
@@ -32,36 +32,36 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
   const overdueTasks = tasks.filter(task => 
     task.scheduledDate && 
     task.scheduledDate < today && 
-    !task.completed
-  );
+                  {
+    
 
-  if (overdueTasks.length === 0) {
+            </div>
     return null;
-  }
+   
 
-  // Group overdue tasks by date
-  const overdueByDate = overdueTasks.reduce((acc, task) => {
-    const date = task.scheduledDate!;
-    if (!acc[date]) {
-      acc[date] = [];
+                <DialogHeader>
+                </DialogHeader>
+                  <div className="spa
+                     
+                     
     }
-    acc[date].push(task);
-    return acc;
-  }, {} as Record<string, Task[]>);
+                         
+               
+                          }}
 
-  // Sort dates (most recent first)
-  const sortedOverdueDates = Object.keys(overdueByDate).sort((a, b) => b.localeCompare(a));
+                              <div 
+                              </div>
 
-  const getCategoryById = (id: string) => categories.find(cat => cat.id === id);
+                                </div>
 
   return (
-    <>
-      {/* Summary Card */}
-      <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+      
+                          
+                              <Button
         <CardContent className="pt-4 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-800">
+                                  e.stopPropagation();
+                                  setShowPendingDialo
+                                className="text-xs"
                 <Calendar size={16} className="text-orange-700 dark:text-orange-300" />
               </div>
               <div>
@@ -126,15 +126,15 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                 }}
                                 className="text-xs"
                               >
-                                View Day
+                    })}
                               </Button>
                             </div>
                           </div>
                           
                           {/* Tasks Preview */}
-                          <AnimatePresence>
+  );
                             {isSelectedDate && (
-                              <motion.div
+
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
@@ -148,11 +148,11 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                       key={task.id}
                                       className="flex items-start gap-3 p-2 rounded bg-secondary/30"
                                     >
-                                      <div 
+
                                         className="w-2 h-2 rounded-full flex-shrink-0 mt-2"
                                         style={{ backgroundColor: category?.color || '#6B7280' }}
                                       />
-                                      <div className="flex-1 min-w-0">
+
                                         <div className="font-medium text-sm truncate">
                                           {task.title}
                                         </div>
@@ -164,19 +164,19 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                               <Clock size={12} />
                                               {task.scheduledTime}
-                                            </div>
+
                                           )}
                                         </div>
                                       </div>
-                                    </div>
+
                                   );
-                                })}
+
                                 {tasksForDate.length > 5 && (
-                                  <Button
+
                                     variant="ghost"
-                                    size="sm"
+
                                     onClick={(e) => {
-                                      e.stopPropagation();
+
                                       onSelectDate(date);
                                       setShowPendingDialog(false);
                                     }}
@@ -184,20 +184,19 @@ export const PendingTasksSummary: React.FC<PendingTasksSummaryProps> = ({
                                   >
                                     View all {tasksForDate.length} tasks for this day
                                   </Button>
-                                )}
+
                               </motion.div>
-                            )}
+
                           </AnimatePresence>
-                        </motion.div>
+
                       );
-                    })}
+
                   </div>
-                </ScrollArea>
+
               </DialogContent>
             </Dialog>
           </div>
         </CardContent>
       </Card>
-    </>
-  );
-};
+
+

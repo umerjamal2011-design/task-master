@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MagnifyingGlass as Search, Users, UserPlus, Receipt, TrendUp, CurrencyDollar } from '@phosphor-icons/react';
+import { MagnifyingGlass as Search, Users, UserPlus, Receipt, TrendUp, CurrencyDollar, Trash } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AddPersonDialog } from '@/components/AddPersonDialog';
 import { AddTransactionDialog } from '@/components/AddTransactionDialog';
@@ -142,6 +142,7 @@ export function FinancialDashboard({
         onUpdateTransaction={onUpdateTransaction}
         onDeleteTransaction={onDeleteTransaction}
         onUpdatePerson={onUpdatePerson}
+        onDeletePerson={onDeletePerson}
         formatCurrency={formatCurrency}
         defaultCurrency={defaultCurrency}
       />
@@ -352,23 +353,43 @@ export function FinancialDashboard({
                   transition={{ duration: 0.2 }}
                 >
                   <Card 
-                    className="cursor-pointer hover:shadow-md transition-all duration-200 hover:bg-accent/5"
-                    onClick={() => setSelectedPersonId(ledger.person.id)}
+                    className="cursor-pointer hover:shadow-md transition-all duration-200 hover:bg-accent/5 group"
                   >
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
+                        <div 
+                          className="flex-1 cursor-pointer"
+                          onClick={() => setSelectedPersonId(ledger.person.id)}
+                        >
                           <h3 className="font-semibold text-foreground">{ledger.person.name}</h3>
                           {ledger.person.phone && (
                             <p className="text-sm text-muted-foreground">{ledger.person.phone}</p>
                           )}
                         </div>
-                        <Badge variant={ledger.balance === 0 ? 'outline' : ledger.balance > 0 ? 'default' : 'secondary'}>
-                          {ledger.balance === 0 ? 'Settled' : ledger.balance > 0 ? 'Owes You' : 'You Owe'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={ledger.balance === 0 ? 'outline' : ledger.balance > 0 ? 'default' : 'secondary'}>
+                            {ledger.balance === 0 ? 'Settled' : ledger.balance > 0 ? 'Owes You' : 'You Owe'}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Are you sure you want to delete ${ledger.person.name}? This will also delete all their transactions and cannot be undone.`)) {
+                                onDeletePerson(ledger.person.id);
+                              }
+                            }}
+                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                          >
+                            <Trash size={14} />
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div 
+                        className="space-y-2 cursor-pointer"
+                        onClick={() => setSelectedPersonId(ledger.person.id)}
+                      >
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-muted-foreground">Balance:</span>
                           <span className={`font-semibold ${

@@ -18,6 +18,7 @@ interface PersonLedgerViewProps {
   onUpdateTransaction: (transactionId: string, updates: Partial<Transaction>) => void;
   onDeleteTransaction: (transactionId: string) => void;
   onUpdatePerson: (personId: string, updates: Partial<PersonLedger['person']>) => void;
+  onDeletePerson: (personId: string) => void;
   formatCurrency: (amount: number, currency?: string) => string;
   defaultCurrency: string;
 }
@@ -29,6 +30,7 @@ export function PersonLedgerView({
   onUpdateTransaction,
   onDeleteTransaction,
   onUpdatePerson,
+  onDeletePerson,
   formatCurrency,
   defaultCurrency
 }: PersonLedgerViewProps) {
@@ -111,6 +113,19 @@ export function PersonLedgerView({
           >
             <PencilSimple size={16} />
             Edit Info
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (confirm(`Are you sure you want to delete ${ledger.person.name}? This will also delete all their transactions and cannot be undone.`)) {
+                onDeletePerson(ledger.person.id);
+                onBack(); // Go back to the main view after deletion
+              }
+            }}
+            className="gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <Trash size={16} />
+            Delete Person
           </Button>
           <Button
             onClick={() => setShowAddTransaction(true)}

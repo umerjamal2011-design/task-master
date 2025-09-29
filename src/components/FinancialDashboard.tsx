@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Person, Transaction, PersonLedger } from '@/types/index';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, TrendUp, TrendDown, CurrencyDollar, Users, Receipt, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { PersonLedgerView } from './PersonLedgerView';
 import { AddPersonDialog } from './AddPersonDialog';
 import { AddTransactionDialog } from './AddTransactionDialog';
+import { Users, UserPlus, Receipt, CurrencyDollar, MagnifyingGlass, TrendUp, TrendDown } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FinancialDashboardProps {
@@ -45,7 +45,6 @@ export function FinancialDashboard({
     return people.map(person => {
       const personTransactions = transactions.filter(tx => tx.personId === person.id);
       
-      // Calculate balance and totals
       let balance = 0;
       let totalGiven = 0;
       let totalReceived = 0;
@@ -90,7 +89,7 @@ export function FinancialDashboard({
     if (!searchQuery.trim()) return personLedgers;
     
     const query = searchQuery.toLowerCase();
-    return personLedgers.filter(ledger =>
+    return personLedgers.filter(ledger => 
       ledger.person.name.toLowerCase().includes(query) ||
       ledger.person.phone?.toLowerCase().includes(query) ||
       ledger.person.email?.toLowerCase().includes(query)
@@ -99,17 +98,17 @@ export function FinancialDashboard({
 
   // Calculate overall statistics
   const overallStats = useMemo(() => {
-    const totalYouOwe = personLedgers.reduce((sum, ledger) => 
-      sum + (ledger.balance < 0 ? Math.abs(ledger.balance) : 0), 0);
     const totalOwedToYou = personLedgers.reduce((sum, ledger) => 
       sum + (ledger.balance > 0 ? ledger.balance : 0), 0);
+    const totalYouOwe = personLedgers.reduce((sum, ledger) => 
+      sum + (ledger.balance < 0 ? Math.abs(ledger.balance) : 0), 0);
     const netBalance = totalOwedToYou - totalYouOwe;
     const activeRelationships = personLedgers.filter(ledger => ledger.balance !== 0).length;
     const totalPeople = people.length;
 
     return {
-      totalYouOwe,
       totalOwedToYou,
+      totalYouOwe,
       netBalance,
       activeRelationships,
       totalPeople
@@ -120,14 +119,14 @@ export function FinancialDashboard({
   const formatCurrency = (amount: number, currency: string = defaultCurrency) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2
+      currency: currency || defaultCurrency
     }).format(Math.abs(amount));
   };
 
-  // Handle person selection for detailed view
+  // Get selected ledger for person view
   const selectedLedger = personLedgers.find(ledger => ledger.person.id === selectedPersonId);
 
+  // If a person is selected, show their ledger view
   if (selectedLedger) {
     return (
       <PersonLedgerView
@@ -151,10 +150,10 @@ export function FinancialDashboard({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Financial Dashboard</h1>
-          <p className="text-muted-foreground">Track your money relationships</p>
+          <p className="text-muted-foreground">Track your financial dealings and transactions</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -167,10 +166,10 @@ export function FinancialDashboard({
           </Button>
           <Button
             onClick={() => setShowAddTransaction(true)}
-            className="gap-2"
             disabled={people.length === 0}
+            className="gap-2"
           >
-            <Plus size={18} />
+            <Receipt size={18} />
             Add Transaction
           </Button>
         </div>
@@ -209,7 +208,7 @@ export function FinancialDashboard({
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -223,16 +222,12 @@ export function FinancialDashboard({
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className={`${
-              overallStats.netBalance >= 0 
-                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-            }`}>
+
+            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Net Balance</p>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Net Balance</p>
                     <p className={`text-2xl font-bold ${
                       overallStats.netBalance >= 0 
                         ? 'text-green-600 dark:text-green-400' 
@@ -242,17 +237,15 @@ export function FinancialDashboard({
                       {formatCurrency(overallStats.netBalance)}
                     </p>
                   </div>
-                  <div className={`${
+                  <CurrencyDollar size={24} className={
                     overallStats.netBalance >= 0 
                       ? 'text-green-600 dark:text-green-400' 
                       : 'text-red-600 dark:text-red-400'
-                  }`}>
-                    {overallStats.netBalance >= 0 ? <TrendUp size={24} /> : <TrendDown size={24} />}
-                  </div>
+                  } />
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -508,8 +501,8 @@ export function FinancialDashboard({
       <AddTransactionDialog
         open={showAddTransaction}
         onOpenChange={setShowAddTransaction}
-        people={people}
         onAddTransaction={onAddTransaction}
+        people={people}
         defaultCurrency={defaultCurrency}
       />
     </div>

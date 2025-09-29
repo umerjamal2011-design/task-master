@@ -197,7 +197,12 @@ export function FinancialDashboard({
     category: ''
   });
 
-  // Person management states (existing)
+  // Expense deletion by date range states
+  const [showDateRangeDeletion, setShowDateRangeDeletion] = useState(false);
+  const [deletionDateRange, setDeletionDateRange] = useState({
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [newPerson, setNewPerson] = useState({
@@ -618,7 +623,6 @@ export function FinancialDashboard({
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {personLedgers
-                    .filter(ledger => ledger.balance !== 0) // Only show people with outstanding balances
                     .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)) // Sort by balance amount (descending)
                     .map(ledger => (
                     <div key={ledger.person.id} className="p-4 rounded-lg border bg-card/50">
@@ -647,24 +651,6 @@ export function FinancialDashboard({
                   ))}
                 </div>
                 
-                {/* Show all settled relationships in a compact summary */}
-                {personLedgers.filter(ledger => ledger.balance === 0).length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Settled Relationships ({personLedgers.filter(ledger => ledger.balance === 0).length})
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {personLedgers
-                        .filter(ledger => ledger.balance === 0)
-                        .map(ledger => (
-                        <Badge key={ledger.person.id} variant="outline" className="text-xs">
-                          {ledger.person.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
                 {/* Quick Action */}
                 <div className="mt-4 pt-4 border-t">
                   <Button
@@ -686,10 +672,16 @@ export function FinancialDashboard({
         <TabsContent value="accounts" className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Manage Accounts</h3>
-            <Button onClick={() => setShowAddAccount(true)} className="gap-2">
-              <Plus size={16} />
-              Add Account
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowAddTransfer(true)} variant="outline" className="gap-2">
+                <ArrowRight size={16} />
+                Transfer
+              </Button>
+              <Button onClick={() => setShowAddAccount(true)} className="gap-2">
+                <Plus size={16} />
+                Add Account
+              </Button>
+            </div>
           </div>
           
           {accounts.length > 0 ? (
@@ -811,6 +803,72 @@ export function FinancialDashboard({
               </Button>
             </div>
           )}
+
+          {/* Recent Transfers */}
+          {transfers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowRight size={20} />
+                  Recent Transfers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {transfers
+                    .sort((a, b) => new Date(b.date + ' ' + (b.time || '00:00')).getTime() - new Date(a.date + ' ' + (a.time || '00:00')).getTime())
+                    .slice(0, 10)
+                    .map(transfer => {
+                      const fromAccount = accounts.find(a => a.id === transfer.fromAccountId);
+                      const toAccount = accounts.find(a => a.id === transfer.toAccountId);
+                      
+                      return (
+                        <div key={transfer.id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-full bg-blue-500/10">
+                              <ArrowRight size={16} className="text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm">
+                                {fromAccount?.name || 'Unknown'} → {toAccount?.name || 'Unknown'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(transfer.date).toLocaleDateString()}
+                                {transfer.description && ` • ${transfer.description}`}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <div className="font-bold text-blue-600">
+                                {formatCurrency(transfer.amount, transfer.currency)}
+                              </div>
+                              {transfer.fee && transfer.fee > 0 && (
+                                <div className="text-xs text-muted-foreground">
+                                  Fee: {formatCurrency(transfer.fee, transfer.currency)}
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                if (confirm('Are you sure you want to delete this transfer? This will reverse the account balance changes.')) {
+                                  onDeleteTransfer(transfer.id);
+                                }
+                              }}
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash size={12} />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-6">
@@ -825,10 +883,16 @@ export function FinancialDashboard({
           {/* Expense Categories */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag size={20} />
-                Expense Categories
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Tag size={20} />
+                  Expense Categories
+                </CardTitle>
+                <Button onClick={() => setShowAddExpenseCategory(true)} size="sm" className="gap-2">
+                  <Plus size={16} />
+                  Add Category
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {expenseCategories.length > 0 ? (
@@ -839,6 +903,39 @@ export function FinancialDashboard({
                         <div className="flex items-center gap-2">
                           <span className="text-lg">{category.icon}</span>
                           <span className="font-medium text-sm">{category.name}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingExpenseCategory(category);
+                              setNewExpenseCategory({
+                                name: category.name,
+                                color: category.color || '#10B981',
+                                icon: category.icon || '🛒',
+                                budget: category.budget || 0,
+                                currency: category.currency,
+                                isActive: category.isActive
+                              });
+                              setShowAddExpenseCategory(true);
+                            }}
+                            className="h-6 w-6 p-0"
+                          >
+                            <PencilSimple size={12} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to delete category "${category.name}"?`)) {
+                                onDeleteExpenseCategory(category.id);
+                              }
+                            }}
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash size={12} />
+                          </Button>
                         </div>
                       </div>
                       {category.budget && category.budget > 0 && (
@@ -852,6 +949,10 @@ export function FinancialDashboard({
               ) : (
                 <div className="text-center py-4 text-muted-foreground">
                   <p>No expense categories created yet</p>
+                  <Button onClick={() => setShowAddExpenseCategory(true)} size="sm" className="gap-2 mt-2">
+                    <Plus size={16} />
+                    Create Your First Category
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -860,10 +961,82 @@ export function FinancialDashboard({
           {/* Recent Expenses */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Receipt size={20} />
-                Recent Expenses
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt size={20} />
+                  Recent Expenses
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete ALL expenses? This action cannot be undone.')) {
+                        expenses.forEach(expense => onDeleteExpense(expense.id));
+                      }
+                    }}
+                    disabled={expenses.length === 0}
+                    className="gap-2 text-destructive hover:text-destructive"
+                  >
+                    <Trash size={16} />
+                    Clear All
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+                      const monthlyExpenses = expenses.filter(exp => exp.date.startsWith(currentMonth));
+                      
+                      if (monthlyExpenses.length === 0) {
+                        alert('No expenses found for this month.');
+                        return;
+                      }
+                      
+                      if (confirm(`Are you sure you want to delete all ${monthlyExpenses.length} expenses from this month? This action cannot be undone.`)) {
+                        monthlyExpenses.forEach(expense => onDeleteExpense(expense.id));
+                      }
+                    }}
+                    disabled={expenses.length === 0}
+                    className="gap-2"
+                  >
+                    <Calendar size={16} />
+                    Clear Month
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const currentYear = new Date().getFullYear().toString();
+                      const yearlyExpenses = expenses.filter(exp => exp.date.startsWith(currentYear));
+                      
+                      if (yearlyExpenses.length === 0) {
+                        alert('No expenses found for this year.');
+                        return;
+                      }
+                      
+                      if (confirm(`Are you sure you want to delete all ${yearlyExpenses.length} expenses from ${currentYear}? This action cannot be undone.`)) {
+                        yearlyExpenses.forEach(expense => onDeleteExpense(expense.id));
+                      }
+                    }}
+                    disabled={expenses.length === 0}
+                    className="gap-2"
+                  >
+                    <Calendar size={16} />
+                    Clear Year
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowDateRangeDeletion(true)}
+                    disabled={expenses.length === 0}
+                    className="gap-2"
+                  >
+                    <Calendar size={16} />
+                    Custom Range
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {expenses.length > 0 ? (
@@ -889,13 +1062,53 @@ export function FinancialDashboard({
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className={`font-bold ${expense.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
-                              {expense.type === 'expense' ? '-' : '+'}
-                              {formatCurrency(expense.amount, expense.currency)}
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <div className={`font-bold ${expense.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
+                                {expense.type === 'expense' ? '-' : '+'}
+                                {formatCurrency(expense.amount, expense.currency)}
+                              </div>
+                              <div className="text-xs text-muted-foreground capitalize">
+                                {expense.type}
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground capitalize">
-                              {expense.type}
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingExpense(expense);
+                                  setNewExpense({
+                                    title: expense.title,
+                                    amount: expense.amount,
+                                    currency: expense.currency,
+                                    categoryId: expense.categoryId,
+                                    accountId: expense.accountId || '',
+                                    description: expense.description || '',
+                                    date: expense.date,
+                                    time: expense.time || '',
+                                    type: expense.type,
+                                    tags: expense.tags || [],
+                                    location: expense.location || ''
+                                  });
+                                  setShowAddExpense(true);
+                                }}
+                                className="h-6 w-6 p-0"
+                              >
+                                <PencilSimple size={12} />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to delete "${expense.title}"?`)) {
+                                    onDeleteExpense(expense.id);
+                                  }
+                                }}
+                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                              >
+                                <Trash size={12} />
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -1879,6 +2092,233 @@ export function FinancialDashboard({
                   setShowAddTransfer(false);
                   resetNewTransfer();
                 }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Expense Category Dialog */}
+      <Dialog open={showAddExpenseCategory} onOpenChange={(open) => {
+        setShowAddExpenseCategory(open);
+        if (!open) {
+          setEditingExpenseCategory(null);
+          resetNewExpenseCategory();
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingExpenseCategory ? 'Edit Expense Category' : 'Add New Expense Category'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Category Name *</Label>
+              <Input
+                value={newExpenseCategory.name}
+                onChange={(e) => setNewExpenseCategory(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Food & Dining, Transportation"
+                maxLength={50}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Icon</Label>
+                <Input
+                  value={newExpenseCategory.icon}
+                  onChange={(e) => setNewExpenseCategory(prev => ({ ...prev, icon: e.target.value }))}
+                  placeholder="🛒"
+                  maxLength={5}
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  Use an emoji to represent this category
+                </div>
+              </div>
+              <div>
+                <Label>Color</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#84CC16', '#EC4899', '#6B7280'].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setNewExpenseCategory(prev => ({ ...prev, color }))}
+                      className={`w-6 h-6 rounded-full border-2 transition-all ${
+                        newExpenseCategory.color === color 
+                          ? 'border-foreground scale-110' 
+                          : 'border-border hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Monthly Budget (Optional)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newExpenseCategory.budget}
+                  onChange={(e) => setNewExpenseCategory(prev => ({ ...prev, budget: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label>Currency</Label>
+                <Select value={newExpenseCategory.currency} onValueChange={(value) => setNewExpenseCategory(prev => ({ ...prev, currency: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map(currency => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => {
+                  if (newExpenseCategory.name.trim()) {
+                    if (editingExpenseCategory) {
+                      onUpdateExpenseCategory(editingExpenseCategory.id, newExpenseCategory);
+                      setEditingExpenseCategory(null);
+                    } else {
+                      onAddExpenseCategory(newExpenseCategory);
+                    }
+                    setShowAddExpenseCategory(false);
+                    resetNewExpenseCategory();
+                  }
+                }}
+                disabled={!newExpenseCategory.name.trim()}
+                className="flex-1"
+              >
+                {editingExpenseCategory ? 'Update Category' : 'Add Category'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAddExpenseCategory(false);
+                  setEditingExpenseCategory(null);
+                  resetNewExpenseCategory();
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Date Range Deletion Dialog */}
+      <Dialog open={showDateRangeDeletion} onOpenChange={setShowDateRangeDeletion}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Expenses by Date Range</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Start Date</Label>
+                <Input
+                  type="date"
+                  value={deletionDateRange.startDate}
+                  onChange={(e) => setDeletionDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>End Date</Label>
+                <Input
+                  type="date"
+                  value={deletionDateRange.endDate}
+                  onChange={(e) => setDeletionDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                />
+              </div>
+            </div>
+            
+            {/* Preview of expenses to be deleted */}
+            {(() => {
+              const expensesInRange = expenses.filter(expense => 
+                expense.date >= deletionDateRange.startDate && 
+                expense.date <= deletionDateRange.endDate
+              );
+              
+              return (
+                <div className="p-3 bg-muted/50 rounded-lg border">
+                  <div className="text-sm font-medium mb-2">
+                    Preview: {expensesInRange.length} expenses will be deleted
+                  </div>
+                  {expensesInRange.length > 0 ? (
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {expensesInRange.slice(0, 5).map(expense => (
+                        <div key={expense.id} className="text-xs flex justify-between">
+                          <span>{expense.title}</span>
+                          <span>{formatCurrency(expense.amount, expense.currency)}</span>
+                        </div>
+                      ))}
+                      {expensesInRange.length > 5 && (
+                        <div className="text-xs text-muted-foreground">
+                          +{expensesInRange.length - 5} more...
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      No expenses found in this date range
+                    </div>
+                  )}
+                  
+                  {expensesInRange.length > 0 && (
+                    <div className="mt-2 pt-2 border-t text-xs">
+                      <div className="flex justify-between font-medium">
+                        <span>Total Amount:</span>
+                        <span>
+                          {formatCurrency(
+                            expensesInRange.reduce((sum, exp) => sum + (exp.type === 'expense' ? exp.amount : -exp.amount), 0),
+                            defaultCurrency
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => {
+                  const expensesInRange = expenses.filter(expense => 
+                    expense.date >= deletionDateRange.startDate && 
+                    expense.date <= deletionDateRange.endDate
+                  );
+                  
+                  if (expensesInRange.length === 0) {
+                    alert('No expenses found in the selected date range.');
+                    return;
+                  }
+                  
+                  if (confirm(`Are you sure you want to delete ${expensesInRange.length} expenses from ${deletionDateRange.startDate} to ${deletionDateRange.endDate}? This action cannot be undone.`)) {
+                    expensesInRange.forEach(expense => onDeleteExpense(expense.id));
+                    setShowDateRangeDeletion(false);
+                  }
+                }}
+                variant="destructive"
+                className="flex-1"
+              >
+                Delete Expenses
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDateRangeDeletion(false)}
               >
                 Cancel
               </Button>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
-import { Task, Category, PrayerTimes, LocationData, PrayerSettings } from '@/types/index';
+import { Task, Category, PrayerTimes, LocationData, PrayerSettings, Person, Transaction } from '@/types/index';
 import { SortableCategoryList } from '@/components/SortableCategoryList';
 import { SortableCategoryNavigation } from '@/components/SortableCategoryNavigation';
 import { DailyView } from '@/components/DailyView';
 import { PendingTasksSummary } from '@/components/PendingTasksSummary';
+import { FinancialDashboard } from '@/components/FinancialDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise, FloppyDisk, Clock } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise, FloppyDisk, Clock, CurrencyDollar } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'sonner';
 import { getTasksForDate, isRepeatingTask } from '@/lib/repeat-utils';
@@ -25,6 +26,8 @@ function App() {
   const [categories, setCategories] = useKV<Category[]>('categories', [
     { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString(), order: 0 }
   ]);
+  const [people, setPeople] = useKV<Person[]>('people', []);
+  const [transactions, setTransactions] = useKV<Transaction[]>('transactions', []);
   const [isDarkMode, setIsDarkMode] = useKV<boolean>('dark-mode', false);
   const [prayerSettings, setPrayerSettings] = useKV<PrayerSettings>('prayer-settings', {
     enabled: false,
@@ -34,7 +37,7 @@ function App() {
   // Flag to prevent infinite update loops
   const isUpdatingRef = React.useRef(false);
   
-  const [currentView, setCurrentView] = useState<'categories' | 'daily'>('categories');
+  const [currentView, setCurrentView] = useState<'categories' | 'daily' | 'financial'>('categories');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -233,12 +236,16 @@ function App() {
       // Force save all current state to KV storage
       await (window as any).spark.kv.set('tasks', tasks || []);
       await (window as any).spark.kv.set('categories', categories || []);
+      await (window as any).spark.kv.set('people', people || []);
+      await (window as any).spark.kv.set('transactions', transactions || []);
       await (window as any).spark.kv.set('dark-mode', isDarkMode);
       await (window as any).spark.kv.set('prayer-settings', prayerSettings || { enabled: false, method: 2 });
       
       console.log('Force save completed:', {
         tasks: (tasks || []).length,
         categories: (categories || []).length,
+        people: (people || []).length,
+        transactions: (transactions || []).length,
         darkMode: isDarkMode,
         prayerEnabled: prayerSettings?.enabled
       });
@@ -264,6 +271,8 @@ function App() {
       const freshCategories = (await (window as any).spark.kv.get('categories') as Category[]) || [
         { id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString(), order: 0 }
       ];
+      const freshPeople = (await (window as any).spark.kv.get('people') as Person[]) || [];
+      const freshTransactions = (await (window as any).spark.kv.get('transactions') as Transaction[]) || [];
       const freshDarkMode = (await (window as any).spark.kv.get('dark-mode') as boolean) || false;
       const freshPrayerSettings = (await (window as any).spark.kv.get('prayer-settings') as PrayerSettings) || {
         enabled: false,
@@ -273,6 +282,8 @@ function App() {
       console.log('Fresh data loaded:', {
         tasks: freshTasks.length,
         categories: freshCategories.length,
+        people: freshPeople.length,
+        transactions: freshTransactions.length,
         darkMode: freshDarkMode,
         prayerEnabled: freshPrayerSettings.enabled
       });
@@ -280,6 +291,8 @@ function App() {
       // Update all state with fresh data
       setTasks(freshTasks);
       setCategories(freshCategories);
+      setPeople(freshPeople);
+      setTransactions(freshTransactions);
       setIsDarkMode(freshDarkMode);
       setPrayerSettings(freshPrayerSettings);
       
@@ -522,7 +535,7 @@ function App() {
 
       // Add new prayer tasks for the specific date
       const newPrayerTasks = prayerNames.map(prayer => ({
-        id: generateId(),
+        id: generateTaskId(),
         title: `${prayer.name} Prayer`,
         description: `${prayer.description} - ${prayer.time}`,
         completed: false,
@@ -909,7 +922,78 @@ function App() {
     }
   };
 
+  // Financial Management Functions
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  const addPerson = (personData: Omit<Person, 'id' | 'createdAt'>) => {
+    const newPerson: Person = {
+      id: generateId(),
+      ...personData,
+      createdAt: new Date().toISOString()
+    };
+    setPeople(currentPeople => [...(currentPeople || []), newPerson]);
+    toast.success(`${newPerson.name} added successfully`);
+  };
+
+  const updatePerson = (personId: string, updates: Partial<Person>) => {
+    setPeople(currentPeople => 
+      (currentPeople || []).map(person => 
+        person.id === personId ? { ...person, ...updates } : person
+      )
+    );
+    toast.success('Person updated successfully');
+  };
+
+  const deletePerson = (personId: string) => {
+    const person = people?.find(p => p.id === personId);
+    if (!person) return;
+
+    // Also delete all transactions for this person
+    setTransactions(currentTransactions => 
+      (currentTransactions || []).filter(tx => tx.personId !== personId)
+    );
+    
+    setPeople(currentPeople => 
+      (currentPeople || []).filter(person => person.id !== personId)
+    );
+    
+    toast.success(`${person.name} and all related transactions deleted`);
+  };
+
+  const addTransaction = (transactionData: Omit<Transaction, 'id' | 'createdAt'>) => {
+    const newTransaction: Transaction = {
+      id: generateId(),
+      ...transactionData,
+      createdAt: new Date().toISOString()
+    };
+    
+    setTransactions(currentTransactions => [...(currentTransactions || []), newTransaction]);
+    
+    // Update person's lastTransactionAt
+    updatePerson(transactionData.personId, {
+      lastTransactionAt: newTransaction.date
+    });
+    
+    toast.success('Transaction added successfully');
+  };
+
+  const updateTransaction = (transactionId: string, updates: Partial<Transaction>) => {
+    setTransactions(currentTransactions => 
+      (currentTransactions || []).map(transaction => 
+        transaction.id === transactionId ? { ...transaction, ...updates } : transaction
+      )
+    );
+    toast.success('Transaction updated successfully');
+  };
+
+  const deleteTransaction = (transactionId: string) => {
+    setTransactions(currentTransactions => 
+      (currentTransactions || []).filter(transaction => transaction.id !== transactionId)
+    );
+    toast.success('Transaction deleted successfully');
+  };
+
+  const generateTaskId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   // Cleanup function to remove orphaned tasks (tasks with non-existent parent IDs or category IDs)
   const cleanupOrphanedTasks = React.useCallback((currentCategories: Category[]) => {
@@ -1256,7 +1340,7 @@ function App() {
   
   // Emergency data reset function (for severe corruption)
   const emergencyReset = async () => {
-    if (confirm('This will delete ALL tasks and categories and reset the app. Are you sure?')) {
+    if (confirm('This will delete ALL tasks, categories, people, transactions and reset the app. Are you sure?')) {
       console.log('Starting emergency reset...');
       
       // Clear state immediately with functional setters
@@ -1268,12 +1352,22 @@ function App() {
         console.log('Emergency reset: resetting categories to default');
         return [{ id: DEFAULT_CATEGORY_ID, name: 'General', createdAt: new Date().toISOString(), order: 0 }];
       });
+      setPeople(() => {
+        console.log('Emergency reset: clearing all people');
+        return [];
+      });
+      setTransactions(() => {
+        console.log('Emergency reset: clearing all transactions');
+        return [];
+      });
       
       // Also try to clear KV storage directly if accessible
       try {
         if (typeof window !== 'undefined' && (window as any).spark?.kv) {
           await (window as any).spark.kv.delete('tasks');
           await (window as any).spark.kv.delete('categories');
+          await (window as any).spark.kv.delete('people');
+          await (window as any).spark.kv.delete('transactions');
           console.log('KV storage cleared');
         }
       } catch (error) {
@@ -1291,7 +1385,7 @@ function App() {
 
   const addTask = (categoryId: string, title: string, description?: string, taskOptions?: Partial<Task>) => {
     const newTask: Task = {
-      id: generateId(),
+      id: generateTaskId(),
       title,
       description,
       completed: false,
@@ -1315,7 +1409,7 @@ function App() {
       if (!parentTask) return tasksList;
 
       const newSubtask: Task = {
-        id: generateId(),
+        id: generateTaskId(),
         title,
         completed: false,
         categoryId: parentTask.categoryId,
@@ -1335,7 +1429,7 @@ function App() {
       if (!referenceTask) return tasksList;
 
       const newTask: Task = {
-        id: generateId(),
+        id: generateTaskId(),
         title,
         completed: false,
         categoryId: referenceTask.categoryId,
@@ -1579,7 +1673,7 @@ function App() {
             </Button>
             <div>
               <h1 className="text-lg font-bold text-foreground">TaskFlow</h1>
-              <p className="text-xs text-muted-foreground">Organize your day</p>
+              <p className="text-xs text-muted-foreground">Organize your day & finances</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -1622,8 +1716,8 @@ function App() {
         
         {/* Mobile Navigation Tabs */}
         <div className="mt-4">
-          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'categories' | 'daily')}>
-            <TabsList className="grid w-full grid-cols-2 h-12">
+          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'categories' | 'daily' | 'financial')}>
+            <TabsList className="grid w-full grid-cols-3 h-12">
               <TabsTrigger value="categories" className="gap-2 text-sm">
                 <List size={16} />
                 Categories
@@ -1631,6 +1725,10 @@ function App() {
               <TabsTrigger value="daily" className="gap-2 text-sm">
                 <Sun size={16} />
                 Daily View
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="gap-2 text-sm">
+                <CurrencyDollar size={16} />
+                Financial
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -1676,7 +1774,7 @@ function App() {
                   </Button>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">Organize your day</p>
+              <p className="text-sm text-muted-foreground">Organize your day & finances</p>
             </div>
 
             {/* Clock Display */}
@@ -1713,8 +1811,8 @@ function App() {
 
             {/* Navigation Tabs */}
             <div className="mb-6">
-              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'categories' | 'daily')}>
-                <TabsList className="grid w-full grid-cols-2">
+              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'categories' | 'daily' | 'financial')}>
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="categories" className="gap-2 text-xs">
                     <List size={14} />
                     Categories
@@ -1722,6 +1820,10 @@ function App() {
                   <TabsTrigger value="daily" className="gap-2 text-xs">
                     <Sun size={14} />
                     Daily View
+                  </TabsTrigger>
+                  <TabsTrigger value="financial" className="gap-2 text-xs">
+                    <CurrencyDollar size={14} />
+                    Financial
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1974,7 +2076,7 @@ function App() {
                   <div className="flex items-center justify-between mb-8">
                     <div>
                       <h1 className="text-xl font-bold text-foreground">TaskFlow</h1>
-                      <p className="text-sm text-muted-foreground">Organize your day</p>
+                      <p className="text-sm text-muted-foreground">Organize your day & finances</p>
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
@@ -2534,6 +2636,20 @@ function App() {
                   onAddSubtask={addSubtask}
                   onAddTaskAtSameLevel={addTaskAtSameLevel}
                   currentTime={currentTime}
+                />
+              </TabsContent>
+
+              <TabsContent value="financial">
+                <FinancialDashboard
+                  people={people || []}
+                  transactions={transactions || []}
+                  onAddPerson={addPerson}
+                  onUpdatePerson={updatePerson}
+                  onDeletePerson={deletePerson}
+                  onAddTransaction={addTransaction}
+                  onUpdateTransaction={updateTransaction}
+                  onDeleteTransaction={deleteTransaction}
+                  defaultCurrency="USD"
                 />
               </TabsContent>
             </Tabs>

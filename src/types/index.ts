@@ -55,3 +55,38 @@ export interface AppState {
   tasks: Task[];
   categories: Category[];
 }
+
+// Financial Management Types
+export interface Person {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+  createdAt: string;
+  lastTransactionAt?: string;
+}
+
+export interface Transaction {
+  id: string;
+  personId: string;
+  type: 'loan_given' | 'loan_taken' | 'payment_received' | 'payment_made' | 'other';
+  amount: number;
+  currency: string;
+  description?: string;
+  date: string; // YYYY-MM-DD format
+  time?: string; // HH:mm format
+  createdAt: string;
+  attachments?: string[]; // File paths or URLs
+  category?: string; // Optional categorization
+}
+
+export interface PersonLedger {
+  person: Person;
+  transactions: Transaction[];
+  balance: number; // Positive means they owe you, negative means you owe them
+  totalGiven: number; // Total amount you've given them
+  totalReceived: number; // Total amount you've received from them
+  totalLent: number; // Total amount they've lent you
+  totalPaid: number; // Total amount you've paid them back
+}

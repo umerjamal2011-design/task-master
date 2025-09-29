@@ -90,6 +90,13 @@ const EXPENSE_TYPES = [
   { value: 'transfer', label: 'Transfer', icon: <ArrowRight size={16} /> },
 ];
 
+const TRANSACTION_TYPES = [
+  { value: 'loan_given', label: 'Loan Given', description: 'You lent money to them', icon: <HandCoins size={16} /> },
+  { value: 'payment_received', label: 'Payment Received', description: 'They paid you back', icon: <TrendUp size={16} /> },
+  { value: 'loan_taken', label: 'Loan Taken', description: 'You borrowed money from them', icon: <TrendDown size={16} /> },
+  { value: 'payment_made', label: 'Payment Made', description: 'You paid them back', icon: <ArrowRight size={16} /> },
+];
+
 export function FinancialDashboard({
   people,
   transactions,
@@ -174,6 +181,20 @@ export function FinancialDashboard({
     description: '',
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().split(' ')[0].substring(0, 5)
+  });
+
+  // Transaction management states (missing)
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [newTransaction, setNewTransaction] = useState({
+    personId: '',
+    amount: 0,
+    currency: defaultCurrency,
+    type: 'loan_given' as Transaction['type'],
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+    category: ''
   });
 
   // Person management states (existing)
@@ -376,6 +397,19 @@ export function FinancialDashboard({
       description: '',
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().split(' ')[0].substring(0, 5)
+    });
+  };
+
+  const resetNewTransaction = () => {
+    setNewTransaction({
+      personId: '',
+      amount: 0,
+      currency: defaultCurrency,
+      type: 'loan_given',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+      category: ''
     });
   };
 
@@ -872,11 +906,114 @@ export function FinancialDashboard({
                       </div>
                     </div>
                     
+                    {/* Recent Transactions for this person */}
+                    {ledger.transactions.length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="text-sm font-medium mb-3">Recent Transactions</h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {ledger.transactions
+                            .sort((a, b) => new Date(b.date + ' ' + (b.time || '00:00')).getTime() - new Date(a.date + ' ' + (a.time || '00:00')).getTime())
+                            .slice(0, 5)
+                            .map(transaction => (
+                              <div key={transaction.id} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium capitalize">
+                                      {transaction.type.replace('_', ' ')}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(transaction.date).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  {transaction.description && (
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {transaction.description}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <div className={`text-sm font-bold ${
+                                    transaction.type === 'loan_given' || transaction.type === 'payment_made' ? 'text-green-600' : 'text-blue-600'
+                                  }`}>
+                                    {formatCurrency(transaction.amount, transaction.currency)}
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setEditingTransaction(transaction);
+                                        setNewTransaction({
+                                          personId: transaction.personId,
+                                          amount: transaction.amount,
+                                          currency: transaction.currency,
+                                          type: transaction.type,
+                                          description: transaction.description || '',
+                                          date: transaction.date,
+                                          time: transaction.time || '',
+                                          category: transaction.category || ''
+                                        });
+                                        setShowAddTransaction(true);
+                                      }}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <PencilSimple size={12} />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        if (confirm('Are you sure you want to delete this transaction?')) {
+                                          onDeleteTransaction(transaction.id);
+                                        }
+                                      }}
+                                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                    >
+                                      <Trash size={12} />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          {ledger.transactions.length > 5 && (
+                            <div className="text-xs text-muted-foreground text-center pt-2">
+                              +{ledger.transactions.length - 5} more transactions
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex gap-2 mt-4">
                       <Button
                         size="sm"
+                        variant="default"
+                        onClick={() => {
+                          setNewTransaction(prev => ({
+                            ...prev,
+                            personId: ledger.person.id,
+                            currency: ledger.person.preferredCurrency
+                          }));
+                          setShowAddTransaction(true);
+                        }}
+                        className="gap-1"
+                      >
+                        <Plus size={14} />
+                        Add Transaction
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="outline"
-                        onClick={() => setEditingPerson(ledger.person)}
+                        onClick={() => {
+                          setEditingPerson(ledger.person);
+                          setNewPerson({
+                            name: ledger.person.name,
+                            phone: ledger.person.phone || '',
+                            email: ledger.person.email || '',
+                            notes: ledger.person.notes || '',
+                            preferredCurrency: ledger.person.preferredCurrency
+                          });
+                        }}
                         className="gap-1"
                       >
                         <PencilSimple size={14} />
@@ -885,7 +1022,11 @@ export function FinancialDashboard({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => onDeletePerson(ledger.person.id)}
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete ${ledger.person.name}? This will also delete all their transactions.`)) {
+                            onDeletePerson(ledger.person.id);
+                          }
+                        }}
                         className="gap-1 text-destructive hover:text-destructive"
                       >
                         <Trash size={14} />
@@ -1202,7 +1343,19 @@ export function FinancialDashboard({
       </Dialog>
 
       {/* Add Person Dialog */}
-      <Dialog open={showAddPerson} onOpenChange={setShowAddPerson}>
+      <Dialog open={showAddPerson || editingPerson !== null} onOpenChange={(open) => {
+        setShowAddPerson(open);
+        if (!open) {
+          setEditingPerson(null);
+          setNewPerson({
+            name: '',
+            phone: '',
+            email: '',
+            notes: '',
+            preferredCurrency: defaultCurrency
+          });
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editingPerson ? 'Edit Person' : 'Add New Person'}</DialogTitle>
@@ -1300,6 +1453,160 @@ export function FinancialDashboard({
                     notes: '',
                     preferredCurrency: defaultCurrency
                   });
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Transaction Dialog */}
+      <Dialog open={showAddTransaction} onOpenChange={(open) => {
+        setShowAddTransaction(open);
+        if (!open) {
+          setEditingTransaction(null);
+          resetNewTransaction();
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Person *</Label>
+              <Select value={newTransaction.personId} onValueChange={(value) => setNewTransaction(prev => ({ ...prev, personId: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select person" />
+                </SelectTrigger>
+                <SelectContent>
+                  {people.map(person => (
+                    <SelectItem key={person.id} value={person.id}>
+                      <div className="flex items-center gap-2">
+                        <User size={16} />
+                        {person.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Transaction Type *</Label>
+              <Select value={newTransaction.type} onValueChange={(value) => setNewTransaction(prev => ({ ...prev, type: value as Transaction['type'] }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRANSACTION_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        {type.icon}
+                        <div>
+                          <div className="font-medium">{type.label}</div>
+                          <div className="text-xs text-muted-foreground">{type.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Amount *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newTransaction.amount}
+                  onChange={(e) => setNewTransaction(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label>Currency</Label>
+                <Select value={newTransaction.currency} onValueChange={(value) => setNewTransaction(prev => ({ ...prev, currency: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map(currency => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Date *</Label>
+                <Input
+                  type="date"
+                  value={newTransaction.date}
+                  onChange={(e) => setNewTransaction(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Time (Optional)</Label>
+                <Input
+                  type="time"
+                  value={newTransaction.time}
+                  onChange={(e) => setNewTransaction(prev => ({ ...prev, time: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Category (Optional)</Label>
+              <Input
+                value={newTransaction.category}
+                onChange={(e) => setNewTransaction(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="e.g., Groceries, Rent, Business"
+              />
+            </div>
+
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={newTransaction.description}
+                onChange={(e) => setNewTransaction(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="What was this transaction for?"
+                rows={2}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => {
+                  if (newTransaction.personId && newTransaction.amount > 0) {
+                    if (editingTransaction) {
+                      onUpdateTransaction(editingTransaction.id, newTransaction);
+                      setEditingTransaction(null);
+                    } else {
+                      onAddTransaction(newTransaction);
+                    }
+                    setShowAddTransaction(false);
+                    resetNewTransaction();
+                  }
+                }}
+                disabled={!newTransaction.personId || newTransaction.amount <= 0}
+                className="flex-1"
+              >
+                {editingTransaction ? 'Update Transaction' : 'Add Transaction'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAddTransaction(false);
+                  setEditingTransaction(null);
+                  resetNewTransaction();
                 }}
               >
                 Cancel

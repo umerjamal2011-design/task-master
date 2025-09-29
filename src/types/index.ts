@@ -65,6 +65,7 @@ export interface Person {
   notes?: string;
   createdAt: string;
   lastTransactionAt?: string;
+  preferredCurrency: string; // Each person has a single currency for all transactions
 }
 
 export interface Transaction {

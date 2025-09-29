@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PersonLedger, Transaction } from '@/types/index';
+import { PersonLedger, Transaction, Person } from '@/types/index';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, PencilSimple, Trash, Phone, Envelope, NotePencil, Receipt, TrendUp, TrendDown } from '@phosphor-icons/react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Plus, PencilSimple, Trash, Phone, Envelope, NotePencil, Receipt, TrendUp, TrendDown, CurrencyDollar } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AddTransactionDialog } from './AddTransactionDialog';
 
@@ -19,7 +20,7 @@ interface PersonLedgerViewProps {
   onDeleteTransaction: (transactionId: string) => void;
   onUpdatePerson: (personId: string, updates: Partial<PersonLedger['person']>) => void;
   onDeletePerson: (personId: string) => void;
-  formatCurrency: (amount: number, currency?: string) => string;
+  formatCurrency: (amount: number, person?: Person) => string;
   defaultCurrency: string;
 }
 
@@ -41,7 +42,8 @@ export function PersonLedgerView({
     name: ledger.person.name,
     phone: ledger.person.phone || '',
     email: ledger.person.email || '',
-    notes: ledger.person.notes || ''
+    notes: ledger.person.notes || '',
+    preferredCurrency: ledger.person.preferredCurrency || 'USD'
   });
 
   const handleUpdatePerson = () => {
@@ -49,7 +51,8 @@ export function PersonLedgerView({
       name: personData.name.trim(),
       phone: personData.phone.trim() || undefined,
       email: personData.email.trim() || undefined,
-      notes: personData.notes.trim() || undefined
+      notes: personData.notes.trim() || undefined,
+      preferredCurrency: personData.preferredCurrency
     });
     setShowEditPerson(false);
   };
@@ -83,7 +86,7 @@ export function PersonLedgerView({
     
     return (
       <span className={`font-semibold ${colorClass}`}>
-        {sign}{formatCurrency(transaction.amount, transaction.currency)}
+        {sign}{formatCurrency(transaction.amount, ledger.person)}
       </span>
     );
   };
@@ -157,6 +160,13 @@ export function PersonLedgerView({
                 <span className="text-sm">{ledger.person.email}</span>
               </div>
             )}
+            {ledger.person.preferredCurrency && (
+              <div className="flex items-center gap-2">
+                <CurrencyDollar size={16} className="text-muted-foreground" />
+                <span className="text-sm font-medium">{ledger.person.preferredCurrency}</span>
+                <span className="text-xs text-muted-foreground">(Default Currency)</span>
+              </div>
+            )}
             {ledger.person.notes && (
               <div className="flex items-start gap-2">
                 <NotePencil size={16} className="text-muted-foreground mt-0.5" />
@@ -186,7 +196,7 @@ export function PersonLedgerView({
                 'text-red-600 dark:text-red-400'
               }`}>
                 {ledger.balance === 0 ? 'Settled' : 
-                  (ledger.balance > 0 ? '+' : '') + formatCurrency(ledger.balance)
+                  (ledger.balance > 0 ? '+' : '') + formatCurrency(ledger.balance, ledger.person)
                 }
               </div>
               <Badge variant={
@@ -209,25 +219,25 @@ export function PersonLedgerView({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Given:</span>
               <span className="font-medium text-red-600 dark:text-red-400">
-                {formatCurrency(ledger.totalGiven)}
+                {formatCurrency(ledger.totalGiven, ledger.person)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Received:</span>
               <span className="font-medium text-green-600 dark:text-green-400">
-                {formatCurrency(ledger.totalReceived)}
+                {formatCurrency(ledger.totalReceived, ledger.person)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Borrowed:</span>
               <span className="font-medium text-orange-600 dark:text-orange-400">
-                {formatCurrency(ledger.totalLent)}
+                {formatCurrency(ledger.totalLent, ledger.person)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Paid:</span>
               <span className="font-medium text-blue-600 dark:text-blue-400">
-                {formatCurrency(ledger.totalPaid)}
+                {formatCurrency(ledger.totalPaid, ledger.person)}
               </span>
             </div>
             <div className="border-t pt-2 flex justify-between font-semibold">
@@ -379,6 +389,31 @@ export function PersonLedgerView({
                 value={personData.email}
                 onChange={(e) => setPersonData(prev => ({ ...prev, email: e.target.value }))}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-currency" className="flex items-center gap-2">
+                <CurrencyDollar size={16} />
+                Preferred Currency *
+              </Label>
+              <Select 
+                value={personData.preferredCurrency} 
+                onValueChange={(value) => setPersonData(prev => ({ ...prev, preferredCurrency: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD', 'JPY', 'CNY', 'PKR', 'BDT', 'SAR', 'AED', 'QAR', 'KWD', 'BHD', 'OMR'].map(currency => (
+                    <SelectItem key={currency} value={currency}>
+                      {currency}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                ⚠️ Changing currency will affect how all transactions with this person are displayed
+              </p>
             </div>
 
             <div className="space-y-2">

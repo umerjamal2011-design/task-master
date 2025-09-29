@@ -115,8 +115,17 @@ export function FinancialDashboard({
     };
   }, [personLedgers, people.length]);
 
-  // Format currency helper
-  const formatCurrency = (amount: number, currency: string = defaultCurrency) => {
+  // Format currency helper - now takes person to use their preferred currency
+  const formatCurrency = (amount: number, person?: Person) => {
+    const currency = person?.preferredCurrency || defaultCurrency;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  };
+
+  // Format currency with specific currency code (for overview stats)
+  const formatCurrencyWithCode = (amount: number, currency: string = defaultCurrency) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -200,7 +209,7 @@ export function FinancialDashboard({
                   <div>
                     <p className="text-sm font-medium text-green-700 dark:text-green-300">Owed to You</p>
                     <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                      {formatCurrency(overallStats.totalOwedToYou)}
+                      {formatCurrencyWithCode(overallStats.totalOwedToYou)}
                     </p>
                   </div>
                   <TrendUp size={24} className="text-green-600 dark:text-green-400" />
@@ -214,7 +223,7 @@ export function FinancialDashboard({
                   <div>
                     <p className="text-sm font-medium text-red-700 dark:text-red-300">You Owe</p>
                     <p className="text-2xl font-bold text-red-700 dark:text-red-300">
-                      {formatCurrency(overallStats.totalYouOwe)}
+                      {formatCurrencyWithCode(overallStats.totalYouOwe)}
                     </p>
                   </div>
                   <TrendUp size={24} className="text-red-600 dark:text-red-400 rotate-180" />
@@ -236,7 +245,7 @@ export function FinancialDashboard({
                         'text-red-700 dark:text-red-300'
                     }`}>
                       {overallStats.netBalance >= 0 ? '+' : ''}
-                      {formatCurrency(overallStats.netBalance)}
+                      {formatCurrencyWithCode(overallStats.netBalance)}
                     </p>
                   </div>
                   <CurrencyDollar size={24} className="text-muted-foreground" />
@@ -315,7 +324,7 @@ export function FinancialDashboard({
                                 : 'text-green-600 dark:text-green-400'
                             }`}>
                               {transaction.type === 'loan_given' || transaction.type === 'payment_made' ? '-' : '+'}
-                              {formatCurrency(transaction.amount, transaction.currency)}
+                              {formatCurrency(transaction.amount, person)}
                             </div>
                           </div>
                         </div>
@@ -398,7 +407,7 @@ export function FinancialDashboard({
                             'text-red-600 dark:text-red-400'
                           }`}>
                             {ledger.balance === 0 ? 'Settled' : 
-                              (ledger.balance > 0 ? '+' : '') + formatCurrency(ledger.balance)
+                              (ledger.balance > 0 ? '+' : '') + formatCurrency(ledger.balance, ledger.person)
                             }
                           </span>
                         </div>
@@ -486,6 +495,11 @@ export function FinancialDashboard({
                                 {transaction.time && ` at ${transaction.time}`}
                               </span>
                               <span>Currency: {transaction.currency}</span>
+                              {person && person.preferredCurrency !== transaction.currency && (
+                                <span className="text-orange-600 dark:text-orange-400">
+                                  ⚠️ Different from person's default ({person.preferredCurrency})
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div className="text-right">
@@ -495,7 +509,7 @@ export function FinancialDashboard({
                                 : 'text-green-600 dark:text-green-400'
                             }`}>
                               {transaction.type === 'loan_given' || transaction.type === 'payment_made' ? '-' : '+'}
-                              {formatCurrency(transaction.amount, transaction.currency)}
+                              {formatCurrency(transaction.amount, person)}
                             </div>
                           </div>
                         </div>
@@ -513,6 +527,7 @@ export function FinancialDashboard({
         open={showAddPerson}
         onOpenChange={setShowAddPerson}
         onAddPerson={onAddPerson}
+        defaultCurrency={defaultCurrency}
       />
 
       {/* Add Transaction Dialog */}

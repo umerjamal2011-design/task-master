@@ -5,20 +5,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { UserPlus } from '@phosphor-icons/react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UserPlus, CurrencyDollar } from '@phosphor-icons/react';
 
 interface AddPersonDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddPerson: (person: Omit<Person, 'id' | 'createdAt'>) => void;
+  defaultCurrency?: string;
 }
 
-export function AddPersonDialog({ open, onOpenChange, onAddPerson }: AddPersonDialogProps) {
+export function AddPersonDialog({ open, onOpenChange, onAddPerson, defaultCurrency = 'USD' }: AddPersonDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     email: '',
-    notes: ''
+    notes: '',
+    preferredCurrency: defaultCurrency
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,7 +33,8 @@ export function AddPersonDialog({ open, onOpenChange, onAddPerson }: AddPersonDi
       name: formData.name.trim(),
       phone: formData.phone.trim() || undefined,
       email: formData.email.trim() || undefined,
-      notes: formData.notes.trim() || undefined
+      notes: formData.notes.trim() || undefined,
+      preferredCurrency: formData.preferredCurrency
     });
 
     // Reset form
@@ -38,7 +42,8 @@ export function AddPersonDialog({ open, onOpenChange, onAddPerson }: AddPersonDi
       name: '',
       phone: '',
       email: '',
-      notes: ''
+      notes: '',
+      preferredCurrency: defaultCurrency
     });
 
     onOpenChange(false);
@@ -49,7 +54,8 @@ export function AddPersonDialog({ open, onOpenChange, onAddPerson }: AddPersonDi
       name: '',
       phone: '',
       email: '',
-      notes: ''
+      notes: '',
+      preferredCurrency: defaultCurrency
     });
     onOpenChange(false);
   };
@@ -97,6 +103,28 @@ export function AddPersonDialog({ open, onOpenChange, onAddPerson }: AddPersonDi
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency" className="flex items-center gap-2">
+              <CurrencyDollar size={16} />
+              Preferred Currency *
+            </Label>
+            <Select value={formData.preferredCurrency} onValueChange={(value) => setFormData(prev => ({ ...prev, preferredCurrency: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD', 'JPY', 'CNY', 'PKR', 'BDT', 'SAR', 'AED', 'QAR', 'KWD', 'BHD', 'OMR'].map(currency => (
+                  <SelectItem key={currency} value={currency}>
+                    {currency}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              All transactions with this person will be in this currency
+            </p>
           </div>
 
           <div className="space-y-2">

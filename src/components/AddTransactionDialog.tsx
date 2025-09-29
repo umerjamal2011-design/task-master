@@ -36,11 +36,22 @@ export function AddTransactionDialog({
     category: ''
   });
 
+  // Get selected person's preferred currency
+  const selectedPerson = people.find(p => p.id === formData.personId);
+  const personCurrency = selectedPerson?.preferredCurrency || defaultCurrency;
+
   React.useEffect(() => {
     if (preselectedPersonId) {
       setFormData(prev => ({ ...prev, personId: preselectedPersonId }));
     }
   }, [preselectedPersonId]);
+
+  // Update currency when person changes
+  React.useEffect(() => {
+    if (selectedPerson) {
+      setFormData(prev => ({ ...prev, currency: selectedPerson.preferredCurrency }));
+    }
+  }, [selectedPerson]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,19 +62,20 @@ export function AddTransactionDialog({
       personId: formData.personId,
       type: formData.type,
       amount: parseFloat(formData.amount),
-      currency: formData.currency,
+      currency: personCurrency, // Use person's preferred currency
       description: formData.description.trim() || undefined,
       date: formData.date,
       time: formData.time || undefined,
       category: formData.category.trim() || undefined
     });
 
-    // Reset form
+    // Reset form using person's currency for new transactions
+    const resetCurrency = selectedPerson?.preferredCurrency || defaultCurrency;
     setFormData({
       personId: preselectedPersonId || '',
       type: 'loan_given',
       amount: '',
-      currency: defaultCurrency,
+      currency: resetCurrency,
       description: '',
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().slice(0, 5),
@@ -74,11 +86,14 @@ export function AddTransactionDialog({
   };
 
   const handleCancel = () => {
+    const selectedPerson = people.find(p => p.id === (preselectedPersonId || ''));
+    const resetCurrency = selectedPerson?.preferredCurrency || defaultCurrency;
+    
     setFormData({
       personId: preselectedPersonId || '',
       type: 'loan_given',
       amount: '',
-      currency: defaultCurrency,
+      currency: resetCurrency,
       description: '',
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().slice(0, 5),
@@ -94,8 +109,6 @@ export function AddTransactionDialog({
     { value: 'payment_made', label: 'Payment Made (You paid them back)', color: 'text-blue-600' },
     { value: 'other', label: 'Other Transaction', color: 'text-gray-600' }
   ];
-
-  const currencies = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD', 'JPY', 'CNY', 'PKR', 'BDT'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,18 +170,19 @@ export function AddTransactionDialog({
 
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <Select value={formData.currency} onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencies.map(currency => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="h-10 px-3 py-2 bg-muted border border-input rounded-md flex items-center text-sm">
+                <span className="font-medium text-foreground">
+                  {personCurrency}
+                </span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  ({selectedPerson?.name}'s currency)
+                </span>
+              </div>
+              {!selectedPerson && (
+                <p className="text-xs text-muted-foreground">
+                  Select a person to see their currency
+                </p>
+              )}
             </div>
           </div>
 

@@ -123,6 +123,22 @@ function App() {
     loadUserLocation();
   }, []);
 
+  // Migration effect for people without preferredCurrency
+  useEffect(() => {
+    if (people && people.length > 0) {
+      const needsMigration = people.some(person => !person.preferredCurrency);
+      if (needsMigration) {
+        console.log('Migrating people to include preferredCurrency...');
+        const migratedPeople = people.map(person => ({
+          ...person,
+          preferredCurrency: person.preferredCurrency || 'USD' // Default to USD if missing
+        }));
+        setPeople(migratedPeople);
+        console.log(`Migrated ${people.length} people to include currency preference`);
+      }
+    }
+  }, [people, setPeople]);
+
   // Update location when prayer settings change
   useEffect(() => {
     if (prayerSettings?.location) {

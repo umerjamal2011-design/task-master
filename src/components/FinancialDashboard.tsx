@@ -583,11 +583,125 @@ export function FinancialDashboard({
             </Button>
           </div>
           
-          {/* Account list implementation would go here */}
-          <div className="text-center py-8 text-muted-foreground">
-            <Bank size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Account management interface coming soon...</p>
-          </div>
+          {accounts.length > 0 ? (
+            <div className="grid gap-4">
+              {accounts.map(account => (
+                <Card key={account.id} className="relative">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full" style={{ backgroundColor: `${account.color || '#3B82F6'}20` }}>
+                          {getAccountIcon(account.type)}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{account.name}</CardTitle>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {account.type}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {account.currency}
+                            </span>
+                            {!account.isActive && (
+                              <Badge variant="destructive" className="text-xs">
+                                Inactive
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold" style={{ color: account.color || '#3B82F6' }}>
+                          {formatCurrency(account.balance, account.currency)}
+                        </div>
+                        {account.bankName && (
+                          <div className="text-sm text-muted-foreground">
+                            {account.bankName}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  {(account.description || account.accountNumber) && (
+                    <CardContent className="pt-0">
+                      {account.description && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {account.description}
+                        </p>
+                      )}
+                      {account.accountNumber && (
+                        <p className="text-xs text-muted-foreground">
+                          Account: {account.accountNumber}
+                        </p>
+                      )}
+                    </CardContent>
+                  )}
+                  
+                  <CardContent className="pt-2">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingAccount(account);
+                          setNewAccount({
+                            name: account.name,
+                            type: account.type,
+                            balance: account.balance,
+                            currency: account.currency,
+                            description: account.description || '',
+                            accountNumber: account.accountNumber || '',
+                            bankName: account.bankName || '',
+                            isActive: account.isActive,
+                            color: account.color || '#3B82F6'
+                          });
+                          setShowAddAccount(true);
+                        }}
+                        className="gap-1"
+                      >
+                        <PencilSimple size={14} />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          onUpdateAccount(account.id, { isActive: !account.isActive });
+                        }}
+                        className="gap-1"
+                      >
+                        {account.isActive ? 'Deactivate' : 'Activate'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete account "${account.name}"? This action cannot be undone.`)) {
+                            onDeleteAccount(account.id);
+                          }
+                        }}
+                        className="gap-1 text-destructive hover:text-destructive"
+                      >
+                        <Trash size={14} />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Bank size={64} className="mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-lg font-medium mb-2">No accounts yet</h3>
+              <p className="text-muted-foreground mb-4">Add your first account to start tracking your finances</p>
+              <Button onClick={() => setShowAddAccount(true)} className="gap-2">
+                <Plus size={16} />
+                Add Your First Account
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-6">
@@ -599,11 +713,99 @@ export function FinancialDashboard({
             </Button>
           </div>
           
-          {/* Expense list implementation would go here */}
-          <div className="text-center py-8 text-muted-foreground">
-            <Receipt size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Expense management interface coming soon...</p>
-          </div>
+          {/* Expense Categories */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag size={20} />
+                Expense Categories
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {expenseCategories.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {expenseCategories.filter(cat => cat.isActive).map(category => (
+                    <div key={category.id} className="p-3 rounded-lg border bg-card/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{category.icon}</span>
+                          <span className="font-medium text-sm">{category.name}</span>
+                        </div>
+                      </div>
+                      {category.budget && category.budget > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          Budget: {formatCurrency(category.budget, category.currency)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>No expense categories created yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Expenses */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt size={20} />
+                Recent Expenses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {expenses.length > 0 ? (
+                <div className="space-y-3">
+                  {expenses
+                    .sort((a, b) => new Date(b.date + ' ' + (b.time || '00:00')).getTime() - new Date(a.date + ' ' + (a.time || '00:00')).getTime())
+                    .slice(0, 10)
+                    .map(expense => {
+                      const category = expenseCategories.find(c => c.id === expense.categoryId);
+                      const account = accounts.find(a => a.id === expense.accountId);
+                      
+                      return (
+                        <div key={expense.id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{category?.icon || '💰'}</span>
+                              <div>
+                                <div className="font-medium text-sm">{expense.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {category?.name || 'Unknown'} • {new Date(expense.date).toLocaleDateString()}
+                                  {account && ` • ${account.name}`}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-bold ${expense.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
+                              {expense.type === 'expense' ? '-' : '+'}
+                              {formatCurrency(expense.amount, expense.currency)}
+                            </div>
+                            <div className="text-xs text-muted-foreground capitalize">
+                              {expense.type}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Receipt size={48} className="mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">No expenses yet</h3>
+                  <p className="text-muted-foreground mb-4">Start tracking your expenses to get insights</p>
+                  <Button onClick={() => setShowAddExpense(true)} className="gap-2">
+                    <Plus size={16} />
+                    Add Your First Expense
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="people" className="space-y-6">
@@ -709,10 +911,16 @@ export function FinancialDashboard({
       </Tabs>
 
       {/* Add Account Dialog */}
-      <Dialog open={showAddAccount} onOpenChange={setShowAddAccount}>
+      <Dialog open={showAddAccount} onOpenChange={(open) => {
+        setShowAddAccount(open);
+        if (!open) {
+          setEditingAccount(null);
+          resetNewAccount();
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Account</DialogTitle>
+            <DialogTitle>{editingAccount ? 'Edit Account' : 'Add New Account'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -746,7 +954,7 @@ export function FinancialDashboard({
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label>Initial Balance</Label>
+                <Label>Balance</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -807,7 +1015,12 @@ export function FinancialDashboard({
               <Button 
                 onClick={() => {
                   if (newAccount.name.trim()) {
-                    onAddAccount(newAccount);
+                    if (editingAccount) {
+                      onUpdateAccount(editingAccount.id, newAccount);
+                      setEditingAccount(null);
+                    } else {
+                      onAddAccount(newAccount);
+                    }
                     setShowAddAccount(false);
                     resetNewAccount();
                   }
@@ -815,13 +1028,170 @@ export function FinancialDashboard({
                 disabled={!newAccount.name.trim()}
                 className="flex-1"
               >
-                Add Account
+                {editingAccount ? 'Update Account' : 'Add Account'}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setShowAddAccount(false);
+                  setEditingAccount(null);
                   resetNewAccount();
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Expense Dialog */}
+      <Dialog open={showAddExpense} onOpenChange={(open) => {
+        setShowAddExpense(open);
+        if (!open) {
+          setEditingExpense(null);
+          resetNewExpense();
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Title *</Label>
+              <Input
+                value={newExpense.title}
+                onChange={(e) => setNewExpense(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="e.g., Coffee, Groceries, Salary"
+                maxLength={100}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Amount *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newExpense.amount}
+                  onChange={(e) => setNewExpense(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label>Type</Label>
+                <Select value={newExpense.type} onValueChange={(value) => setNewExpense(prev => ({ ...prev, type: value as Expense['type'] }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPENSE_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex items-center gap-2">
+                          {type.icon}
+                          {type.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Category</Label>
+                <Select value={newExpense.categoryId} onValueChange={(value) => setNewExpense(prev => ({ ...prev, categoryId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {expenseCategories.filter(cat => cat.isActive).map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{category.icon}</span>
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Account</Label>
+                <Select value={newExpense.accountId} onValueChange={(value) => setNewExpense(prev => ({ ...prev, accountId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.filter(acc => acc.isActive).map(account => (
+                      <SelectItem key={account.id} value={account.id}>
+                        <div className="flex items-center gap-2">
+                          {getAccountIcon(account.type)}
+                          {account.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={newExpense.date}
+                  onChange={(e) => setNewExpense(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Time (Optional)</Label>
+                <Input
+                  type="time"
+                  value={newExpense.time}
+                  onChange={(e) => setNewExpense(prev => ({ ...prev, time: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Description (Optional)</Label>
+              <Textarea
+                value={newExpense.description}
+                onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Additional details about this expense"
+                rows={2}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => {
+                  if (newExpense.title.trim() && newExpense.amount > 0) {
+                    if (editingExpense) {
+                      onUpdateExpense(editingExpense.id, newExpense);
+                      setEditingExpense(null);
+                    } else {
+                      onAddExpense(newExpense);
+                    }
+                    setShowAddExpense(false);
+                    resetNewExpense();
+                  }
+                }}
+                disabled={!newExpense.title.trim() || newExpense.amount <= 0}
+                className="flex-1"
+              >
+                {editingExpense ? 'Update Expense' : 'Add Expense'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAddExpense(false);
+                  setEditingExpense(null);
+                  resetNewExpense();
                 }}
               >
                 Cancel

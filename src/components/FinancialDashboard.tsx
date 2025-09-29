@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Person, Transaction, PersonLedger } from '@/types/index';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PersonLedgerView } from './PersonLedgerView';
-import { AddPersonDialog } from './AddPersonDialog';
-import { AddTransactionDialog } from './AddTransactionDialog';
-import { Users, UserPlus, Receipt, CurrencyDollar, MagnifyingGlass, TrendUp, TrendDown } from '@phosphor-icons/react';
+import { MagnifyingGlass as Search, Users, UserPlus, Receipt, TrendUp, CurrencyDollar } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Person, Transaction, PersonLedger } from '@/types/index';
+import { AddPersonDialog } from '@/components/AddPersonDialog';
+import { AddTransactionDialog } from '@/components/AddTransactionDialog';
+import { PersonLedgerView } from '@/components/PersonLedgerView';
 
 interface FinancialDashboardProps {
   people: Person[];
@@ -74,17 +74,17 @@ export function FinancialDashboard({
 
       return {
         person,
-        transactions: personTransactions,
         balance,
         totalGiven,
         totalReceived,
         totalLent,
-        totalPaid
+        totalPaid,
+        transactions: personTransactions
       };
     });
   }, [people, transactions]);
 
-  // Filter ledgers based on search query
+  // Filter ledgers based on search
   const filteredLedgers = useMemo(() => {
     if (!searchQuery.trim()) return personLedgers;
     
@@ -98,32 +98,35 @@ export function FinancialDashboard({
 
   // Calculate overall statistics
   const overallStats = useMemo(() => {
-    const totalOwedToYou = personLedgers.reduce((sum, ledger) => 
-      sum + (ledger.balance > 0 ? ledger.balance : 0), 0);
     const totalYouOwe = personLedgers.reduce((sum, ledger) => 
-      sum + (ledger.balance < 0 ? Math.abs(ledger.balance) : 0), 0);
+      sum + (ledger.balance < 0 ? Math.abs(ledger.balance) : 0), 0
+    );
+    const totalOwedToYou = personLedgers.reduce((sum, ledger) => 
+      sum + (ledger.balance > 0 ? ledger.balance : 0), 0
+    );
     const netBalance = totalOwedToYou - totalYouOwe;
     const activeRelationships = personLedgers.filter(ledger => ledger.balance !== 0).length;
-    const totalPeople = people.length;
 
     return {
-      totalOwedToYou,
       totalYouOwe,
+      totalOwedToYou,
       netBalance,
       activeRelationships,
-      totalPeople
+      totalPeople: people.length
     };
   }, [personLedgers, people.length]);
 
-  // Format currency
-  const formatCurrency = (amount: number, currency: string = defaultCurrency) => {
+  // Format currency helper
+  const formatCurrency = (amount: number, currency = defaultCurrency) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || defaultCurrency
-    }).format(Math.abs(amount));
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
   };
 
-  // Get selected ledger for person view
+  // Get selected person's ledger
   const selectedLedger = personLedgers.find(ledger => ledger.person.id === selectedPersonId);
 
   // If a person is selected, show their ledger view
@@ -131,7 +134,6 @@ export function FinancialDashboard({
     return (
       <PersonLedgerView
         ledger={selectedLedger}
-        onBack={() => setSelectedPersonId(null)}
         onAddTransaction={(transactionData) => {
           onAddTransaction({
             ...transactionData,
@@ -141,6 +143,7 @@ export function FinancialDashboard({
         onUpdateTransaction={onUpdateTransaction}
         onDeleteTransaction={onDeleteTransaction}
         onUpdatePerson={onUpdatePerson}
+        onBack={() => setSelectedPersonId(null)}
         formatCurrency={formatCurrency}
         defaultCurrency={defaultCurrency}
       />
@@ -150,14 +153,13 @@ export function FinancialDashboard({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Financial Dashboard</h1>
-          <p className="text-muted-foreground">Track your financial dealings and transactions</p>
+          <p className="text-muted-foreground">Track loans and payments with people</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
             onClick={() => setShowAddPerson(true)}
             className="gap-2"
           >
@@ -168,6 +170,7 @@ export function FinancialDashboard({
             onClick={() => setShowAddTransaction(true)}
             disabled={people.length === 0}
             className="gap-2"
+            variant="outline"
           >
             <Receipt size={18} />
             Add Transaction
@@ -177,9 +180,9 @@ export function FinancialDashboard({
 
       {/* Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList>
           <TabsTrigger value="overview" className="gap-2">
-            <CurrencyDollar size={16} />
+            <TrendUp size={16} />
             Overview
           </TabsTrigger>
           <TabsTrigger value="people" className="gap-2">
@@ -199,8 +202,8 @@ export function FinancialDashboard({
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-700 dark:text-green-300">Owed to You</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Total Owed to You</p>
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                       {formatCurrency(overallStats.totalOwedToYou)}
                     </p>
                   </div>
@@ -213,35 +216,39 @@ export function FinancialDashboard({
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-red-700 dark:text-red-300">You Owe</p>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    <p className="text-sm font-medium text-red-800 dark:text-red-200">Total You Owe</p>
+                    <p className="text-2xl font-bold text-red-900 dark:text-red-100">
                       {formatCurrency(overallStats.totalYouOwe)}
                     </p>
                   </div>
-                  <TrendDown size={24} className="text-red-600 dark:text-red-400" />
+                  <CurrencyDollar size={24} className="text-red-600 dark:text-red-400" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Card className={overallStats.netBalance >= 0 ? 
+              "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" :
+              "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
+            }>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Net Balance</p>
+                    <p className="text-sm font-medium text-muted-foreground">Net Balance</p>
                     <p className={`text-2xl font-bold ${
                       overallStats.netBalance >= 0 
-                        ? 'text-green-600 dark:text-green-400' 
-                        : 'text-red-600 dark:text-red-400'
+                        ? 'text-blue-900 dark:text-blue-100' 
+                        : 'text-orange-900 dark:text-orange-100'
                     }`}>
-                      {overallStats.netBalance >= 0 ? '+' : ''}
                       {formatCurrency(overallStats.netBalance)}
                     </p>
+                    <p className={`text-xs ${
+                      overallStats.netBalance >= 0 
+                        ? 'text-blue-600 dark:text-blue-400' 
+                        : 'text-orange-600 dark:text-orange-400'
+                    }`}>
+                      {overallStats.netBalance >= 0 ? 'In your favor' : 'You owe overall'}
+                    </p>
                   </div>
-                  <CurrencyDollar size={24} className={
-                    overallStats.netBalance >= 0 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : 'text-red-600 dark:text-red-400'
-                  } />
                 </div>
               </CardContent>
             </Card>
@@ -333,7 +340,7 @@ export function FinancialDashboard({
           {/* Search */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
-              <MagnifyingGlass size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search people..."
                 value={searchQuery}
@@ -370,7 +377,7 @@ export function FinancialDashboard({
                           {ledger.balance === 0 ? 'Settled' : ledger.balance > 0 ? 'Owes You' : 'You Owe'}
                         </Badge>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-muted-foreground">Balance:</span>

@@ -605,6 +605,81 @@ export function FinancialDashboard({
               </CardContent>
             </Card>
           )}
+
+          {/* People Overview */}
+          {personLedgers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User size={20} />
+                  Financial Relationships Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {personLedgers
+                    .filter(ledger => ledger.balance !== 0) // Only show people with outstanding balances
+                    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance)) // Sort by balance amount (descending)
+                    .map(ledger => (
+                    <div key={ledger.person.id} className="p-4 rounded-lg border bg-card/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <User size={16} className="text-muted-foreground" />
+                          <span className="font-medium text-sm truncate">{ledger.person.name}</span>
+                        </div>
+                        <Badge 
+                          variant={ledger.balance > 0 ? "default" : ledger.balance < 0 ? "destructive" : "secondary"} 
+                          className="text-xs"
+                        >
+                          {ledger.balance > 0 ? 'Owes You' : ledger.balance < 0 ? 'You Owe' : 'Settled'}
+                        </Badge>
+                      </div>
+                      <div className={`text-lg font-bold ${
+                        ledger.balance > 0 ? 'text-green-600 dark:text-green-400' : 
+                        ledger.balance < 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
+                      }`}>
+                        {formatCurrency(Math.abs(ledger.balance), ledger.person.preferredCurrency)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {ledger.transactions.length} transaction{ledger.transactions.length !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Show all settled relationships in a compact summary */}
+                {personLedgers.filter(ledger => ledger.balance === 0).length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground mb-2">
+                      Settled Relationships ({personLedgers.filter(ledger => ledger.balance === 0).length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {personLedgers
+                        .filter(ledger => ledger.balance === 0)
+                        .map(ledger => (
+                        <Badge key={ledger.person.id} variant="outline" className="text-xs">
+                          {ledger.person.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Quick Action */}
+                <div className="mt-4 pt-4 border-t">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveTab('people')}
+                    className="w-full gap-2"
+                  >
+                    <ListBullets size={16} />
+                    View All People & Transactions
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Additional tabs would be implemented here */}
@@ -1607,6 +1682,202 @@ export function FinancialDashboard({
                   setShowAddTransaction(false);
                   setEditingTransaction(null);
                   resetNewTransaction();
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Transfer Dialog */}
+      <Dialog open={showAddTransfer} onOpenChange={(open) => {
+        setShowAddTransfer(open);
+        if (!open) {
+          resetNewTransfer();
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Transfer Between Accounts</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>From Account *</Label>
+                <Select value={newTransfer.fromAccountId} onValueChange={(value) => setNewTransfer(prev => ({ ...prev, fromAccountId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.filter(acc => acc.isActive).map(account => (
+                      <SelectItem key={account.id} value={account.id}>
+                        <div className="flex items-center gap-2">
+                          {getAccountIcon(account.type)}
+                          <div>
+                            <div className="font-medium text-sm">{account.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatCurrency(account.balance, account.currency)}
+                            </div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>To Account *</Label>
+                <Select value={newTransfer.toAccountId} onValueChange={(value) => setNewTransfer(prev => ({ ...prev, toAccountId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.filter(acc => acc.isActive).map(account => (
+                      <SelectItem key={account.id} value={account.id}>
+                        <div className="flex items-center gap-2">
+                          {getAccountIcon(account.type)}
+                          <div>
+                            <div className="font-medium text-sm">{account.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatCurrency(account.balance, account.currency)}
+                            </div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Amount *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newTransfer.amount}
+                  onChange={(e) => setNewTransfer(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label>Transfer Fee</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newTransfer.fee}
+                  onChange={(e) => setNewTransfer(prev => ({ ...prev, fee: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* Show exchange rate field if currencies are different */}
+            {(() => {
+              const fromAccount = accounts.find(acc => acc.id === newTransfer.fromAccountId);
+              const toAccount = accounts.find(acc => acc.id === newTransfer.toAccountId);
+              const differentCurrencies = fromAccount && toAccount && fromAccount.currency !== toAccount.currency;
+              
+              if (differentCurrencies) {
+                return (
+                  <div>
+                    <Label>Exchange Rate ({fromAccount.currency} to {toAccount.currency}) *</Label>
+                    <Input
+                      type="number"
+                      step="0.000001"
+                      value={newTransfer.exchangeRate}
+                      onChange={(e) => setNewTransfer(prev => ({ ...prev, exchangeRate: parseFloat(e.target.value) || 1 }))}
+                      placeholder="1.0"
+                    />
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {newTransfer.amount} {fromAccount.currency} = {(newTransfer.amount * newTransfer.exchangeRate).toFixed(2)} {toAccount.currency}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Date *</Label>
+                <Input
+                  type="date"
+                  value={newTransfer.date}
+                  onChange={(e) => setNewTransfer(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Time (Optional)</Label>
+                <Input
+                  type="time"
+                  value={newTransfer.time}
+                  onChange={(e) => setNewTransfer(prev => ({ ...prev, time: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Description (Optional)</Label>
+              <Textarea
+                value={newTransfer.description}
+                onChange={(e) => setNewTransfer(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="What is this transfer for?"
+                rows={2}
+              />
+            </div>
+
+            {/* Transfer Summary */}
+            {newTransfer.fromAccountId && newTransfer.toAccountId && newTransfer.amount > 0 && (
+              <div className="p-3 bg-muted/50 rounded-lg border">
+                <div className="text-sm font-medium mb-2">Transfer Summary</div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Amount to transfer:</span>
+                    <span>{formatCurrency(newTransfer.amount, newTransfer.currency)}</span>
+                  </div>
+                  {newTransfer.fee > 0 && (
+                    <div className="flex justify-between">
+                      <span>Transfer fee:</span>
+                      <span className="text-red-600">-{formatCurrency(newTransfer.fee, newTransfer.currency)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium border-t pt-1">
+                    <span>Total deducted:</span>
+                    <span className="text-red-600">-{formatCurrency(newTransfer.amount + newTransfer.fee, newTransfer.currency)}</span>
+                  </div>
+                  {newTransfer.exchangeRate !== 1 && (
+                    <div className="flex justify-between font-medium">
+                      <span>Amount received:</span>
+                      <span className="text-green-600">+{formatCurrency(newTransfer.amount * newTransfer.exchangeRate, accounts.find(acc => acc.id === newTransfer.toAccountId)?.currency || newTransfer.currency)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => {
+                  if (newTransfer.fromAccountId && newTransfer.toAccountId && newTransfer.amount > 0 && newTransfer.fromAccountId !== newTransfer.toAccountId) {
+                    onAddTransfer(newTransfer);
+                    setShowAddTransfer(false);
+                    resetNewTransfer();
+                  }
+                }}
+                disabled={!newTransfer.fromAccountId || !newTransfer.toAccountId || newTransfer.amount <= 0 || newTransfer.fromAccountId === newTransfer.toAccountId}
+                className="flex-1"
+              >
+                Complete Transfer
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAddTransfer(false);
+                  resetNewTransfer();
                 }}
               >
                 Cancel

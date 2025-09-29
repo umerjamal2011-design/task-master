@@ -123,6 +123,7 @@ export function FinancialDashboard({
   onDeleteTransfer,
   defaultCurrency
 }: FinancialDashboardProps) {
+  // Financial dashboard component for managing accounts, expenses, and transactions
   const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'expenses' | 'people'>('overview');
   
   // Account management states
@@ -1888,4 +1889,4 @@ export function FinancialDashboard({
       </Dialog>
     </div>
   );
-}
+} // End of FinancialDashboard component

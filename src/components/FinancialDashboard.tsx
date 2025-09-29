@@ -1,16 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { Person, Transaction, PersonLedger } from '@/types/index';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, TrendUp, TrendDown, CurrencyDollar, Users, Receipt, MagnifyingGlass, Plus, ArrowUpRight, ArrowDownRight } from '@phosphor-icons/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { UserPlus, TrendUp, TrendDown, CurrencyDollar, Users, Receipt, MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { PersonLedgerView } from './PersonLedgerView';
 import { AddPersonDialog } from './AddPersonDialog';
 import { AddTransactionDialog } from './AddTransactionDialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FinancialDashboardProps {
   people: Person[];
@@ -46,6 +45,7 @@ export function FinancialDashboard({
     return people.map(person => {
       const personTransactions = transactions.filter(tx => tx.personId === person.id);
       
+      // Calculate balance and totals
       let balance = 0;
       let totalGiven = 0;
       let totalReceived = 0;
@@ -70,19 +70,12 @@ export function FinancialDashboard({
             balance += tx.amount; // You paid them back
             totalPaid += tx.amount;
             break;
-          case 'other':
-            // For other transactions, positive means they owe you, negative means you owe them
-            // This can be customized based on the description
-            break;
         }
       });
 
       return {
         person,
-        transactions: personTransactions.sort((a, b) => 
-          new Date(b.date + ' ' + (b.time || '00:00')).getTime() - 
-          new Date(a.date + ' ' + (a.time || '00:00')).getTime()
-        ),
+        transactions: personTransactions,
         balance,
         totalGiven,
         totalReceived,
@@ -92,12 +85,12 @@ export function FinancialDashboard({
     });
   }, [people, transactions]);
 
-  // Filter people based on search
+  // Filter ledgers based on search query
   const filteredLedgers = useMemo(() => {
     if (!searchQuery.trim()) return personLedgers;
     
     const query = searchQuery.toLowerCase();
-    return personLedgers.filter(ledger => 
+    return personLedgers.filter(ledger =>
       ledger.person.name.toLowerCase().includes(query) ||
       ledger.person.phone?.toLowerCase().includes(query) ||
       ledger.person.email?.toLowerCase().includes(query)
@@ -106,43 +99,43 @@ export function FinancialDashboard({
 
   // Calculate overall statistics
   const overallStats = useMemo(() => {
-    const totalOwedToYou = personLedgers.reduce((sum, ledger) => sum + Math.max(0, ledger.balance), 0);
-    const totalYouOwe = personLedgers.reduce((sum, ledger) => sum + Math.max(0, -ledger.balance), 0);
-    const netPosition = totalOwedToYou - totalYouOwe;
-    const totalTransactions = transactions.length;
+    const totalYouOwe = personLedgers.reduce((sum, ledger) => 
+      sum + (ledger.balance < 0 ? Math.abs(ledger.balance) : 0), 0);
+    const totalOwedToYou = personLedgers.reduce((sum, ledger) => 
+      sum + (ledger.balance > 0 ? ledger.balance : 0), 0);
+    const netBalance = totalOwedToYou - totalYouOwe;
     const activeRelationships = personLedgers.filter(ledger => ledger.balance !== 0).length;
+    const totalPeople = people.length;
 
     return {
-      totalOwedToYou,
       totalYouOwe,
-      netPosition,
-      totalTransactions,
+      totalOwedToYou,
+      netBalance,
       activeRelationships,
-      totalPeople: people.length
+      totalPeople
     };
-  }, [personLedgers, transactions]);
+  }, [personLedgers, people.length]);
 
+  // Format currency
   const formatCurrency = (amount: number, currency: string = defaultCurrency) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+      minimumFractionDigits: 2
     }).format(Math.abs(amount));
   };
 
-  const selectedLedger = selectedPersonId 
-    ? personLedgers.find(ledger => ledger.person.id === selectedPersonId)
-    : null;
+  // Handle person selection for detailed view
+  const selectedLedger = personLedgers.find(ledger => ledger.person.id === selectedPersonId);
 
   if (selectedLedger) {
     return (
       <PersonLedgerView
         ledger={selectedLedger}
         onBack={() => setSelectedPersonId(null)}
-        onAddTransaction={(transaction) => {
+        onAddTransaction={(transactionData) => {
           onAddTransaction({
-            ...transaction,
+            ...transactionData,
             personId: selectedLedger.person.id
           });
         }}
@@ -158,16 +151,16 @@ export function FinancialDashboard({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Financial Dealings</h1>
-          <p className="text-muted-foreground">Manage loans and payments with people</p>
+          <h1 className="text-2xl font-bold text-foreground">Financial Dashboard</h1>
+          <p className="text-muted-foreground">Track your money relationships</p>
         </div>
         <div className="flex gap-2">
           <Button
+            variant="outline"
             onClick={() => setShowAddPerson(true)}
             className="gap-2"
-            variant="outline"
           >
             <UserPlus size={18} />
             Add Person
@@ -175,6 +168,7 @@ export function FinancialDashboard({
           <Button
             onClick={() => setShowAddTransaction(true)}
             className="gap-2"
+            disabled={people.length === 0}
           >
             <Plus size={18} />
             Add Transaction
@@ -183,7 +177,7 @@ export function FinancialDashboard({
       </div>
 
       {/* Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="gap-2">
             <CurrencyDollar size={16} />
@@ -191,11 +185,11 @@ export function FinancialDashboard({
           </TabsTrigger>
           <TabsTrigger value="people" className="gap-2">
             <Users size={16} />
-            People ({people.length})
+            People
           </TabsTrigger>
           <TabsTrigger value="transactions" className="gap-2">
             <Receipt size={16} />
-            Transactions ({transactions.length})
+            Transactions
           </TabsTrigger>
         </TabsList>
 
@@ -207,57 +201,58 @@ export function FinancialDashboard({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-700 dark:text-green-300">Owed to You</p>
-                    <p className="text-2xl font-bold text-green-800 dark:text-green-200">
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {formatCurrency(overallStats.totalOwedToYou)}
                     </p>
                   </div>
-                  <ArrowUpRight size={24} className="text-green-600 dark:text-green-400" />
+                  <TrendUp size={24} className="text-green-600 dark:text-green-400" />
                 </div>
               </CardContent>
             </Card>
-
+            
             <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-red-700 dark:text-red-300">You Owe</p>
-                    <p className="text-2xl font-bold text-red-800 dark:text-red-200">
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                       {formatCurrency(overallStats.totalYouOwe)}
                     </p>
                   </div>
-                  <ArrowDownRight size={24} className="text-red-600 dark:text-red-400" />
+                  <TrendDown size={24} className="text-red-600 dark:text-red-400" />
                 </div>
               </CardContent>
             </Card>
-
-            <Card className={`${overallStats.netPosition >= 0 
-              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-              : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+            
+            <Card className={`${
+              overallStats.netBalance >= 0 
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
             }`}>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className={`text-sm font-medium ${overallStats.netPosition >= 0 
-                      ? 'text-blue-700 dark:text-blue-300' 
-                      : 'text-orange-700 dark:text-orange-300'
+                    <p className="text-sm font-medium text-muted-foreground">Net Balance</p>
+                    <p className={`text-2xl font-bold ${
+                      overallStats.netBalance >= 0 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-red-600 dark:text-red-400'
                     }`}>
-                      Net Position
-                    </p>
-                    <p className={`text-2xl font-bold ${overallStats.netPosition >= 0 
-                      ? 'text-blue-800 dark:text-blue-200' 
-                      : 'text-orange-800 dark:text-orange-200'
-                    }`}>
-                      {overallStats.netPosition >= 0 ? '+' : ''}{formatCurrency(overallStats.netPosition)}
+                      {overallStats.netBalance >= 0 ? '+' : ''}
+                      {formatCurrency(overallStats.netBalance)}
                     </p>
                   </div>
-                  <TrendUp size={24} className={`${overallStats.netPosition >= 0 
-                    ? 'text-blue-600 dark:text-blue-400' 
-                    : 'text-orange-600 dark:text-orange-400'
-                  }`} />
+                  <div className={`${
+                    overallStats.netBalance >= 0 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {overallStats.netBalance >= 0 ? <TrendUp size={24} /> : <TrendDown size={24} />}
+                  </div>
                 </div>
               </CardContent>
             </Card>
-
+            
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">

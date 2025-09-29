@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
-import { Task, Category, PrayerTimes, LocationData, PrayerSettings, Person, Transaction } from '@/types/index';
+import { Task, Category, PrayerTimes, LocationData, PrayerSettings, Person, Transaction, Account, ExpenseCategory, Expense, Transfer } from '@/types/index';
 import { SortableCategoryList } from '@/components/SortableCategoryList';
 import { SortableCategoryNavigation } from '@/components/SortableCategoryNavigation';
 import { DailyView } from '@/components/DailyView';
@@ -28,6 +28,17 @@ function App() {
   ]);
   const [people, setPeople] = useKV<Person[]>('people', []);
   const [transactions, setTransactions] = useKV<Transaction[]>('transactions', []);
+  const [accounts, setAccounts] = useKV<Account[]>('accounts', []);
+  const [expenseCategories, setExpenseCategories] = useKV<ExpenseCategory[]>('expense-categories', [
+    { id: 'food', name: 'Food & Dining', color: '#10B981', icon: '🍔', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+    { id: 'transport', name: 'Transportation', color: '#3B82F6', icon: '🚗', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+    { id: 'shopping', name: 'Shopping', color: '#F59E0B', icon: '🛍️', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+    { id: 'entertainment', name: 'Entertainment', color: '#EF4444', icon: '🎬', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+    { id: 'utilities', name: 'Utilities', color: '#8B5CF6', icon: '⚡', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+    { id: 'healthcare', name: 'Healthcare', color: '#EC4899', icon: '🏥', currency: 'USD', isActive: true, createdAt: new Date().toISOString() }
+  ]);
+  const [expenses, setExpenses] = useKV<Expense[]>('expenses', []);
+  const [transfers, setTransfers] = useKV<Transfer[]>('transfers', []);
   const [isDarkMode, setIsDarkMode] = useKV<boolean>('dark-mode', false);
   const [prayerSettings, setPrayerSettings] = useKV<PrayerSettings>('prayer-settings', {
     enabled: false,
@@ -254,6 +265,10 @@ function App() {
       await (window as any).spark.kv.set('categories', categories || []);
       await (window as any).spark.kv.set('people', people || []);
       await (window as any).spark.kv.set('transactions', transactions || []);
+      await (window as any).spark.kv.set('accounts', accounts || []);
+      await (window as any).spark.kv.set('expense-categories', expenseCategories || []);
+      await (window as any).spark.kv.set('expenses', expenses || []);
+      await (window as any).spark.kv.set('transfers', transfers || []);
       await (window as any).spark.kv.set('dark-mode', isDarkMode);
       await (window as any).spark.kv.set('prayer-settings', prayerSettings || { enabled: false, method: 2 });
       
@@ -262,6 +277,10 @@ function App() {
         categories: (categories || []).length,
         people: (people || []).length,
         transactions: (transactions || []).length,
+        accounts: (accounts || []).length,
+        expenseCategories: (expenseCategories || []).length,
+        expenses: (expenses || []).length,
+        transfers: (transfers || []).length,
         darkMode: isDarkMode,
         prayerEnabled: prayerSettings?.enabled
       });
@@ -289,6 +308,17 @@ function App() {
       ];
       const freshPeople = (await (window as any).spark.kv.get('people') as Person[]) || [];
       const freshTransactions = (await (window as any).spark.kv.get('transactions') as Transaction[]) || [];
+      const freshAccounts = (await (window as any).spark.kv.get('accounts') as Account[]) || [];
+      const freshExpenseCategories = (await (window as any).spark.kv.get('expense-categories') as ExpenseCategory[]) || [
+        { id: 'food', name: 'Food & Dining', color: '#10B981', icon: '🍔', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+        { id: 'transport', name: 'Transportation', color: '#3B82F6', icon: '🚗', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+        { id: 'shopping', name: 'Shopping', color: '#F59E0B', icon: '🛍️', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+        { id: 'entertainment', name: 'Entertainment', color: '#EF4444', icon: '🎬', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+        { id: 'utilities', name: 'Utilities', color: '#8B5CF6', icon: '⚡', currency: 'USD', isActive: true, createdAt: new Date().toISOString() },
+        { id: 'healthcare', name: 'Healthcare', color: '#EC4899', icon: '🏥', currency: 'USD', isActive: true, createdAt: new Date().toISOString() }
+      ];
+      const freshExpenses = (await (window as any).spark.kv.get('expenses') as Expense[]) || [];
+      const freshTransfers = (await (window as any).spark.kv.get('transfers') as Transfer[]) || [];
       const freshDarkMode = (await (window as any).spark.kv.get('dark-mode') as boolean) || false;
       const freshPrayerSettings = (await (window as any).spark.kv.get('prayer-settings') as PrayerSettings) || {
         enabled: false,
@@ -300,6 +330,10 @@ function App() {
         categories: freshCategories.length,
         people: freshPeople.length,
         transactions: freshTransactions.length,
+        accounts: freshAccounts.length,
+        expenseCategories: freshExpenseCategories.length,
+        expenses: freshExpenses.length,
+        transfers: freshTransfers.length,
         darkMode: freshDarkMode,
         prayerEnabled: freshPrayerSettings.enabled
       });
@@ -309,6 +343,10 @@ function App() {
       setCategories(freshCategories);
       setPeople(freshPeople);
       setTransactions(freshTransactions);
+      setAccounts(freshAccounts);
+      setExpenseCategories(freshExpenseCategories);
+      setExpenses(freshExpenses);
+      setTransfers(freshTransfers);
       setIsDarkMode(freshDarkMode);
       setPrayerSettings(freshPrayerSettings);
       
@@ -1009,6 +1047,246 @@ function App() {
     toast.success('Transaction deleted successfully');
   };
 
+  // Account Management Functions
+  const addAccount = (accountData: Omit<Account, 'id' | 'createdAt' | 'lastUpdated'>) => {
+    const newAccount: Account = {
+      id: generateId(),
+      ...accountData,
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+    setAccounts(currentAccounts => [...(currentAccounts || []), newAccount]);
+    toast.success(`Account "${newAccount.name}" added successfully`);
+  };
+
+  const updateAccount = (accountId: string, updates: Partial<Account>) => {
+    setAccounts(currentAccounts => 
+      (currentAccounts || []).map(account => 
+        account.id === accountId 
+          ? { ...account, ...updates, lastUpdated: new Date().toISOString() } 
+          : account
+      )
+    );
+    toast.success('Account updated successfully');
+  };
+
+  const deleteAccount = (accountId: string) => {
+    const account = accounts?.find(a => a.id === accountId);
+    if (!account) return;
+
+    // Check if account is used in any expenses or transfers
+    const usedInExpenses = expenses?.some(expense => expense.accountId === accountId);
+    const usedInTransfers = transfers?.some(transfer => 
+      transfer.fromAccountId === accountId || transfer.toAccountId === accountId
+    );
+
+    if (usedInExpenses || usedInTransfers) {
+      if (!confirm(`Account "${account.name}" is used in expenses or transfers. Delete anyway? This will orphan those records.`)) {
+        return;
+      }
+    }
+
+    setAccounts(currentAccounts => 
+      (currentAccounts || []).filter(account => account.id !== accountId)
+    );
+    
+    toast.success(`Account "${account.name}" deleted`);
+  };
+
+  // Expense Category Management Functions
+  const addExpenseCategory = (categoryData: Omit<ExpenseCategory, 'id' | 'createdAt'>) => {
+    const newCategory: ExpenseCategory = {
+      id: generateId(),
+      ...categoryData,
+      createdAt: new Date().toISOString()
+    };
+    setExpenseCategories(currentCategories => [...(currentCategories || []), newCategory]);
+    toast.success(`Expense category "${newCategory.name}" added successfully`);
+  };
+
+  const updateExpenseCategory = (categoryId: string, updates: Partial<ExpenseCategory>) => {
+    setExpenseCategories(currentCategories => 
+      (currentCategories || []).map(category => 
+        category.id === categoryId ? { ...category, ...updates } : category
+      )
+    );
+    toast.success('Expense category updated successfully');
+  };
+
+  const deleteExpenseCategory = (categoryId: string) => {
+    const category = expenseCategories?.find(c => c.id === categoryId);
+    if (!category) return;
+
+    // Check if category is used in any expenses
+    const usedInExpenses = expenses?.some(expense => expense.categoryId === categoryId);
+
+    if (usedInExpenses) {
+      if (!confirm(`Category "${category.name}" is used in expenses. Delete anyway? This will orphan those expenses.`)) {
+        return;
+      }
+    }
+
+    setExpenseCategories(currentCategories => 
+      (currentCategories || []).filter(category => category.id !== categoryId)
+    );
+    
+    toast.success(`Expense category "${category.name}" deleted`);
+  };
+
+  // Expense Management Functions
+  const addExpense = (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
+    const newExpense: Expense = {
+      id: generateId(),
+      ...expenseData,
+      createdAt: new Date().toISOString()
+    };
+    
+    setExpenses(currentExpenses => [...(currentExpenses || []), newExpense]);
+
+    // Update account balance if account is specified
+    if (expenseData.accountId && expenseData.type === 'expense') {
+      updateAccount(expenseData.accountId, {
+        balance: (accounts?.find(a => a.id === expenseData.accountId)?.balance || 0) - expenseData.amount
+      });
+    } else if (expenseData.accountId && expenseData.type === 'income') {
+      updateAccount(expenseData.accountId, {
+        balance: (accounts?.find(a => a.id === expenseData.accountId)?.balance || 0) + expenseData.amount
+      });
+    }
+    
+    toast.success(`${expenseData.type === 'expense' ? 'Expense' : 'Income'} "${newExpense.title}" added successfully`);
+  };
+
+  const updateExpense = (expenseId: string, updates: Partial<Expense>) => {
+    const originalExpense = expenses?.find(e => e.id === expenseId);
+    if (!originalExpense) return;
+
+    setExpenses(currentExpenses => 
+      (currentExpenses || []).map(expense => 
+        expense.id === expenseId ? { ...expense, ...updates } : expense
+      )
+    );
+
+    // Update account balances if amount or account changed
+    if (updates.amount !== undefined || updates.accountId !== undefined) {
+      // Reverse original transaction
+      if (originalExpense.accountId) {
+        const originalAccount = accounts?.find(a => a.id === originalExpense.accountId);
+        if (originalAccount) {
+          const reverseAmount = originalExpense.type === 'expense' 
+            ? originalExpense.amount 
+            : -originalExpense.amount;
+          updateAccount(originalExpense.accountId, {
+            balance: originalAccount.balance + reverseAmount
+          });
+        }
+      }
+
+      // Apply new transaction
+      const newAccountId = updates.accountId || originalExpense.accountId;
+      const newAmount = updates.amount !== undefined ? updates.amount : originalExpense.amount;
+      const newType = updates.type || originalExpense.type;
+      
+      if (newAccountId) {
+        const newAccount = accounts?.find(a => a.id === newAccountId);
+        if (newAccount) {
+          const changeAmount = newType === 'expense' ? -newAmount : newAmount;
+          updateAccount(newAccountId, {
+            balance: newAccount.balance + changeAmount
+          });
+        }
+      }
+    }
+    
+    toast.success('Expense updated successfully');
+  };
+
+  const deleteExpense = (expenseId: string) => {
+    const expense = expenses?.find(e => e.id === expenseId);
+    if (!expense) return;
+
+    // Reverse the account balance change
+    if (expense.accountId) {
+      const account = accounts?.find(a => a.id === expense.accountId);
+      if (account) {
+        const reverseAmount = expense.type === 'expense' ? expense.amount : -expense.amount;
+        updateAccount(expense.accountId, {
+          balance: account.balance + reverseAmount
+        });
+      }
+    }
+
+    setExpenses(currentExpenses => 
+      (currentExpenses || []).filter(expense => expense.id !== expenseId)
+    );
+    
+    toast.success(`Expense "${expense.title}" deleted`);
+  };
+
+  // Transfer Management Functions
+  const addTransfer = (transferData: Omit<Transfer, 'id' | 'createdAt'>) => {
+    const newTransfer: Transfer = {
+      id: generateId(),
+      ...transferData,
+      createdAt: new Date().toISOString()
+    };
+    
+    setTransfers(currentTransfers => [...(currentTransfers || []), newTransfer]);
+
+    // Update account balances
+    const fromAccount = accounts?.find(a => a.id === transferData.fromAccountId);
+    const toAccount = accounts?.find(a => a.id === transferData.toAccountId);
+
+    if (fromAccount) {
+      const totalDebit = transferData.amount + (transferData.fee || 0);
+      updateAccount(transferData.fromAccountId, {
+        balance: fromAccount.balance - totalDebit
+      });
+    }
+
+    if (toAccount) {
+      const creditAmount = transferData.exchangeRate 
+        ? transferData.amount * transferData.exchangeRate 
+        : transferData.amount;
+      updateAccount(transferData.toAccountId, {
+        balance: toAccount.balance + creditAmount
+      });
+    }
+    
+    toast.success('Transfer completed successfully');
+  };
+
+  const deleteTransfer = (transferId: string) => {
+    const transfer = transfers?.find(t => t.id === transferId);
+    if (!transfer) return;
+
+    // Reverse the account balance changes
+    const fromAccount = accounts?.find(a => a.id === transfer.fromAccountId);
+    const toAccount = accounts?.find(a => a.id === transfer.toAccountId);
+
+    if (fromAccount) {
+      const totalDebit = transfer.amount + (transfer.fee || 0);
+      updateAccount(transfer.fromAccountId, {
+        balance: fromAccount.balance + totalDebit
+      });
+    }
+
+    if (toAccount) {
+      const creditAmount = transfer.exchangeRate 
+        ? transfer.amount * transfer.exchangeRate 
+        : transfer.amount;
+      updateAccount(transfer.toAccountId, {
+        balance: toAccount.balance - creditAmount
+      });
+    }
+
+    setTransfers(currentTransfers => 
+      (currentTransfers || []).filter(transfer => transfer.id !== transferId)
+    );
+    
+    toast.success('Transfer deleted successfully');
+  };
+
   const generateTaskId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   // Cleanup function to remove orphaned tasks (tasks with non-existent parent IDs or category IDs)
@@ -1376,6 +1654,22 @@ function App() {
         console.log('Emergency reset: clearing all transactions');
         return [];
       });
+      setAccounts(() => {
+        console.log('Emergency reset: clearing all accounts');
+        return [];
+      });
+      setExpenseCategories(() => {
+        console.log('Emergency reset: clearing all expense categories');
+        return [];
+      });
+      setExpenses(() => {
+        console.log('Emergency reset: clearing all expenses');
+        return [];
+      });
+      setTransfers(() => {
+        console.log('Emergency reset: clearing all transfers');
+        return [];
+      });
       
       // Also try to clear KV storage directly if accessible
       try {
@@ -1384,6 +1678,10 @@ function App() {
           await (window as any).spark.kv.delete('categories');
           await (window as any).spark.kv.delete('people');
           await (window as any).spark.kv.delete('transactions');
+          await (window as any).spark.kv.delete('accounts');
+          await (window as any).spark.kv.delete('expense-categories');
+          await (window as any).spark.kv.delete('expenses');
+          await (window as any).spark.kv.delete('transfers');
           console.log('KV storage cleared');
         }
       } catch (error) {
@@ -2659,12 +2957,27 @@ function App() {
                 <FinancialDashboard
                   people={people || []}
                   transactions={transactions || []}
+                  accounts={accounts || []}
+                  expenseCategories={expenseCategories || []}
+                  expenses={expenses || []}
+                  transfers={transfers || []}
                   onAddPerson={addPerson}
                   onUpdatePerson={updatePerson}
                   onDeletePerson={deletePerson}
                   onAddTransaction={addTransaction}
                   onUpdateTransaction={updateTransaction}
                   onDeleteTransaction={deleteTransaction}
+                  onAddAccount={addAccount}
+                  onUpdateAccount={updateAccount}
+                  onDeleteAccount={deleteAccount}
+                  onAddExpenseCategory={addExpenseCategory}
+                  onUpdateExpenseCategory={updateExpenseCategory}
+                  onDeleteExpenseCategory={deleteExpenseCategory}
+                  onAddExpense={addExpense}
+                  onUpdateExpense={updateExpense}
+                  onDeleteExpense={deleteExpense}
+                  onAddTransfer={addTransfer}
+                  onDeleteTransfer={deleteTransfer}
                   defaultCurrency="USD"
                 />
               </TabsContent>

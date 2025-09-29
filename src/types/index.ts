@@ -91,3 +91,107 @@ export interface PersonLedger {
   totalLent: number; // Total amount they've lent you
   totalPaid: number; // Total amount you've paid them back
 }
+
+// Account Management Types
+export interface Account {
+  id: string;
+  name: string;
+  type: 'cash' | 'bank' | 'savings' | 'credit' | 'investment' | 'other';
+  balance: number;
+  currency: string;
+  description?: string;
+  accountNumber?: string; // For bank accounts
+  bankName?: string; // For bank accounts
+  isActive: boolean;
+  createdAt: string;
+  lastUpdated: string;
+  color?: string; // For visual identification
+}
+
+// Expense Tracking Types
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  color?: string;
+  icon?: string;
+  budget?: number; // Monthly budget for this category
+  currency: string;
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface Expense {
+  id: string;
+  title: string;
+  amount: number;
+  currency: string;
+  categoryId: string;
+  accountId?: string; // Which account was used for payment
+  description?: string;
+  date: string; // YYYY-MM-DD format
+  time?: string; // HH:mm format
+  type: 'expense' | 'income' | 'transfer';
+  tags?: string[]; // Optional tags for better categorization
+  receipt?: string; // File path or URL to receipt
+  location?: string; // Where the expense occurred
+  createdAt: string;
+  recurring?: {
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number; // Every N periods
+    endDate?: string; // When to stop recurring
+  };
+}
+
+// Transfer between accounts
+export interface Transfer {
+  id: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  currency: string;
+  exchangeRate?: number; // If transferring between different currencies
+  fee?: number; // Transfer fee
+  description?: string;
+  date: string;
+  time?: string;
+  createdAt: string;
+}
+
+// Budget tracking
+export interface Budget {
+  id: string;
+  name: string;
+  categoryIds: string[]; // Which expense categories this budget covers
+  amount: number;
+  currency: string;
+  period: 'weekly' | 'monthly' | 'yearly';
+  startDate: string;
+  endDate?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// Financial Summary interfaces
+export interface AccountSummary {
+  totalCash: number;
+  totalBank: number;
+  totalSavings: number;
+  totalCredit: number;
+  totalInvestment: number;
+  netWorth: number;
+  currency: string;
+}
+
+export interface ExpenseSummary {
+  totalExpenses: number;
+  totalIncome: number;
+  netFlow: number;
+  currency: string;
+  period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  topCategories: Array<{
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+    percentage: number;
+  }>;
+}

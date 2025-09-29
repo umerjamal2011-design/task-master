@@ -226,175 +226,259 @@ export function PendingTasksSummary({
                   View All
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] mx-2 sm:mx-auto">
-                <DialogHeader>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <DialogTitle className="text-lg sm:text-xl">All Overdue Tasks</DialogTitle>
-                    <div className="flex flex-wrap gap-1 sm:gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setExpandedDates(new Set(sortedOverdueDates))}
-                        className="text-xs flex-1 sm:flex-none"
-                      >
-                        Expand All
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setExpandedDates(new Set())}
-                        className="text-xs flex-1 sm:flex-none"
-                      >
-                        Collapse All
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setShowBulkRescheduleAll(true)}
-                        className="text-xs flex-1 sm:flex-none"
-                      >
-                        <ArrowsClockwise size={14} className="mr-1" />
-                        Reschedule All
-                      </Button>
-                    </div>
-                  </div>
-                </DialogHeader>
-                <ScrollArea className="h-[70vh] sm:h-[75vh] pr-2 sm:pr-4">
-                  <div className="space-y-4">
-                    {sortedOverdueDates.map((date) => {
-                      const tasksForDate = overdueByDate[date];
-                      const isExpanded = expandedDates.has(date);
-                      
-                      return (
-                        <motion.div
-                          key={date}
-                          layout
-                          className="border border-border rounded-lg overflow-hidden"
-                        >
-                          {/* Date Header */}
-                          <div 
-                            className="flex items-center justify-between p-4 bg-secondary/20 cursor-pointer hover:bg-secondary/40 transition-colors"
-                            onClick={() => toggleDateExpansion(date)}
+              <DialogContent className="max-w-[96vw] sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] mx-1 sm:mx-auto p-0">
+                <div className="p-4 sm:p-6 pb-0">
+                  <DialogHeader>
+                    <div className="flex flex-col gap-3">
+                      <DialogTitle className="text-lg sm:text-xl">All Overdue Tasks</DialogTitle>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {/* Mobile: Stack all buttons */}
+                        <div className="flex gap-1 sm:hidden">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setExpandedDates(new Set(sortedOverdueDates))}
+                            className="text-xs flex-1"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-800">
-                                <Calendar size={14} className="text-orange-700 dark:text-orange-300" />
+                            Expand All
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setExpandedDates(new Set())}
+                            className="text-xs flex-1"
+                          >
+                            Collapse All
+                          </Button>
+                        </div>
+                        <div className="sm:hidden">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setShowBulkRescheduleAll(true)}
+                            className="text-xs w-full"
+                          >
+                            <ArrowsClockwise size={14} className="mr-1" />
+                            Reschedule All {overdueTasks.length} Tasks
+                          </Button>
+                        </div>
+                        
+                        {/* Desktop: Original layout */}
+                        <div className="hidden sm:flex sm:flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setExpandedDates(new Set(sortedOverdueDates))}
+                            className="text-xs"
+                          >
+                            Expand All
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setExpandedDates(new Set())}
+                            className="text-xs"
+                          >
+                            Collapse All
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setShowBulkRescheduleAll(true)}
+                            className="text-xs"
+                          >
+                            <ArrowsClockwise size={14} className="mr-1" />
+                            Reschedule All
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogHeader>
+                </div>
+                <div className="px-4 sm:px-6 pb-4 sm:pb-6 flex-1 min-h-0">
+                  <ScrollArea className="h-[65vh] sm:h-[70vh] pr-2 sm:pr-4">
+                    <div className="space-y-4">
+                      {sortedOverdueDates.map((date) => {
+                        const tasksForDate = overdueByDate[date];
+                        const isExpanded = expandedDates.has(date);
+                        
+                        return (
+                          <motion.div
+                            key={date}
+                            layout
+                            className="border border-border rounded-lg overflow-hidden"
+                          >
+                            {/* Date Header */}
+                            <div className="bg-secondary/20">
+                              {/* Main header - clickable to expand/collapse */}
+                              <div 
+                                className="flex items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
+                                onClick={() => toggleDateExpansion(date)}
+                              >
+                                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                  <div className="p-1.5 sm:p-2 rounded-full bg-orange-100 dark:bg-orange-800 flex-shrink-0">
+                                    <Calendar size={12} sm-size={14} className="text-orange-700 dark:text-orange-300" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-medium text-sm sm:text-base text-foreground">
+                                      {getDateLabel(date)}
+                                    </div>
+                                    <div className="text-xs sm:text-sm text-muted-foreground">
+                                      {new Date(date).toLocaleDateString()} • {tasksForDate.length} {tasksForDate.length === 1 ? 'task' : 'tasks'}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {tasksForDate.length}
+                                  </Badge>
+                                  {isExpanded ? <CaretUp size={16} /> : <CaretDown size={16} />}
+                                </div>
                               </div>
-                              <div>
-                                <div className="font-medium text-foreground">
-                                  {getDateLabel(date)} ({new Date(date).toLocaleDateString()})
+                              
+                              {/* Action buttons row for mobile optimization */}
+                              <div className="px-3 pb-3 sm:hidden">
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onSelectDate(date);
+                                      setShowPendingDialog(false);
+                                    }}
+                                    className="text-xs flex-1"
+                                  >
+                                    <Calendar size={12} className="mr-1" />
+                                    View Day
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setBulkRescheduleDate(date);
+                                    }}
+                                    className="text-xs flex-1"
+                                  >
+                                    <ArrowsClockwise size={12} className="mr-1" />
+                                    Reschedule
+                                  </Button>
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {tasksForDate.length} {tasksForDate.length === 1 ? 'task' : 'tasks'} pending
-                                </div>
+                              </div>
+                              
+                              {/* Desktop action buttons */}
+                              <div className="hidden sm:flex items-center justify-end gap-2 px-4 pb-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setBulkRescheduleDate(date);
+                                  }}
+                                  className="text-xs"
+                                >
+                                  <ArrowsClockwise size={12} className="mr-1" />
+                                  Reschedule Day
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onSelectDate(date);
+                                    setShowPendingDialog(false);
+                                  }}
+                                  className="text-xs"
+                                >
+                                  <Calendar size={12} className="mr-1" />
+                                  View Day
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {tasksForDate.length}
-                              </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setBulkRescheduleDate(date);
-                                }}
-                                className="text-xs"
-                              >
-                                <ArrowsClockwise size={12} className="mr-1" />
-                                Reschedule Day
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onSelectDate(date);
-                                  setShowPendingDialog(false);
-                                }}
-                                className="text-xs"
-                              >
-                                View Day
-                              </Button>
-                              {isExpanded ? <CaretUp size={16} /> : <CaretDown size={16} />}
-                            </div>
-                          </div>
-                          
-                          {/* Tasks List */}
-                          <AnimatePresence>
-                            {isExpanded && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="border-t border-border"
-                              >
-                                <div className="p-4 space-y-3">
-                                  {tasksForDate.map((task) => {
-                                    const category = getCategoryById(task.categoryId);
-                                    
-                                    return (
-                                      <div
-                                        key={task.id}
-                                        className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border/50 hover:border-border transition-colors"
-                                      >
+                            
+                            {/* Tasks List */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="border-t border-border"
+                                >
+                                  <div className="p-3 sm:p-4 space-y-3">
+                                    {tasksForDate.map((task) => {
+                                      const category = getCategoryById(task.categoryId);
+                                      
+                                      return (
                                         <div
-                                          className="w-3 h-3 rounded-full flex-shrink-0"
-                                          style={{ backgroundColor: category?.color || '#6B7280' }}
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-medium text-sm mb-1 line-clamp-2">
-                                            {task.title}
-                                          </div>
-                                          {task.description && (
-                                            <div className="text-xs text-muted-foreground mb-2 line-clamp-1">
-                                              {task.description}
-                                            </div>
-                                          )}
-                                          <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="text-xs">
-                                              {category?.name || 'Unknown'}
-                                            </Badge>
-                                            {task.scheduledTime && (
-                                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                <Clock size={12} />
-                                                {task.scheduledTime}
+                                          key={task.id}
+                                          className="rounded-lg bg-card border border-border/50 hover:border-border transition-colors"
+                                        >
+                                          {/* Task content */}
+                                          <div className="p-3">
+                                            <div className="flex items-start gap-3">
+                                              <div
+                                                className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                                                style={{ backgroundColor: category?.color || '#6B7280' }}
+                                              />
+                                              <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-sm mb-1 line-clamp-2">
+                                                  {task.title}
+                                                </div>
+                                                {task.description && (
+                                                  <div className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                                                    {task.description}
+                                                  </div>
+                                                )}
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                  <Badge variant="outline" className="text-xs">
+                                                    {category?.name || 'Unknown'}
+                                                  </Badge>
+                                                  {task.scheduledTime && (
+                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                      <Clock size={12} />
+                                                      {task.scheduledTime}
+                                                    </div>
+                                                  )}
+                                                  {task.priority && task.priority !== 'medium' && (
+                                                    <Badge 
+                                                      variant={task.priority === 'high' ? 'destructive' : 'secondary'}
+                                                      className="text-xs"
+                                                    >
+                                                      {task.priority}
+                                                    </Badge>
+                                                  )}
+                                                </div>
                                               </div>
-                                            )}
-                                            {task.priority && task.priority !== 'medium' && (
-                                              <Badge 
-                                                variant={task.priority === 'high' ? 'destructive' : 'secondary'}
-                                                className="text-xs"
-                                              >
-                                                {task.priority}
-                                              </Badge>
-                                            )}
+                                            </div>
+                                          </div>
+                                          
+                                          {/* Mobile-optimized action button */}
+                                          <div className="border-t border-border/50 p-2">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => setIndividualReschedule({ taskId: task.id, currentDate: date })}
+                                              className="text-xs w-full"
+                                            >
+                                              <CalendarBlank size={12} className="mr-1" />
+                                              Reschedule This Task
+                                            </Button>
                                           </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setIndividualReschedule({ taskId: task.id, currentDate: date })}
-                                            className="text-xs h-7 px-2"
-                                          >
-                                            <CalendarBlank size={12} className="mr-1" />
-                                            Reschedule
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
+                                      );
+                                    })}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
@@ -403,7 +487,7 @@ export function PendingTasksSummary({
 
       {/* Bulk Reschedule All Tasks Dialog */}
       <Dialog open={showBulkRescheduleAll} onOpenChange={setShowBulkRescheduleAll}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-2 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>Reschedule All Overdue Tasks</DialogTitle>
           </DialogHeader>
@@ -420,7 +504,7 @@ export function PendingTasksSummary({
             <div className="space-y-3">
               <div>
                 <Label className="text-sm mb-2 block">Quick Options</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {getQuickRescheduleOptions().map((option) => (
                     <Button
                       key={option.value}
@@ -440,7 +524,7 @@ export function PendingTasksSummary({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-sm mb-1 block">New Date</Label>
                   <Input
@@ -469,11 +553,11 @@ export function PendingTasksSummary({
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button 
                 onClick={handleBulkRescheduleAllSubmit}
                 disabled={!bulkAllTargetDate}
-                className="flex-1"
+                className="flex-1 text-xs sm:text-sm"
               >
                 <Check size={14} className="mr-1" />
                 Reschedule All {overdueTasks.length} Tasks
@@ -481,8 +565,10 @@ export function PendingTasksSummary({
               <Button 
                 variant="outline" 
                 onClick={() => setShowBulkRescheduleAll(false)}
+                className="sm:w-auto"
               >
                 <X size={14} />
+                <span className="sm:hidden ml-1">Cancel</span>
               </Button>
             </div>
           </div>
@@ -491,14 +577,14 @@ export function PendingTasksSummary({
 
       {/* Individual Task Reschedule Dialog */}
       <Dialog open={!!individualReschedule} onOpenChange={() => setIndividualReschedule(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-2 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>Reschedule Task</DialogTitle>
           </DialogHeader>
           {individualReschedule && (
             <div className="space-y-4">
               <div className="p-3 bg-secondary/30 rounded-lg">
-                <h4 className="font-medium text-sm mb-1">
+                <h4 className="font-medium text-sm mb-1 line-clamp-2">
                   {tasks.find(t => t.id === individualReschedule.taskId)?.title}
                 </h4>
                 <p className="text-xs text-muted-foreground">
@@ -509,7 +595,7 @@ export function PendingTasksSummary({
               <div className="space-y-3">
                 <div>
                   <Label className="text-sm mb-2 block">Quick Options</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {getQuickRescheduleOptions().map((option) => (
                       <Button
                         key={option.value}
@@ -529,7 +615,7 @@ export function PendingTasksSummary({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-sm mb-1 block">New Date</Label>
                     <Input
@@ -551,7 +637,7 @@ export function PendingTasksSummary({
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   onClick={handleIndividualRescheduleSubmit}
                   disabled={!individualTargetDate}
@@ -563,8 +649,10 @@ export function PendingTasksSummary({
                 <Button 
                   variant="outline" 
                   onClick={() => setIndividualReschedule(null)}
+                  className="sm:w-auto"
                 >
                   <X size={14} />
+                  <span className="sm:hidden ml-1">Cancel</span>
                 </Button>
               </div>
             </div>
@@ -574,7 +662,7 @@ export function PendingTasksSummary({
 
       {/* Bulk Reschedule Day Dialog */}
       <Dialog open={!!bulkRescheduleDate} onOpenChange={() => setBulkRescheduleDate(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-2 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>Reschedule Day's Tasks</DialogTitle>
           </DialogHeader>
@@ -592,7 +680,7 @@ export function PendingTasksSummary({
               <div className="space-y-3">
                 <div>
                   <Label className="text-sm mb-2 block">Quick Options</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {getQuickRescheduleOptions().map((option) => (
                       <Button
                         key={option.value}
@@ -612,7 +700,7 @@ export function PendingTasksSummary({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-sm mb-1 block">New Date</Label>
                     <Input
@@ -641,7 +729,7 @@ export function PendingTasksSummary({
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   onClick={handleBulkRescheduleSubmit}
                   disabled={!bulkRescheduleTargetDate}
@@ -653,8 +741,10 @@ export function PendingTasksSummary({
                 <Button 
                   variant="outline" 
                   onClick={() => setBulkRescheduleDate(null)}
+                  className="sm:w-auto"
                 >
                   <X size={14} />
+                  <span className="sm:hidden ml-1">Cancel</span>
                 </Button>
               </div>
             </div>

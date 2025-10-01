@@ -199,8 +199,8 @@ function DaySection({
                     }`}
                   >
                     {/* Mobile optimized time display */}
-                    <div className="flex flex-col items-center min-w-[50px] sm:min-w-[60px] lg:min-w-[70px] pt-0.5 flex-shrink-0">
-                      <div className={`text-[10px] sm:text-xs lg:text-sm font-bold px-1 sm:px-1.5 lg:px-2 py-0.5 sm:py-1 rounded-md transition-all duration-200 text-center leading-tight ${
+                    <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] lg:min-w-[80px] pt-0.5 flex-shrink-0">
+                      <div className={`text-xs sm:text-sm lg:text-base font-bold px-1.5 sm:px-2 lg:px-2.5 py-1 sm:py-1.5 rounded-md transition-all duration-200 text-center leading-tight ${
                         task.completed
                           ? 'text-muted-foreground bg-muted/30 line-through'
                           : isCurrentDay

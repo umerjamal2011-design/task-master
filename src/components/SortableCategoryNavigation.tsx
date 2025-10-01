@@ -20,8 +20,11 @@ import { Category, Task } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, DotsSixVertical } from '@phosphor-icons/react';
+import { Plus, DotsSixVertical, DotsThreeVertical, Trash, Pencil, Palette } from '@phosphor-icons/react';
 
 interface SortableCategoryNavItemProps {
   category: Category;
@@ -35,6 +38,9 @@ interface SortableCategoryNavItemProps {
   onQuickTaskCancel: () => void;
   isMobile?: boolean;
   onMobileClose?: () => void;
+  onUpdateCategory?: (categoryId: string, updates: Partial<Category>) => void;
+  onDeleteCategory?: (categoryId: string) => void;
+  canDeleteCategory?: boolean;
 }
 
 function SortableCategoryNavItem({
@@ -48,7 +54,10 @@ function SortableCategoryNavItem({
   onQuickTaskSubmit,
   onQuickTaskCancel,
   isMobile = false,
-  onMobileClose
+  onMobileClose,
+  onUpdateCategory,
+  onDeleteCategory,
+  canDeleteCategory = true
 }: SortableCategoryNavItemProps) {
   const {
     attributes,
@@ -58,6 +67,27 @@ function SortableCategoryNavItem({
     transition,
     isDragging,
   } = useSortable({ id: category.id });
+
+  const [isEditingCategory, setIsEditingCategory] = React.useState(false);
+  const [editCategoryName, setEditCategoryName] = React.useState(category.name);
+  const [editCategoryColor, setEditCategoryColor] = React.useState(category.color || '#3B82F6');
+
+  const DEFAULT_CATEGORY_ID = 'general';
+  const PRAYER_CATEGORY_ID = 'prayers';
+  const canDelete = canDeleteCategory && category.id !== DEFAULT_CATEGORY_ID;
+
+  const categoryColors = [
+    '#3B82F6', // blue
+    '#10B981', // green
+    '#F59E0B', // amber
+    '#EF4444', // red
+    '#8B5CF6', // purple
+    '#06B6D4', // cyan
+    '#F97316', // orange
+    '#84CC16', // lime
+    '#EC4899', // pink
+    '#6B7280', // gray
+  ];
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -100,6 +130,33 @@ function SortableCategoryNavItem({
       onQuickTaskSubmit(category.id);
     } else if (e.key === 'Escape') {
       onQuickTaskCancel();
+    }
+  };
+
+  const handleSaveCategory = () => {
+    if (editCategoryName.trim() && onUpdateCategory) {
+      onUpdateCategory(category.id, {
+        name: editCategoryName.trim(),
+        color: editCategoryColor
+      });
+      setIsEditingCategory(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditCategoryName(category.name);
+    setEditCategoryColor(category.color || '#3B82F6');
+    setIsEditingCategory(false);
+  };
+
+  const handleDeleteCategory = () => {
+    if (onDeleteCategory && canDelete) {
+      if (confirm(`Are you sure you want to delete "${category.name}" and all its tasks?`)) {
+        onDeleteCategory(category.id);
+        if (isMobile && onMobileClose) {
+          onMobileClose();
+        }
+      }
     }
   };
 
@@ -164,9 +221,11 @@ function SortableCategoryNavItem({
                 </Badge>
               )}
             </div>
-            <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
-              {completedCount}/{tasks.length}
-            </Badge>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className="text-xs flex-shrink-0">
+                {completedCount}/{tasks.length}
+              </Badge>
+            </div>
           </div>
           {tasks.length > 0 && (
             <div className="space-y-1">
@@ -186,6 +245,35 @@ function SortableCategoryNavItem({
             </div>
           )}
         </button>
+
+        {/* Category Options Menu */}
+        {(onUpdateCategory || onDeleteCategory) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 opacity-70 hover:opacity-100 transition-opacity"
+              >
+                <DotsThreeVertical size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {onUpdateCategory && (
+                <DropdownMenuItem onClick={() => setIsEditingCategory(true)}>
+                  <Pencil size={14} className="mr-2" />
+                  Edit Category
+                </DropdownMenuItem>
+              )}
+              {onDeleteCategory && canDelete && (
+                <DropdownMenuItem onClick={handleDeleteCategory} className="text-destructive">
+                  <Trash size={14} className="mr-2" />
+                  Delete Category
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       
       {/* Quick Add Task Input */}
@@ -225,6 +313,57 @@ function SortableCategoryNavItem({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Category Edit Dialog */}
+      <Dialog open={isEditingCategory} onOpenChange={setIsEditingCategory}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Category Name</Label>
+              <Input
+                placeholder="Enter category name..."
+                value={editCategoryName}
+                onChange={(e) => setEditCategoryName(e.target.value)}
+                maxLength={50}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Palette size={14} />
+                Choose Color
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {categoryColors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setEditCategoryColor(color)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all ${
+                      editCategoryColor === color 
+                        ? 'border-foreground scale-110' 
+                        : 'border-border hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleSaveCategory} disabled={!editCategoryName.trim()}>
+                Save Changes
+              </Button>
+              <Button variant="outline" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -241,6 +380,8 @@ interface SortableCategoryNavigationProps {
   onQuickTaskSubmit: (categoryId: string) => void;
   isMobile?: boolean;
   onMobileClose?: () => void;
+  onUpdateCategory?: (categoryId: string, updates: Partial<Category>) => void;
+  onDeleteCategory?: (categoryId: string) => void;
 }
 
 export function SortableCategoryNavigation({
@@ -254,7 +395,9 @@ export function SortableCategoryNavigation({
   onQuickTaskTitleChange,
   onQuickTaskSubmit,
   isMobile = false,
-  onMobileClose
+  onMobileClose,
+  onUpdateCategory,
+  onDeleteCategory
 }: SortableCategoryNavigationProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -307,6 +450,8 @@ export function SortableCategoryNavigation({
     onQuickTaskTitleChange('');
   };
 
+  const DEFAULT_CATEGORY_ID = 'general';
+
   return (
     <DndContext
       sensors={sensors}
@@ -317,6 +462,7 @@ export function SortableCategoryNavigation({
         <div className="space-y-2">
           {sortedCategories.map((category) => {
             const categoryTasks = nonRepeatedTasks.filter(task => task.categoryId === category.id);
+            const canDeleteCategory = category.id !== DEFAULT_CATEGORY_ID;
             
             return (
               <SortableCategoryNavItem
@@ -332,6 +478,9 @@ export function SortableCategoryNavigation({
                 onQuickTaskCancel={handleQuickTaskCancel}
                 isMobile={isMobile}
                 onMobileClose={onMobileClose}
+                onUpdateCategory={onUpdateCategory}
+                onDeleteCategory={onDeleteCategory}
+                canDeleteCategory={canDeleteCategory}
               />
             );
           })}

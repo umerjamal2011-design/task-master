@@ -2179,6 +2179,8 @@ function App() {
                     quickTaskTitle={quickTaskTitle}
                     onQuickTaskTitleChange={setQuickTaskTitle}
                     onQuickTaskSubmit={addQuickTask}
+                    onUpdateCategory={updateCategory}
+                    onDeleteCategory={deleteCategory}
                   />
                   
                   {/* Add Category Button in Sidebar */}
@@ -2494,6 +2496,8 @@ function App() {
                           onQuickTaskSubmit={addQuickTask}
                           isMobile={true}
                           onMobileClose={() => setIsMobileSidebarOpen(false)}
+                          onUpdateCategory={updateCategory}
+                          onDeleteCategory={deleteCategory}
                         />
                         
                         {/* Add Category Button in Mobile Sidebar */}

@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise, FloppyDisk, Clock, CurrencyDollar } from '@phosphor-icons/react';
+import { Plus, CheckCircle, Circle, FolderPlus, Calendar, List, Sun, Palette, Hash, TrendUp, Dot, Moon, ListBullets, X, MapPin, ArrowClockwise, FloppyDisk, Clock, CurrencyDollar, DotsThreeVertical } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'sonner';
 import { getTasksForDate, isRepeatingTask } from '@/lib/repeat-utils';
@@ -2395,26 +2395,73 @@ function App() {
                       <p className="text-sm text-muted-foreground">Organize your day & finances</p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={forceSaveData}
-                        disabled={isForceSaving}
-                        className="h-8 w-8 p-0"
-                        title="Force save all data"
-                      >
-                        <FloppyDisk size={16} className={isForceSaving ? 'animate-pulse' : ''} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={refreshTasks}
-                        disabled={isRefreshing}
-                        className="h-8 w-8 p-0"
-                        title="Refresh all data"
-                      >
-                        <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="More options"
+                          >
+                            <DotsThreeVertical size={16} />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>App Options</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-3">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                forceSaveData();
+                              }}
+                              disabled={isForceSaving}
+                              className="w-full gap-2 justify-start"
+                            >
+                              <FloppyDisk size={16} className={isForceSaving ? 'animate-pulse' : ''} />
+                              Force Save All Data
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                refreshTasks();
+                              }}
+                              disabled={isRefreshing}
+                              className="w-full gap-2 justify-start"
+                            >
+                              <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                              Refresh All Data
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={toggleDarkMode}
+                              className="w-full gap-2 justify-start"
+                            >
+                              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                              {isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                            </Button>
+                            {hasDataInconsistencies && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  onClick={fixDataInconsistencies}
+                                  className="w-full gap-2 justify-start text-orange-600 border-orange-300 hover:bg-orange-50"
+                                >
+                                  ⚠️ Fix Data Issues
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={emergencyReset}
+                                  className="w-full gap-2 justify-start text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                >
+                                  🔄 Emergency Reset
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2700,8 +2747,8 @@ function App() {
         </AnimatePresence>
 
         {/* Main Content */}
-        <div className="flex-1 lg:overflow-auto">
-          <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 max-w-4xl pb-24 lg:pb-8">
+        <div className="flex-1 min-w-0">
+          <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-4xl pb-20 lg:pb-8">
 
             {/* Add Category Form */}
             {currentView === 'categories' && (
@@ -2850,8 +2897,8 @@ function App() {
 
               <TabsContent value="daily">
                 <div className="mb-4">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3 sm:gap-4">
+                    <div className="min-w-0 flex-1">
                       <h2 className="text-lg font-semibold text-foreground">Daily Schedule</h2>
                       <p className="text-sm text-muted-foreground">
                         {new Date(selectedDate).toLocaleDateString('en-US', {
@@ -2862,7 +2909,7 @@ function App() {
                         })}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       <Button
                         variant="outline"
                         onClick={refreshTasks}
@@ -2871,7 +2918,7 @@ function App() {
                         size="sm"
                       >
                         <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                        Refresh
+                        <span className="hidden sm:inline">Refresh</span>
                       </Button>
                       <Button
                         variant="outline"
@@ -2881,7 +2928,7 @@ function App() {
                         size="sm"
                       >
                         <Calendar size={16} />
-                        Update Daily
+                        <span className="hidden sm:inline">Update Daily</span>
                       </Button>
                     </div>
                   </div>

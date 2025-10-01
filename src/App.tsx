@@ -2748,7 +2748,7 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-4xl pb-20 lg:pb-8">
+          <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-2 sm:py-3 lg:py-6 max-w-4xl pb-20 lg:pb-8">
 
             {/* Add Category Form */}
             {currentView === 'categories' && (
@@ -2896,11 +2896,11 @@ function App() {
               </TabsContent>
 
               <TabsContent value="daily">
-                <div className="mb-4">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3 sm:gap-4">
+                <div className="mb-3 sm:mb-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 sm:mb-4 gap-2 sm:gap-3 lg:gap-4">
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-lg font-semibold text-foreground">Daily Schedule</h2>
-                      <p className="text-sm text-muted-foreground">
+                      <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground">Daily Schedule</h2>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {new Date(selectedDate).toLocaleDateString('en-US', {
                           weekday: 'long',
                           year: 'numeric',
@@ -2909,32 +2909,32 @@ function App() {
                         })}
                       </p>
                     </div>
-                    <div className="flex gap-2 flex-shrink-0">
+                    <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
                       <Button
                         variant="outline"
                         onClick={refreshTasks}
                         disabled={isRefreshing}
-                        className="gap-2"
+                        className="gap-1.5 sm:gap-2"
                         size="sm"
                       >
-                        <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                        <ArrowClockwise size={14} className={`sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                         <span className="hidden sm:inline">Refresh</span>
                       </Button>
                       <Button
                         variant="outline"
                         onClick={handleDayChange}
                         disabled={isRefreshing}
-                        className="gap-2"
+                        className="gap-1.5 sm:gap-2"
                         size="sm"
                       >
-                        <Calendar size={16} />
+                        <Calendar size={14} className="sm:w-4 sm:h-4" />
                         <span className="hidden sm:inline">Update Daily</span>
                       </Button>
                     </div>
                   </div>
 
                   {/* Overdue Tasks Summary Bar */}
-                  <div className="mb-4">
+                  <div className="mb-3 sm:mb-4">
                     <div className="lg:hidden">
                       {/* Mobile: Just show count */}
                       {(() => {
@@ -2948,15 +2948,15 @@ function App() {
                         if (overdueTasks.length > 0) {
                           return (
                             <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
-                              <CardContent className="pt-2 pb-2 px-3">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <Calendar size={14} className="text-orange-700 dark:text-orange-300 flex-shrink-0" />
+                              <CardContent className="pt-2 pb-2 px-2 sm:px-3">
+                                <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+                                  <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+                                    <Calendar size={12} className="sm:w-3.5 sm:h-3.5 text-orange-700 dark:text-orange-300 flex-shrink-0" />
                                     <div className="min-w-0 flex-1">
-                                      <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                                      <span className="text-xs sm:text-sm font-medium text-orange-700 dark:text-orange-300">
                                         {overdueTasks.length} overdue tasks
                                       </span>
-                                      <div className="text-xs text-orange-600 dark:text-orange-400">
+                                      <div className="text-[10px] sm:text-xs text-orange-600 dark:text-orange-400">
                                         View in sidebar to manage
                                       </div>
                                     </div>
@@ -2965,7 +2965,7 @@ function App() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setIsMobileSidebarOpen(true)}
-                                    className="text-xs h-7 px-2 border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-800 flex-shrink-0"
+                                    className="text-[10px] sm:text-xs h-6 sm:h-7 px-1.5 sm:px-2 border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-800 flex-shrink-0"
                                   >
                                     Manage
                                   </Button>

@@ -99,32 +99,32 @@ function DaySection({
   if (totalCount === 0) {
     return (
       <Card className={`${cardVariant} transition-all duration-200`}>
-        <CardHeader className="pb-3 px-4 sm:px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+        <CardHeader className="pb-2 px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
               {/* Collapse/Expand Button for non-current days */}
               {!isCurrentDay && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 flex-shrink-0"
+                  className="h-5 w-5 sm:h-6 sm:w-6 p-0 flex-shrink-0"
                   onClick={() => setIsCollapsed(!isCollapsed)}
                 >
-                  {isCollapsed ? <CaretRight size={14} /> : <CaretDown size={14} />}
+                  {isCollapsed ? <CaretRight size={12} className="sm:w-3.5 sm:h-3.5" /> : <CaretDown size={12} className="sm:w-3.5 sm:h-3.5" />}
                 </Button>
               )}
-              {isCurrentDay && <Sun size={18} className="text-primary flex-shrink-0" />}
-              <h3 className={`font-semibold text-base sm:text-lg ${titleColor} truncate`}>{title}</h3>
-              <Badge variant="outline" className="text-xs px-1.5 py-0.5 flex-shrink-0">
+              {isCurrentDay && <Sun size={16} className="sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-primary flex-shrink-0" />}
+              <h3 className={`font-semibold text-sm sm:text-base lg:text-lg ${titleColor} truncate`}>{title}</h3>
+              <Badge variant="outline" className="text-xs px-1 sm:px-1.5 py-0.5 flex-shrink-0 text-[10px] sm:text-xs">
                 {totalCount}
               </Badge>
             </div>
           </div>
         </CardHeader>
         {!isCollapsed && (
-          <CardContent className="px-4 sm:px-6 pb-4">
-            <div className="text-center py-6 sm:py-8 text-muted-foreground">
-              <CheckCircle size={24} className="mx-auto mb-2 opacity-50 sm:w-8 sm:h-8" />
+          <CardContent className="px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4">
+            <div className="text-center py-4 sm:py-6 lg:py-8 text-muted-foreground">
+              <CheckCircle size={20} className="sm:w-6 sm:h-6 mx-auto mb-2 opacity-50" />
               <p className="text-xs sm:text-sm">No tasks scheduled for this day</p>
             </div>
           </CardContent>
@@ -135,29 +135,29 @@ function DaySection({
 
   return (
     <Card className={`${cardVariant} transition-all duration-200`}>
-      <CardHeader className="pb-3 px-4 sm:px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+      <CardHeader className="pb-2 px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
             {/* Collapse/Expand Button for non-current days */}
             {!isCurrentDay && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 flex-shrink-0"
+                className="h-5 w-5 sm:h-6 sm:w-6 p-0 flex-shrink-0"
                 onClick={() => setIsCollapsed(!isCollapsed)}
               >
-                {isCollapsed ? <CaretRight size={14} /> : <CaretDown size={14} />}
+                {isCollapsed ? <CaretRight size={12} className="sm:w-3.5 sm:h-3.5" /> : <CaretDown size={12} className="sm:w-3.5 sm:h-3.5" />}
               </Button>
             )}
-            {isCurrentDay && <Sun size={18} className="text-primary flex-shrink-0" />}
-            <h3 className={`font-semibold text-base sm:text-lg lg:text-xl ${titleColor} truncate`}>{title}</h3>
-            <Badge variant="outline" className="text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 sm:py-1 flex-shrink-0">
+            {isCurrentDay && <Sun size={16} className="sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-primary flex-shrink-0" />}
+            <h3 className={`font-semibold text-sm sm:text-base lg:text-lg ${titleColor} truncate`}>{title}</h3>
+            <Badge variant="outline" className="text-xs px-1 sm:px-1.5 py-0.5 flex-shrink-0 text-[10px] sm:text-xs">
               {totalCount}
             </Badge>
           </div>
           {totalCount > 0 && (
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-2">
-              <div className="w-8 sm:w-12 lg:w-16 h-2 bg-secondary rounded-full overflow-hidden">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-1 sm:ml-2">
+              <div className="w-6 sm:w-8 lg:w-12 xl:w-16 h-1.5 sm:h-2 bg-secondary rounded-full overflow-hidden">
                 <motion.div
                   className={`h-full rounded-full ${isCurrentDay ? 'bg-primary' : 'bg-accent'}`}
                   initial={{ width: 0 }}
@@ -165,7 +165,7 @@ function DaySection({
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 />
               </div>
-              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              <span className="text-[10px] sm:text-xs font-medium text-muted-foreground whitespace-nowrap">
                 {totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}%
               </span>
             </div>
@@ -174,43 +174,43 @@ function DaySection({
       </CardHeader>
       
       {!isCollapsed && (
-        <CardContent className="space-y-3 px-4 sm:px-6">
+        <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-4 lg:px-6 pb-3 sm:pb-4 lg:pb-6">
           {/* Timed Tasks */}
           {timedTasks.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock size={16} className={isCurrentDay ? 'text-primary' : 'text-secondary-foreground'} />
-                <h4 className="text-sm sm:text-base font-medium text-muted-foreground">Scheduled</h4>
-                <Badge variant="outline" className="text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 sm:py-1">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <Clock size={14} className="sm:w-4 sm:h-4 text-secondary-foreground" />
+                <h4 className="text-xs sm:text-sm lg:text-base font-medium text-muted-foreground">Scheduled</h4>
+                <Badge variant="outline" className="text-xs px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-xs">
                   {timedTasks.length}
                 </Badge>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {timedTasks.map((task, index) => (
                   <motion.div
                     key={task.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.03 }}
-                    className={`flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border transition-all duration-200 ${
+                    className={`flex items-start gap-1.5 sm:gap-2 lg:gap-3 p-1.5 sm:p-2 lg:p-3 rounded-lg border transition-all duration-200 ${
                       task.completed 
                         ? 'bg-muted/50 border-muted/60 opacity-75' 
                         : 'bg-background/50 border-border/50'
                     }`}
                   >
                     {/* Mobile optimized time display */}
-                    <div className="flex flex-col items-center min-w-[60px] sm:min-w-[70px] lg:min-w-[80px] pt-0.5 flex-shrink-0">
-                      <div className={`text-xs sm:text-sm lg:text-base font-bold px-1.5 sm:px-2 lg:px-3 py-1 sm:py-1.5 rounded-md transition-all duration-200 text-center leading-tight ${
+                    <div className="flex flex-col items-center min-w-[50px] sm:min-w-[60px] lg:min-w-[70px] pt-0.5 flex-shrink-0">
+                      <div className={`text-[10px] sm:text-xs lg:text-sm font-bold px-1 sm:px-1.5 lg:px-2 py-0.5 sm:py-1 rounded-md transition-all duration-200 text-center leading-tight ${
                         task.completed
                           ? 'text-muted-foreground bg-muted/30 line-through'
                           : isCurrentDay
                             ? 'text-primary bg-primary/10'
                             : 'text-accent bg-accent/10'
                       }`}>
-                        {task.completed && <span className="mr-1 no-underline">✓</span>}
+                        {task.completed && <span className="mr-0.5 no-underline">✓</span>}
                         {formatTime(task.scheduledTime!)}
                       </div>
-                      <div className={`w-0.5 h-3 sm:h-4 lg:h-5 mt-1 rounded-full transition-all duration-200 ${
+                      <div className={`w-0.5 h-2 sm:h-3 lg:h-4 mt-0.5 sm:mt-1 rounded-full transition-all duration-200 ${
                         task.completed 
                           ? 'bg-muted/60' 
                           : isCurrentDay 
@@ -243,22 +243,22 @@ function DaySection({
 
           {/* Untimed Tasks */}
           {untimedTasks.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar size={16} className="text-muted-foreground" />
-                <h4 className="text-sm sm:text-base font-medium text-muted-foreground">Anytime</h4>
-                <Badge variant="outline" className="text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 sm:py-1">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <Calendar size={14} className="sm:w-4 sm:h-4 text-muted-foreground" />
+                <h4 className="text-xs sm:text-sm lg:text-base font-medium text-muted-foreground">Anytime</h4>
+                <Badge variant="outline" className="text-xs px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-xs">
                   {untimedTasks.length}
                 </Badge>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {untimedTasks.map((task, index) => (
                   <motion.div
                     key={task.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: (timedTasks.length + index) * 0.03 }}
-                    className="p-1"
+                    className="p-0.5 sm:p-1"
                   >
                     <TaskItem
                       task={task}
@@ -329,7 +329,7 @@ export function DailyView({
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
       {sections.map((section) => (
         <DaySection
           key={section.dateStr}

@@ -263,111 +263,58 @@ function SortableCategoryNavItem({
           )}
         </button>
 
-        {/* Category Options Menu - Always show for better visibility */}
+        {/* Category Options Menu - 3-dot menu for both mobile and desktop */}
         {(onUpdateCategory || onDeleteCategory) && (
-          <>
-            {isMobile ? (
-              /* Mobile: Show buttons inline for better accessibility */
-              <div className="flex items-center gap-1">
-                {onUpdateCategory && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditingCategory(true)}
-                      className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
-                      title="Edit name"
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowCustomizeDialog(true)}
-                      className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
-                      title="Customize category"
-                    >
-                      <Palette size={14} />
-                    </Button>
-                  </>
-                )}
-                {onDeleteCategory && canDelete && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleDeleteCategory}
-                    className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground text-destructive"
-                    title="Delete category"
-                  >
-                    <Trash size={14} />
-                  </Button>
-                )}
-                {!canDelete && category.id === DEFAULT_CATEGORY_ID && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled
-                    className="h-8 w-8 p-0 text-muted-foreground"
-                    title="Cannot delete default category"
-                  >
-                    <Trash size={14} />
-                  </Button>
-                )}
-              </div>
-            ) : (
-              /* Desktop: Use dropdown menu - make more visible */
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`h-8 w-8 p-0 flex-shrink-0 transition-all ${
-                      canDelete || onUpdateCategory 
-                        ? 'opacity-70 hover:opacity-100 hover:bg-secondary group-hover:opacity-100' 
-                        : 'opacity-30'
-                    }`}
-                    title="Category options"
-                  >
-                    <DotsThreeVertical size={16} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-48"
-                  side="bottom"
-                  sideOffset={4}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-8 w-8 p-0 flex-shrink-0 transition-all ${
+                  canDelete || onUpdateCategory 
+                    ? 'opacity-70 hover:opacity-100 hover:bg-secondary group-hover:opacity-100' 
+                    : 'opacity-30'
+                }`}
+                title="Category options"
+              >
+                <DotsThreeVertical size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              className="w-48"
+              side="bottom"
+              sideOffset={4}
+            >
+              {onUpdateCategory && (
+                <>
+                  <DropdownMenuItem onClick={() => setIsEditingCategory(true)}>
+                    <Pencil size={14} className="mr-2" />
+                    Edit Name
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowCustomizeDialog(true)}>
+                    <Palette size={14} className="mr-2" />
+                    Customize
+                  </DropdownMenuItem>
+                </>
+              )}
+              {onDeleteCategory && canDelete && (
+                <DropdownMenuItem 
+                  onClick={handleDeleteCategory} 
+                  className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
                 >
-                  {onUpdateCategory && (
-                    <>
-                      <DropdownMenuItem onClick={() => setIsEditingCategory(true)}>
-                        <Pencil size={14} className="mr-2" />
-                        Edit Name
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setShowCustomizeDialog(true)}>
-                        <Palette size={14} className="mr-2" />
-                        Customize
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  {onDeleteCategory && canDelete && (
-                    <DropdownMenuItem 
-                      onClick={handleDeleteCategory} 
-                      className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
-                    >
-                      <Trash size={14} className="mr-2" />
-                      Delete Category
-                    </DropdownMenuItem>
-                  )}
-                  {!canDelete && category.id === DEFAULT_CATEGORY_ID && (
-                    <DropdownMenuItem disabled className="text-muted-foreground">
-                      <Trash size={14} className="mr-2" />
-                      Cannot delete default category
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </>
+                  <Trash size={14} className="mr-2" />
+                  Delete Category
+                </DropdownMenuItem>
+              )}
+              {!canDelete && category.id === DEFAULT_CATEGORY_ID && (
+                <DropdownMenuItem disabled className="text-muted-foreground">
+                  <Trash size={14} className="mr-2" />
+                  Cannot delete default category
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
       

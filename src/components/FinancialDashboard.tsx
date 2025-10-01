@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,7 +28,9 @@ import {
   ChartPie,
   ListBullets,
   Coins,
-  HandCoins
+  HandCoins,
+  DotsThreeVertical,
+  Pencil
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -899,45 +902,53 @@ export function FinancialDashboard({
               {expenseCategories.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {expenseCategories.filter(cat => cat.isActive).map(category => (
-                    <div key={category.id} className="p-3 rounded-lg border bg-card/50">
+                    <div key={category.id} className="p-3 rounded-lg border bg-card/50 group">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                           <span className="text-lg">{category.icon}</span>
-                          <span className="font-medium text-sm">{category.name}</span>
+                          <span className="font-medium text-sm truncate">{category.name}</span>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditingExpenseCategory(category);
-                              setNewExpenseCategory({
-                                name: category.name,
-                                color: category.color || '#10B981',
-                                icon: category.icon || '🛒',
-                                budget: category.budget || 0,
-                                currency: category.currency,
-                                isActive: category.isActive
-                              });
-                              setShowAddExpenseCategory(true);
-                            }}
-                            className="h-6 w-6 p-0"
-                          >
-                            <PencilSimple size={12} />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              if (confirm(`Are you sure you want to delete category "${category.name}"?`)) {
-                                onDeleteExpenseCategory(category.id);
-                              }
-                            }}
-                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                          >
-                            <Trash size={12} />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <DotsThreeVertical size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setEditingExpenseCategory(category);
+                                setNewExpenseCategory({
+                                  name: category.name,
+                                  color: category.color || '#10B981',
+                                  icon: category.icon || '🛒',
+                                  budget: category.budget || 0,
+                                  currency: category.currency,
+                                  isActive: category.isActive
+                                });
+                                setShowAddExpenseCategory(true);
+                              }}
+                            >
+                              <Pencil size={14} className="mr-2" />
+                              Edit Category
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete category "${category.name}"?`)) {
+                                  onDeleteExpenseCategory(category.id);
+                                }
+                              }}
+                              className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                            >
+                              <Trash size={14} className="mr-2" />
+                              Delete Category
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                       {category.budget && category.budget > 0 && (
                         <div className="text-xs text-muted-foreground">

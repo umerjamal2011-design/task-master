@@ -275,19 +275,19 @@ function SortableCategoryNavItem({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsEditingCategory(true)}
-                      className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
+                      className="h-9 w-9 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
                       title="Edit name"
                     >
-                      <Pencil size={14} />
+                      <Pencil size={16} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowCustomizeDialog(true)}
-                      className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
+                      className="h-9 w-9 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
                       title="Customize category"
                     >
-                      <Palette size={14} />
+                      <Palette size={16} />
                     </Button>
                   </>
                 )}
@@ -296,10 +296,10 @@ function SortableCategoryNavItem({
                     variant="ghost"
                     size="sm"
                     onClick={handleDeleteCategory}
-                    className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground text-destructive"
+                    className="h-9 w-9 p-0 hover:bg-destructive hover:text-destructive-foreground text-destructive opacity-80 hover:opacity-100"
                     title="Delete category"
                   >
-                    <Trash size={14} />
+                    <Trash size={16} weight="fill" />
                   </Button>
                 )}
                 {!canDelete && category.id === DEFAULT_CATEGORY_ID && (
@@ -307,10 +307,10 @@ function SortableCategoryNavItem({
                     variant="ghost"
                     size="sm"
                     disabled
-                    className="h-8 w-8 p-0 text-muted-foreground"
+                    className="h-9 w-9 p-0 text-muted-foreground opacity-50"
                     title="Cannot delete default category"
                   >
-                    <Trash size={14} />
+                    <Trash size={16} />
                   </Button>
                 )}
               </div>

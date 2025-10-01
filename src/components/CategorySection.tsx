@@ -436,7 +436,11 @@ export function CategorySection({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => onDeleteCategory(category.id)}
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete "${category.name}" and all its tasks?`)) {
+                          onDeleteCategory(category.id);
+                        }
+                      }}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
                     >
                       <Trash size={16} />

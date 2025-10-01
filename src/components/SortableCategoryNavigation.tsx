@@ -246,7 +246,7 @@ function SortableCategoryNavItem({
           )}
         </button>
 
-        {/* Category Options Menu */}
+        {/* Category Options Menu - Always show for better visibility */}
         {(onUpdateCategory || onDeleteCategory) && (
           <>
             {isMobile ? (
@@ -257,7 +257,7 @@ function SortableCategoryNavItem({
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsEditingCategory(true)}
-                    className="h-8 w-8 p-0 hover:bg-secondary"
+                    className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
                     title="Edit category"
                   >
                     <Pencil size={14} />
@@ -274,15 +274,30 @@ function SortableCategoryNavItem({
                     <Trash size={14} />
                   </Button>
                 )}
+                {!canDelete && category.id === DEFAULT_CATEGORY_ID && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled
+                    className="h-8 w-8 p-0 text-muted-foreground"
+                    title="Cannot delete default category"
+                  >
+                    <Trash size={14} />
+                  </Button>
+                )}
               </div>
             ) : (
-              /* Desktop: Use dropdown menu */
+              /* Desktop: Use dropdown menu - make more visible */
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 transition-opacity opacity-70 hover:opacity-100 flex-shrink-0"
+                    className={`h-8 w-8 p-0 flex-shrink-0 transition-all ${
+                      canDelete || onUpdateCategory 
+                        ? 'opacity-50 hover:opacity-100 hover:bg-secondary' 
+                        : 'opacity-30'
+                    }`}
                     title="Category options"
                   >
                     <DotsThreeVertical size={16} />

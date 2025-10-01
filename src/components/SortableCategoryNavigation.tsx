@@ -71,6 +71,7 @@ function SortableCategoryNavItem({
   const [isEditingCategory, setIsEditingCategory] = React.useState(false);
   const [editCategoryName, setEditCategoryName] = React.useState(category.name);
   const [editCategoryColor, setEditCategoryColor] = React.useState(category.color || '#3B82F6');
+  const [showCustomizeDialog, setShowCustomizeDialog] = React.useState(false);
 
   const DEFAULT_CATEGORY_ID = 'general';
   const PRAYER_CATEGORY_ID = 'prayers';
@@ -143,10 +144,26 @@ function SortableCategoryNavItem({
     }
   };
 
+  const handleSaveCustomization = () => {
+    if (onUpdateCategory) {
+      onUpdateCategory(category.id, { 
+        name: editCategoryName.trim(), 
+        color: editCategoryColor 
+      });
+      setShowCustomizeDialog(false);
+    }
+  };
+
   const handleCancelEdit = () => {
     setEditCategoryName(category.name);
     setEditCategoryColor(category.color || '#3B82F6');
     setIsEditingCategory(false);
+  };
+
+  const handleCancelCustomize = () => {
+    setEditCategoryName(category.name);
+    setEditCategoryColor(category.color || '#3B82F6');
+    setShowCustomizeDialog(false);
   };
 
   const handleDeleteCategory = () => {
@@ -253,15 +270,26 @@ function SortableCategoryNavItem({
               /* Mobile: Show buttons inline for better accessibility */
               <div className="flex items-center gap-1">
                 {onUpdateCategory && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditingCategory(true)}
-                    className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
-                    title="Edit category"
-                  >
-                    <Pencil size={14} />
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingCategory(true)}
+                      className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
+                      title="Edit name"
+                    >
+                      <Pencil size={14} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCustomizeDialog(true)}
+                      className="h-8 w-8 p-0 hover:bg-secondary text-muted-foreground hover:text-foreground"
+                      title="Customize category"
+                    >
+                      <Palette size={14} />
+                    </Button>
+                  </>
                 )}
                 {onDeleteCategory && canDelete && (
                   <Button
@@ -310,10 +338,16 @@ function SortableCategoryNavItem({
                   sideOffset={4}
                 >
                   {onUpdateCategory && (
-                    <DropdownMenuItem onClick={() => setIsEditingCategory(true)}>
-                      <Pencil size={14} className="mr-2" />
-                      Edit Category
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem onClick={() => setIsEditingCategory(true)}>
+                        <Pencil size={14} className="mr-2" />
+                        Edit Name
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowCustomizeDialog(true)}>
+                        <Palette size={14} className="mr-2" />
+                        Customize
+                      </DropdownMenuItem>
+                    </>
                   )}
                   {onDeleteCategory && canDelete && (
                     <DropdownMenuItem 
@@ -392,6 +426,35 @@ function SortableCategoryNavItem({
               />
             </div>
             
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleSaveCategory} disabled={!editCategoryName.trim()}>
+                Save Changes
+              </Button>
+              <Button variant="outline" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Category Customize Dialog */}
+      <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Customize Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="category-name">Category Name</Label>
+              <Input
+                id="category-name"
+                value={editCategoryName}
+                onChange={(e) => setEditCategoryName(e.target.value)}
+                placeholder="Category name"
+                maxLength={50}
+              />
+            </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Palette size={14} />
@@ -403,7 +466,7 @@ function SortableCategoryNavItem({
                     key={color}
                     type="button"
                     onClick={() => setEditCategoryColor(color)}
-                    className={`w-6 h-6 rounded-full border-2 transition-all ${
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
                       editCategoryColor === color 
                         ? 'border-foreground scale-110' 
                         : 'border-border hover:scale-105'
@@ -413,15 +476,17 @@ function SortableCategoryNavItem({
                 ))}
               </div>
             </div>
-            
-            <div className="flex gap-2 pt-2">
-              <Button onClick={handleSaveCategory} disabled={!editCategoryName.trim()}>
-                Save Changes
-              </Button>
-              <Button variant="outline" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCancelCustomize}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCustomization} disabled={!editCategoryName.trim()}>
+              Save Changes
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

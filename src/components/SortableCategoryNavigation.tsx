@@ -253,12 +253,17 @@ function SortableCategoryNavItem({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 opacity-70 hover:opacity-100 transition-opacity"
+                className={`h-8 w-8 p-0 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-70 hover:opacity-100'}`}
               >
                 <DotsThreeVertical size={16} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent 
+              align="end" 
+              className={`w-48 ${isMobile ? 'z-[60]' : ''}`}
+              side={isMobile ? "left" : "bottom"}
+              sideOffset={isMobile ? 8 : 4}
+            >
               {onUpdateCategory && (
                 <DropdownMenuItem onClick={() => setIsEditingCategory(true)}>
                   <Pencil size={14} className="mr-2" />

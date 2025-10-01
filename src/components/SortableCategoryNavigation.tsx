@@ -295,7 +295,7 @@ function SortableCategoryNavItem({
                     size="sm"
                     className={`h-8 w-8 p-0 flex-shrink-0 transition-all ${
                       canDelete || onUpdateCategory 
-                        ? 'opacity-50 hover:opacity-100 hover:bg-secondary' 
+                        ? 'opacity-70 hover:opacity-100 hover:bg-secondary group-hover:opacity-100' 
                         : 'opacity-30'
                     }`}
                     title="Category options"

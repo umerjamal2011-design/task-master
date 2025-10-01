@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -13,7 +14,7 @@ import { TaskItem } from './TaskItem';
 import { QuickDatePicker } from './QuickDatePicker';
 import { RepeatSettings } from './RepeatSettings';
 import { PrayerLocationManager } from './PrayerLocationManager';
-import { Plus, Folder, Trash, Check, X, Pencil, Palette, MapPin, Warning, CaretUp, CaretDown, ArrowUp, ArrowDown, CheckCircle, CaretRight, CaretDown as CaretDownIcon } from '@phosphor-icons/react';
+import { Plus, Folder, Trash, Check, X, Pencil, Palette, MapPin, Warning, CaretUp, CaretDown, ArrowUp, ArrowDown, CheckCircle, CaretRight, CaretDown as CaretDownIcon, DotsThreeVertical } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CategorySectionProps {
@@ -361,91 +362,149 @@ export function CategorySection({
                   </div>
                 )}
                 
-                {/* Desktop buttons */}
-                <div className="hidden sm:flex items-center gap-2">
-                  <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Palette size={16} />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Customize Category</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="category-name">Category Name</Label>
-                          <Input
-                            id="category-name"
-                            value={editCategoryName}
-                            onChange={(e) => setEditCategoryName(e.target.value)}
-                            placeholder="Category name"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Choose Color</Label>
-                          <div className="flex flex-wrap gap-2">
-                            {categoryColors.map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                onClick={() => setEditCategoryColor(color)}
-                                className={`w-8 h-8 rounded-full border-2 transition-all ${
-                                  editCategoryColor === color 
-                                    ? 'border-foreground scale-110' 
-                                    : 'border-border hover:scale-105'
-                                }`}
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setEditCategoryName(category.name);
-                            setEditCategoryColor(category.color || '#3B82F6');
-                            setShowCustomizeDialog(false);
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button onClick={handleSaveCustomization}>
-                          Save Changes
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setIsEditingCategory(true)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Pencil size={16} />
-                  </Button>
-                  {canDeleteCategory && (
+                {/* Three dots menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to delete "${category.name}" and all its tasks?`)) {
-                          onDeleteCategory(category.id);
-                        }
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                      className="h-8 w-8 p-0 opacity-70 hover:opacity-100 group-hover:opacity-100 transition-opacity"
                     >
-                      <Trash size={16} />
+                      <DotsThreeVertical size={16} />
                     </Button>
-                  )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => setIsEditingCategory(true)}>
+                      <Pencil size={16} className="mr-2" />
+                      Edit Name
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => setShowCustomizeDialog(true)}>
+                      <Palette size={16} className="mr-2" />
+                      Customize
+                    </DropdownMenuItem>
+                    
+                    {/* Category ordering menu items */}
+                    {(onMoveCategoryUp || onMoveCategoryDown || onMoveCategoryToTop || onMoveCategoryToBottom) && (
+                      <>
+                        <DropdownMenuSeparator />
+                        
+                        {onMoveCategoryToTop && (
+                          <DropdownMenuItem 
+                            onClick={() => onMoveCategoryToTop(category.id)}
+                            disabled={isFirst}
+                          >
+                            <ArrowUp size={16} className="mr-2" />
+                            Move to Top
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {onMoveCategoryUp && (
+                          <DropdownMenuItem 
+                            onClick={() => onMoveCategoryUp(category.id)}
+                            disabled={isFirst}
+                          >
+                            <CaretUp size={16} className="mr-2" />
+                            Move Up
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {onMoveCategoryDown && (
+                          <DropdownMenuItem 
+                            onClick={() => onMoveCategoryDown(category.id)}
+                            disabled={isLast}
+                          >
+                            <CaretDown size={16} className="mr-2" />
+                            Move Down
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {onMoveCategoryToBottom && (
+                          <DropdownMenuItem 
+                            onClick={() => onMoveCategoryToBottom(category.id)}
+                            disabled={isLast}
+                          >
+                            <ArrowDown size={16} className="mr-2" />
+                            Move to Bottom
+                          </DropdownMenuItem>
+                        )}
+                      </>
+                    )}
+                    
+                    {canDeleteCategory && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete "${category.name}" and all its tasks?`)) {
+                              onDeleteCategory(category.id);
+                            }
+                          }}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash size={16} className="mr-2" />
+                          Delete Category
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Customize Dialog */}
+                <Dialog open={showCustomizeDialog} onOpenChange={setShowCustomizeDialog}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Customize Category</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="category-name">Category Name</Label>
+                        <Input
+                          id="category-name"
+                          value={editCategoryName}
+                          onChange={(e) => setEditCategoryName(e.target.value)}
+                          placeholder="Category name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Choose Color</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {categoryColors.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => setEditCategoryColor(color)}
+                              className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                editCategoryColor === color 
+                                  ? 'border-foreground scale-110' 
+                                  : 'border-border hover:scale-105'
+                              }`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditCategoryName(category.name);
+                          setEditCategoryColor(category.color || '#3B82F6');
+                          setShowCustomizeDialog(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveCustomization}>
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                {/* Add Task buttons */}
+                <div className="hidden sm:flex items-center gap-2 ml-2">
                   {!isPrayerCategory && (
                     <Button
                       size="sm"
@@ -478,7 +537,7 @@ export function CategorySection({
 
                 {/* Mobile compact button */}
                 {!isPrayerCategory && (
-                  <div className="sm:hidden">
+                  <div className="sm:hidden ml-2">
                     <Button
                       size="sm"
                       onClick={() => setShowAddTask(true)}
@@ -496,7 +555,7 @@ export function CategorySection({
                 
                 {/* Prayer category mobile button */}
                 {isPrayerCategory && onAddTodaysPrayers && (
-                  <div className="sm:hidden">
+                  <div className="sm:hidden ml-2">
                     <Button
                       size="sm"
                       onClick={onAddTodaysPrayers}

@@ -749,7 +749,6 @@ export function PendingTasksSummary({
                   onClick={() => setBulkRescheduleDate(null)}
                   className="w-full h-9"
                 >
-                  <X size={14} className="mr-1" />
                   Cancel
                 </Button>
               </div>
